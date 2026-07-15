@@ -33,6 +33,20 @@ MAX_ORB = 8.0
 # of rendering as two separate circles.
 SYNASTRY_INNER_RADIUS = 0.62
 
+# Each person keeps the natal chart's rippling-orbit language rather than
+# falling back to plain dots, banded into two wreaths either side of the
+# inner divider circle so the biwheel separation (outer=A, inner=B) holds.
+# A solo chart only has to clear one boundary (the outer dot ring), so its
+# ripple can swing +/-15% of its own radius and still stay on-canvas. Each
+# synastry band has to clear two (the divider circle AND its own dot ring),
+# so the ripple ratio is pulled in - otherwise a house-12 ring at the top of
+# its band swings past the far edge into the other person's territory.
+SYNASTRY_RIPPLE_RATIO = 0.08
+SYNASTRY_OUTER_ORBIT_MIN = 0.70
+SYNASTRY_OUTER_ORBIT_MAX = 0.90
+SYNASTRY_INNER_ORBIT_MIN = 0.12
+SYNASTRY_INNER_ORBIT_MAX = 0.54
+
 # Every planet becomes a rippled orbit ring: its house sets how far out the
 # ring sits (house 1 near the center, house 12 near the rim), its aspect
 # count sets how many petals ripple around it, its exact longitude anchors
@@ -134,11 +148,15 @@ def _draw_aspect_lines(ax, chart: ChartData, positions: dict) -> None:
         _draw_curved_aspect(ax, p1, p2, _orb_to_alpha(aspect.orb), _orb_to_width(aspect.orb))
 
 
-def _orbit_ring(planet, aspect_count: int) -> tuple[np.ndarray, np.ndarray]:
-    base_r = MIN_ORBIT_RADIUS + (planet.house - 1) / 11 * (
-        MAX_ORBIT_RADIUS - MIN_ORBIT_RADIUS
-    )
-    ripple_amp = base_r * RIPPLE_RATIO
+def _orbit_ring(
+    planet,
+    aspect_count: int,
+    min_r: float = MIN_ORBIT_RADIUS,
+    max_r: float = MAX_ORBIT_RADIUS,
+    ripple_ratio: float = RIPPLE_RATIO,
+) -> tuple[np.ndarray, np.ndarray]:
+    base_r = min_r + (planet.house - 1) / 11 * (max_r - min_r)
+    ripple_amp = base_r * ripple_ratio
     petals = 2 + aspect_count
     direction = -1.0 if planet.retrograde else 1.0
     anchor = math.radians(_absolute_longitude(planet.sign, planet.degree_in_sign))
@@ -150,10 +168,18 @@ def _orbit_ring(planet, aspect_count: int) -> tuple[np.ndarray, np.ndarray]:
     return x, y
 
 
-def _draw_orbit_rings(ax, chart: ChartData) -> None:
-    aspect_counts = _aspect_counts(chart)
+def _draw_orbit_rings(
+    ax,
+    chart: ChartData,
+    aspect_counts: dict[str, int] | None = None,
+    min_r: float = MIN_ORBIT_RADIUS,
+    max_r: float = MAX_ORBIT_RADIUS,
+    ripple_ratio: float = RIPPLE_RATIO,
+) -> None:
+    if aspect_counts is None:
+        aspect_counts = _aspect_counts(chart)
     for planet in sorted(chart.planets, key=lambda p: p.house):
-        x, y = _orbit_ring(planet, aspect_counts.get(planet.name, 0))
+        x, y = _orbit_ring(planet, aspect_counts.get(planet.name, 0), min_r, max_r, ripple_ratio)
         color = ELEMENT_COLOR[ELEMENT_OF_SIGN[planet.sign]]
         ax.plot(
             x, y, color=color, linewidth=ORBIT_LINEWIDTH, alpha=ORBIT_ALPHA,
@@ -282,7 +308,32 @@ def _draw_synastry_traditional(ax, synastry: SynastryData, positions_a: dict, po
         _draw_curved_aspect(ax, p1, p2, _orb_to_alpha(aspect.orb), _orb_to_width(aspect.orb), bow=0.2)
 
 
+def _synastry_aspect_counts(synastry: SynastryData) -> tuple[dict[str, int], dict[str, int]]:
+    """Each planet's petal count starts from its own natal aspects, then
+    picks up one more per cross-chart aspect it takes part in - a planet
+    central to the relationship visibly ripples more than one that just
+    sits quietly in its own chart."""
+    counts_a = _aspect_counts(synastry.person_a)
+    counts_b = _aspect_counts(synastry.person_b)
+    for aspect in synastry.aspects:
+        counts_a[aspect.planet_a] = counts_a.get(aspect.planet_a, 0) + 1
+        counts_b[aspect.planet_b] = counts_b.get(aspect.planet_b, 0) + 1
+    return counts_a, counts_b
+
+
 def _draw_synastry_generative(ax, synastry: SynastryData, positions_a: dict, positions_b: dict) -> None:
+    counts_a, counts_b = _synastry_aspect_counts(synastry)
+    _draw_orbit_rings(
+        ax, synastry.person_a, counts_a,
+        min_r=SYNASTRY_OUTER_ORBIT_MIN, max_r=SYNASTRY_OUTER_ORBIT_MAX,
+        ripple_ratio=SYNASTRY_RIPPLE_RATIO,
+    )
+    _draw_orbit_rings(
+        ax, synastry.person_b, counts_b,
+        min_r=SYNASTRY_INNER_ORBIT_MIN, max_r=SYNASTRY_INNER_ORBIT_MAX,
+        ripple_ratio=SYNASTRY_RIPPLE_RATIO,
+    )
+
     planets_a = {p.name: p for p in synastry.person_a.planets}
     planets_b = {p.name: p for p in synastry.person_b.planets}
     for aspect in synastry.aspects:
