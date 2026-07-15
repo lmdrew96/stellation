@@ -1,4 +1,12 @@
-import type { ApiErrorDetail, ArtStyle, ChartData, ChartRequest, Interpretation } from './types'
+import type {
+  ApiErrorDetail,
+  ArtStyle,
+  ChartData,
+  ChartRequest,
+  Interpretation,
+  SynastryData,
+  SynastryRequest,
+} from './types'
 
 export class ApiError extends Error {
   detail: ApiErrorDetail
@@ -21,6 +29,25 @@ export async function fetchChart(payload: ChartRequest): Promise<ChartData> {
     const detail: ApiErrorDetail = body?.detail ?? {
       error: 'unknown_error',
       message: 'Something went wrong generating the chart.',
+    }
+    throw new ApiError(detail)
+  }
+
+  return res.json()
+}
+
+export async function fetchSynastry(payload: SynastryRequest): Promise<SynastryData> {
+  const res = await fetch('/api/synastry', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  })
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => null)
+    const detail: ApiErrorDetail = body?.detail ?? {
+      error: 'unknown_error',
+      message: 'Something went wrong comparing the charts.',
     }
     throw new ApiError(detail)
   }

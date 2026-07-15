@@ -16,8 +16,8 @@ ASPECTS = [
 _LOOKAHEAD_DAYS = 0.01
 
 
-def _pairwise_separation(longitudes: np.ndarray) -> np.ndarray:
-    diff = np.abs(longitudes[:, None] - longitudes[None, :]) % 360
+def _separation_matrix(longitudes_a: np.ndarray, longitudes_b: np.ndarray) -> np.ndarray:
+    diff = np.abs(longitudes_a[:, None] - longitudes_b[None, :]) % 360
     return np.minimum(diff, 360 - diff)
 
 
@@ -26,8 +26,9 @@ def compute_aspects(raw_positions: list[dict]) -> list[dict]:
     longitudes = np.array([p["longitude"] for p in raw_positions])
     speeds = np.array([p["speed"] for p in raw_positions])
 
-    separations = _pairwise_separation(longitudes)
-    future_separations = _pairwise_separation(longitudes + speeds * _LOOKAHEAD_DAYS)
+    separations = _separation_matrix(longitudes, longitudes)
+    future_longitudes = longitudes + speeds * _LOOKAHEAD_DAYS
+    future_separations = _separation_matrix(future_longitudes, future_longitudes)
 
     aspects = []
     for i in range(len(names)):
@@ -48,4 +49,36 @@ def compute_aspects(raw_positions: list[dict]) -> list[dict]:
                         }
                     )
                     break  # orb bands don't overlap; first match wins
+    return aspects
+
+
+def compute_synastry_aspects(raw_a: list[dict], raw_b: list[dict]) -> list[dict]:
+    """Cross-chart aspects between two people's placements. No applying/
+    separating here - that concept describes motion forward from a single
+    shared "now", which doesn't cleanly apply across two charts frozen at
+    different birth moments."""
+    names_a = [p["name"] for p in raw_a]
+    names_b = [p["name"] for p in raw_b]
+    longitudes_a = np.array([p["longitude"] for p in raw_a])
+    longitudes_b = np.array([p["longitude"] for p in raw_b])
+
+    separations = _separation_matrix(longitudes_a, longitudes_b)
+
+    aspects = []
+    for i, name_a in enumerate(names_a):
+        for j, name_b in enumerate(names_b):
+            separation = separations[i, j]
+            for aspect_type, exact_angle, orb_limit in ASPECTS:
+                orb = abs(separation - exact_angle)
+                if orb <= orb_limit:
+                    aspects.append(
+                        {
+                            "planet_a": name_a,
+                            "planet_b": name_b,
+                            "aspect_type": aspect_type,
+                            "exact_angle": exact_angle,
+                            "orb": round(float(orb), 4),
+                        }
+                    )
+                    break
     return aspects

@@ -1,4 +1,9 @@
+from typing import Literal
+
 from pydantic import BaseModel
+
+ZodiacMode = Literal["tropical", "sidereal"]
+HouseSystem = Literal["placidus", "whole_sign"]
 
 
 class ChartRequest(BaseModel):
@@ -7,6 +12,8 @@ class ChartRequest(BaseModel):
     birth_time: str  # HH:MM, 24-hour
     birth_place: str | None = None
     pronouns: str | None = None
+    zodiac: ZodiacMode = "tropical"
+    house_system: HouseSystem = "placidus"
     manual_lat: float | None = None
     manual_lng: float | None = None
 
@@ -38,6 +45,8 @@ class Aspect(BaseModel):
 class ChartData(BaseModel):
     name: str
     pronouns: str | None = None
+    zodiac: ZodiacMode
+    house_system: HouseSystem
     birth_datetime: str  # ISO8601, includes time (local, with UTC offset)
     birth_location: BirthLocation
     planets: list[Planet]
@@ -52,3 +61,22 @@ class PlanetInterpretation(BaseModel):
 class Interpretation(BaseModel):
     planet_interpretations: list[PlanetInterpretation]
     synthesis: str
+
+
+class SynastryRequest(BaseModel):
+    person_a: ChartRequest
+    person_b: ChartRequest
+
+
+class SynastryAspect(BaseModel):
+    planet_a: str
+    planet_b: str
+    aspect_type: str
+    exact_angle: float
+    orb: float
+
+
+class SynastryData(BaseModel):
+    person_a: ChartData
+    person_b: ChartData
+    aspects: list[SynastryAspect]

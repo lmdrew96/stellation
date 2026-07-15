@@ -1,34 +1,32 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import './App.css'
-import { ApiError, fetchChart, fetchInterpretation, fetchRenderUrl } from './api'
-import { AspectList } from './components/AspectList'
+import { ApiError, fetchChart, fetchSynastry } from './api'
 import { AstrolabeRing } from './components/AstrolabeRing'
 import { BirthDataForm } from './components/BirthDataForm'
-import { ChartCarousel } from './components/ChartCarousel'
-import { GeneratingScreen } from './components/GeneratingScreen'
-import { PlanetList } from './components/PlanetList'
-import { ReadingDisplay } from './components/ReadingDisplay'
-import type { ArtStyle, ChartData, ChartRequest, Interpretation } from './types'
+import { ChartReveal } from './components/ChartReveal'
+import { SynastryAspectList } from './components/SynastryAspectList'
+import { SynastryForm } from './components/SynastryForm'
+import { useChartReveal } from './hooks/useChartReveal'
+import type { ChartData, ChartRequest, SynastryData, SynastryRequest } from './types'
 
 type HealthStatus = 'checking' | 'ok' | 'error'
-
-const ART_STYLES: { style: ArtStyle; label: string }[] = [
-  { style: 'generative', label: 'Generative' },
-  { style: 'traditional', label: 'Traditional' },
-]
+type Mode = 'solo' | 'synastry'
 
 function App() {
   const [health, setHealth] = useState<HealthStatus>('checking')
-  const [chart, setChart] = useState<ChartData | null>(null)
-  const [artUrls, setArtUrls] = useState<Partial<Record<ArtStyle, string>>>({})
-  const [artStatus, setArtStatus] = useState<'idle' | 'loading' | 'error'>('idle')
-  const [reading, setReading] = useState<Interpretation | null>(null)
-  const [readingStatus, setReadingStatus] = useState<'idle' | 'loading' | 'error'>('idle')
-  const [readingError, setReadingError] = useState<string | null>(null)
+  const [mode, setMode] = useState<Mode>('solo')
   const [submitting, setSubmitting] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
+
+  const [chart, setChart] = useState<ChartData | null>(null)
   const [showManualCoords, setShowManualCoords] = useState(false)
-  const artUrlsRef = useRef<Partial<Record<ArtStyle, string>>>({})
+  const soloReveal = useChartReveal(chart)
+
+  const [synastry, setSynastry] = useState<SynastryData | null>(null)
+  const [showManualCoordsA, setShowManualCoordsA] = useState(false)
+  const [showManualCoordsB, setShowManualCoordsB] = useState(false)
+  const revealA = useChartReveal(synastry?.person_a ?? null)
+  const revealB = useChartReveal(synastry?.person_b ?? null)
 
   useEffect(() => {
     fetch('/api/health')
@@ -36,53 +34,11 @@ function App() {
       .catch(() => setHealth('error'))
   }, [])
 
-  useEffect(() => {
-    if (!chart) return
-    Promise.all(
-      ART_STYLES.map(({ style }) => fetchRenderUrl(chart, style).then((url) => [style, url] as const))
-    )
-      .then((pairs) => {
-        for (const url of Object.values(artUrlsRef.current)) {
-          if (url) URL.revokeObjectURL(url)
-        }
-        const next = Object.fromEntries(pairs) as Record<ArtStyle, string>
-        artUrlsRef.current = next
-        setArtUrls(next)
-        setArtStatus('idle')
-      })
-      .catch(() => {
-        setErrorMessage('Chart data loaded, but rendering the art failed.')
-        setArtStatus('error')
-      })
-  }, [chart])
-
-  useEffect(() => {
-    if (!chart) return
-    fetchInterpretation(chart)
-      .then((result) => {
-        setReading(result)
-        setReadingStatus('idle')
-      })
-      .catch((err) => {
-        setReadingStatus('error')
-        setReadingError(err instanceof ApiError ? err.detail.message : 'Could not generate a reading.')
-      })
-  }, [chart])
-
-  const artSettled = ART_STYLES.every(({ style }) => artUrls[style] !== undefined) || artStatus === 'error'
-  const readingSettled = reading !== null || readingStatus === 'error'
-  const isGenerating = chart !== null && !(artSettled && readingSettled)
-
-  async function handleSubmit(payload: ChartRequest) {
+  async function handleSoloSubmit(payload: ChartRequest) {
     setSubmitting(true)
     setErrorMessage(null)
     try {
       const result = await fetchChart(payload)
-      setArtUrls({})
-      setArtStatus('loading')
-      setReading(null)
-      setReadingStatus('loading')
-      setReadingError(null)
       setChart(result)
       setShowManualCoords(false)
     } catch (err) {
@@ -99,9 +55,42 @@ function App() {
     }
   }
 
+  async function handleSynastrySubmit(payload: SynastryRequest) {
+    setSubmitting(true)
+    setErrorMessage(null)
+    try {
+      const result = await fetchSynastry(payload)
+      setSynastry(result)
+      setShowManualCoordsA(false)
+      setShowManualCoordsB(false)
+    } catch (err) {
+      if (err instanceof ApiError) {
+        setErrorMessage(err.detail.message)
+        if (err.detail.error === 'geocode_failed') {
+          if (err.detail.person === 'b') {
+            setShowManualCoordsB(true)
+          } else {
+            setShowManualCoordsA(true)
+          }
+        }
+      } else {
+        setErrorMessage('Something went wrong comparing the charts.')
+      }
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  function switchMode(next: Mode) {
+    setMode(next)
+    setErrorMessage(null)
+  }
+
+  const hasResult = mode === 'solo' ? chart !== null : synastry !== null
+
   return (
     <div className="page">
-      {!chart && (
+      {!hasResult && (
         <div className="ring-field">
           <AstrolabeRing size={560} spin />
         </div>
@@ -112,29 +101,52 @@ function App() {
           <p className="tagline">A precise map of the sky at the moment you arrived.</p>
         </header>
 
-        <BirthDataForm
-          onSubmit={handleSubmit}
-          submitting={submitting}
-          showManualCoords={showManualCoords}
-        />
+        <div className="mode-toggle" role="tablist">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={mode === 'solo'}
+            data-active={mode === 'solo'}
+            onClick={() => switchMode('solo')}
+          >
+            Solo Chart
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={mode === 'synastry'}
+            data-active={mode === 'synastry'}
+            onClick={() => switchMode('synastry')}
+          >
+            Synastry
+          </button>
+        </div>
+
+        {mode === 'solo' ? (
+          <BirthDataForm onSubmit={handleSoloSubmit} submitting={submitting} showManualCoords={showManualCoords} />
+        ) : (
+          <SynastryForm
+            onSubmit={handleSynastrySubmit}
+            submitting={submitting}
+            showManualCoordsA={showManualCoordsA}
+            showManualCoordsB={showManualCoordsB}
+          />
+        )}
 
         {errorMessage && <p className="notice notice-error">{errorMessage}</p>}
 
-        {chart && isGenerating && <GeneratingScreen />}
+        {mode === 'solo' && chart && <ChartReveal chart={chart} {...soloReveal} />}
 
-        {chart && !isGenerating && (
-          <section className="reveal">
-            {ART_STYLES.every(({ style }) => artUrls[style]) && (
-              <ChartCarousel
-                name={chart.name}
-                slides={ART_STYLES.map(({ style, label }) => ({ label, url: artUrls[style]! }))}
-              />
-            )}
-            {readingStatus === 'error' && <p className="notice notice-error">{readingError}</p>}
-            {reading && <ReadingDisplay reading={reading} />}
-            <PlanetList planets={chart.planets} />
-            <AspectList aspects={chart.aspects} />
-          </section>
+        {mode === 'synastry' && synastry && (
+          <>
+            <ChartReveal chart={synastry.person_a} heading={synastry.person_a.name} {...revealA} />
+            <ChartReveal chart={synastry.person_b} heading={synastry.person_b.name} {...revealB} />
+            <SynastryAspectList
+              aspects={synastry.aspects}
+              nameA={synastry.person_a.name}
+              nameB={synastry.person_b.name}
+            />
+          </>
         )}
       </main>
 

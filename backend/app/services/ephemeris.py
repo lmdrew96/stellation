@@ -3,6 +3,8 @@ import zoneinfo
 
 import swisseph as swe
 
+from app.models.schemas import HouseSystem, ZodiacMode
+
 SIGNS = [
     "Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo",
     "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces",
@@ -25,6 +27,16 @@ PLANETS = [
 # well under an arcsecond for any birth-chart-era date — far tighter than the
 # multi-degree orbs this app uses, so no need to ship Swiss Ephemeris data files.
 CALC_FLAGS = swe.FLG_MOSEPH | swe.FLG_SPEED
+
+_HOUSE_SYSTEM_CODE: dict[HouseSystem, bytes] = {
+    "placidus": b"P",
+    "whole_sign": b"W",
+}
+
+# Lahiri is the most widely used ayanamsa for sidereal astrology - there's no
+# single agreed-upon standard, but it's the reasonable default absent a
+# dedicated ayanamsa picker in the UI.
+swe.set_sid_mode(swe.SIDM_LAHIRI)
 
 
 def local_to_jd_ut(birth_date: str, birth_time: str, tz_name: str) -> tuple[float, dt.datetime]:
@@ -65,20 +77,33 @@ def _house_of(longitude: float, cusps: tuple[float, ...]) -> int:
     return 12
 
 
-def compute_raw_positions(jd_ut: float) -> list[dict]:
+def compute_raw_positions(jd_ut: float, zodiac: ZodiacMode = "tropical") -> list[dict]:
     """Longitude + speed per planet. Internal use only (aspect math needs
     speed, which isn't part of the public Planet shape)."""
+    flags = CALC_FLAGS | (swe.FLG_SIDEREAL if zodiac == "sidereal" else 0)
     positions = []
     for name, body in PLANETS:
-        xx, _retflags = swe.calc_ut(jd_ut, body, CALC_FLAGS)
+        xx, _retflags = swe.calc_ut(jd_ut, body, flags)
         positions.append({"name": name, "longitude": xx[0], "speed": xx[3]})
     return positions
 
 
 def compute_planets(
-    jd_ut: float, lat: float, lng: float, raw_positions: list[dict]
+    jd_ut: float,
+    lat: float,
+    lng: float,
+    raw_positions: list[dict],
+    house_system: HouseSystem = "placidus",
+    zodiac: ZodiacMode = "tropical",
 ) -> list[dict]:
-    cusps, _ascmc = swe.houses(jd_ut, lat, lng, b"P")
+    # houses_ex with FLG_SIDEREAL returns cusps already shifted into the same
+    # sidereal frame calc_ut used above for planets, so both are directly
+    # comparable with no manual ayanamsa math - important for whole-sign
+    # houses specifically, whose cusps sit at sign boundaries that differ
+    # between the tropical and sidereal ascendant.
+    hsys = _HOUSE_SYSTEM_CODE[house_system]
+    house_flags = swe.FLG_SIDEREAL if zodiac == "sidereal" else 0
+    cusps, _ascmc = swe.houses_ex(jd_ut, lat, lng, hsys, house_flags)
 
     planets = []
     for p in raw_positions:

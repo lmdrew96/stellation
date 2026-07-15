@@ -1,4 +1,6 @@
 export type ArtStyle = 'generative' | 'traditional'
+export type ZodiacMode = 'tropical' | 'sidereal'
+export type HouseSystem = 'placidus' | 'whole_sign'
 
 export interface ChartRequest {
   name: string
@@ -6,6 +8,8 @@ export interface ChartRequest {
   birth_time: string
   birth_place?: string
   pronouns?: string
+  zodiac?: ZodiacMode
+  house_system?: HouseSystem
   manual_lat?: number
   manual_lng?: number
 }
@@ -37,6 +41,8 @@ export interface Aspect {
 export interface ChartData {
   name: string
   pronouns?: string
+  zodiac: ZodiacMode
+  house_system: HouseSystem
   birth_datetime: string
   birth_location: BirthLocation
   planets: Planet[]
@@ -46,6 +52,7 @@ export interface ChartData {
 export interface ApiErrorDetail {
   error: string
   message: string
+  person?: 'a' | 'b'
 }
 
 export interface PlanetInterpretation {
@@ -56,4 +63,23 @@ export interface PlanetInterpretation {
 export interface Interpretation {
   planet_interpretations: PlanetInterpretation[]
   synthesis: string
+}
+
+export interface SynastryRequest {
+  person_a: ChartRequest
+  person_b: ChartRequest
+}
+
+export interface SynastryAspect {
+  planet_a: string
+  planet_b: string
+  aspect_type: string
+  exact_angle: number
+  orb: number
+}
+
+export interface SynastryData {
+  person_a: ChartData
+  person_b: ChartData
+  aspects: SynastryAspect[]
 }
