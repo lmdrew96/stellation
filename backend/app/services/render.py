@@ -11,8 +11,7 @@ import matplotlib
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-from matplotlib.path import Path
-from matplotlib.patches import PathPatch
+import numpy as np
 
 from app.models.schemas import ChartData
 from app.services.ephemeris import SIGNS
@@ -20,14 +19,26 @@ from app.services.ephemeris import SIGNS
 RADIUS = 1.0
 DOT_SIZE = 110
 DOT_EDGE_WIDTH = 1.2
-MAX_ORB = 8.0
+
+# Every planet becomes a rippled orbit ring: its house sets how far out the
+# ring sits (house 1 near the center, house 12 near the rim), its aspect
+# count sets how many petals ripple around it, its exact longitude anchors
+# where the ripple pattern starts, and retrograde motion reverses which way
+# it winds. Ten placements, ten rings - the "art" is just the birth data
+# traced out as orbits instead of listed as a table.
+MIN_ORBIT_RADIUS = 0.18
+MAX_ORBIT_RADIUS = 0.85
+RIPPLE_RATIO = 0.15
+ORBIT_SAMPLES = 400
+ORBIT_LINEWIDTH = 1.4
+ORBIT_ALPHA = 0.55
 
 # Palette (Nae's pick): a cool violet/blue night scale for the UI, carried
 # into the chart so the two don't look like different apps. Elements need
 # warm/cool variety a monochrome palette can't supply on its own, so fire/
 # earth/air borrow outside it — water stays in-family (Dusty Denim).
 BG_COLOR = "#262423"  # Shadow Grey
-STRUCTURE_COLOR = "#8350C4"  # Deep Lilac - circle + aspect lines
+STRUCTURE_COLOR = "#8350C4"  # Deep Lilac - orientation ring
 LABEL_COLOR = "#C9E0EB"  # Pale Sky
 
 ELEMENT_OF_SIGN = {
@@ -54,27 +65,6 @@ def _absolute_longitude(sign: str, degree_in_sign: float) -> float:
     return SIGNS.index(sign) * 30 + degree_in_sign
 
 
-def _orb_to_alpha(orb: float) -> float:
-    t = 1 - min(orb, MAX_ORB) / MAX_ORB
-    return 0.25 + 0.65 * t
-
-
-def _orb_to_width(orb: float) -> float:
-    t = 1 - min(orb, MAX_ORB) / MAX_ORB
-    return 0.6 + 2.0 * t
-
-
-def _draw_curved_aspect(ax, p1, p2, alpha: float, width: float, bow: float = 0.35) -> None:
-    x1, y1 = p1
-    x2, y2 = p2
-    mx, my = (x1 + x2) / 2, (y1 + y2) / 2
-    cx, cy = mx * (1 - bow), my * (1 - bow)  # bow the midpoint toward center
-    path = Path([(x1, y1), (cx, cy), (x2, y2)], [Path.MOVETO, Path.CURVE3, Path.CURVE3])
-    ax.add_patch(
-        PathPatch(path, facecolor="none", edgecolor=STRUCTURE_COLOR, alpha=alpha, linewidth=width)
-    )
-
-
 def _label_offsets(planets: list) -> dict[str, tuple[float, float]]:
     """Alternate label placement for planets that sit close together in
     longitude, so tight conjunctions don't render overlapping text."""
@@ -95,6 +85,41 @@ def _label_offsets(planets: list) -> dict[str, tuple[float, float]]:
     return offsets
 
 
+def _aspect_counts(chart: ChartData) -> dict[str, int]:
+    counts: dict[str, int] = {}
+    for aspect in chart.aspects:
+        counts[aspect.planet_a] = counts.get(aspect.planet_a, 0) + 1
+        counts[aspect.planet_b] = counts.get(aspect.planet_b, 0) + 1
+    return counts
+
+
+def _orbit_ring(planet, aspect_count: int) -> tuple[np.ndarray, np.ndarray]:
+    base_r = MIN_ORBIT_RADIUS + (planet.house - 1) / 11 * (
+        MAX_ORBIT_RADIUS - MIN_ORBIT_RADIUS
+    )
+    ripple_amp = base_r * RIPPLE_RATIO
+    petals = 2 + aspect_count
+    direction = -1.0 if planet.retrograde else 1.0
+    anchor = math.radians(_absolute_longitude(planet.sign, planet.degree_in_sign))
+
+    theta = np.linspace(0, 2 * np.pi, ORBIT_SAMPLES)
+    r = base_r + ripple_amp * np.cos(direction * petals * theta)
+    x = r * np.cos(theta + anchor)
+    y = r * np.sin(theta + anchor)
+    return x, y
+
+
+def _draw_orbit_rings(ax, chart: ChartData) -> None:
+    aspect_counts = _aspect_counts(chart)
+    for planet in sorted(chart.planets, key=lambda p: p.house):
+        x, y = _orbit_ring(planet, aspect_counts.get(planet.name, 0))
+        color = ELEMENT_COLOR[ELEMENT_OF_SIGN[planet.sign]]
+        ax.plot(
+            x, y, color=color, linewidth=ORBIT_LINEWIDTH, alpha=ORBIT_ALPHA,
+            solid_capstyle="round", zorder=2,
+        )
+
+
 def render_chart_svg(chart: ChartData) -> str:
     positions = {}
     for planet in chart.planets:
@@ -111,13 +136,10 @@ def render_chart_svg(chart: ChartData) -> str:
     ax.axis("off")
 
     ax.add_patch(
-        plt.Circle((0, 0), RADIUS, fill=False, color=STRUCTURE_COLOR, linewidth=1.1, alpha=0.7)
+        plt.Circle((0, 0), RADIUS, fill=False, color=STRUCTURE_COLOR, linewidth=1.1, alpha=0.4)
     )
 
-    for aspect in chart.aspects:
-        p1 = positions[aspect.planet_a]
-        p2 = positions[aspect.planet_b]
-        _draw_curved_aspect(ax, p1, p2, _orb_to_alpha(aspect.orb), _orb_to_width(aspect.orb))
+    _draw_orbit_rings(ax, chart)
 
     for planet in chart.planets:
         x, y = positions[planet.name]
