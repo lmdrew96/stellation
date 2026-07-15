@@ -4,6 +4,7 @@ import { ApiError, fetchChart, fetchInterpretation, fetchRenderUrl } from './api
 import { AspectList } from './components/AspectList'
 import { AstrolabeRing } from './components/AstrolabeRing'
 import { BirthDataForm } from './components/BirthDataForm'
+import { GeneratingScreen } from './components/GeneratingScreen'
 import { PlanetList } from './components/PlanetList'
 import { ReadingDisplay } from './components/ReadingDisplay'
 import type { ChartData, ChartRequest, Interpretation } from './types'
@@ -14,6 +15,7 @@ function App() {
   const [health, setHealth] = useState<HealthStatus>('checking')
   const [chart, setChart] = useState<ChartData | null>(null)
   const [artUrl, setArtUrl] = useState<string | null>(null)
+  const [artStatus, setArtStatus] = useState<'idle' | 'loading' | 'error'>('idle')
   const [reading, setReading] = useState<Interpretation | null>(null)
   const [readingStatus, setReadingStatus] = useState<'idle' | 'loading' | 'error'>('idle')
   const [readingError, setReadingError] = useState<string | null>(null)
@@ -35,15 +37,16 @@ function App() {
         if (artUrlRef.current) URL.revokeObjectURL(artUrlRef.current)
         artUrlRef.current = url
         setArtUrl(url)
+        setArtStatus('idle')
       })
-      .catch(() => setErrorMessage('Chart data loaded, but rendering the art failed.'))
+      .catch(() => {
+        setErrorMessage('Chart data loaded, but rendering the art failed.')
+        setArtStatus('error')
+      })
   }, [chart])
 
   useEffect(() => {
     if (!chart) return
-    setReading(null)
-    setReadingStatus('loading')
-    setReadingError(null)
     fetchInterpretation(chart)
       .then((result) => {
         setReading(result)
@@ -55,11 +58,20 @@ function App() {
       })
   }, [chart])
 
+  const artSettled = artUrl !== null || artStatus === 'error'
+  const readingSettled = reading !== null || readingStatus === 'error'
+  const isGenerating = chart !== null && !(artSettled && readingSettled)
+
   async function handleSubmit(payload: ChartRequest) {
     setSubmitting(true)
     setErrorMessage(null)
     try {
       const result = await fetchChart(payload)
+      setArtUrl(null)
+      setArtStatus('loading')
+      setReading(null)
+      setReadingStatus('loading')
+      setReadingError(null)
       setChart(result)
       setShowManualCoords(false)
     } catch (err) {
@@ -97,7 +109,9 @@ function App() {
 
         {errorMessage && <p className="notice notice-error">{errorMessage}</p>}
 
-        {chart && (
+        {chart && isGenerating && <GeneratingScreen />}
+
+        {chart && !isGenerating && (
           <section className="reveal">
             {artUrl && (
               <div className="chart-frame">
@@ -105,7 +119,6 @@ function App() {
                 <img className="chart-art" src={artUrl} alt={`${chart.name}'s natal chart`} />
               </div>
             )}
-            {readingStatus === 'loading' && <p className="notice notice-loading">Reading the stars…</p>}
             {readingStatus === 'error' && <p className="notice notice-error">{readingError}</p>}
             {reading && <ReadingDisplay reading={reading} />}
             <PlanetList planets={chart.planets} />
