@@ -5,7 +5,7 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
     anthropic_api_key: str = ""
-    anthropic_model: str = "claude-sonnet-4-6"
+    anthropic_model: str = "claude-haiku-4-5"
     cors_origins: list[str] = ["http://localhost:5173"]
 
 

@@ -77,10 +77,12 @@ gitignored) and there's nothing to configure in code.
 - **Orbs:** conjunction/opposition/trine 8°, square 7°, sextile 6°.
 - **Geocoding fallback:** if Nominatim can't resolve a place name, the
   frontend reveals manual latitude/longitude fields.
-- **Interpretation:** forced tool-use (not `output_config.format`) — the
-  pinned model (`claude-sonnet-4-6`) isn't on Anthropic's documented
-  structured-outputs support list, so forced tool-use is the compatible path
-  for typed JSON.
+- **Interpretation:** forced tool-use (not `output_config.format`) for typed
+  JSON — model-agnostic, so it keeps working regardless of which model
+  `ANTHROPIC_MODEL` points at.
+- **Model:** `claude-haiku-4-5` (switched from `claude-sonnet-4-6` — Sonnet
+  readings took ~a minute to render; Haiku is meaningfully faster for this
+  structured-extraction task).
 
 ## Open questions (not yet decided — see spec doc)
 

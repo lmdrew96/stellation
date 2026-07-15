@@ -12,10 +12,9 @@ SYSTEM_PROMPT = (
     "weaving the placements and aspects together into an overall reading."
 )
 
-# Forced tool use rather than output_config.format: structured outputs are only
-# documented for Fable 5 / Opus 4.8 / Sonnet 5 / Haiku 4.5, and this app is
-# pinned to claude-sonnet-4-6 (see settings.anthropic_model) which isn't on
-# that list. Forced tool_choice is the widely-compatible way to get typed JSON.
+# Forced tool_choice (rather than output_config.format) works across any
+# model, including ones outside Anthropic's documented structured-outputs
+# support list, so it stays compatible if settings.anthropic_model changes.
 INTERPRETATION_TOOL = {
     "name": "record_interpretation",
     "description": "Record the natal chart interpretation as structured data.",
