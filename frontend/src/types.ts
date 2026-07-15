@@ -3,6 +3,7 @@ export interface ChartRequest {
   birth_date: string
   birth_time: string
   birth_place?: string
+  pronouns?: string
   manual_lat?: number
   manual_lng?: number
 }
@@ -33,6 +34,7 @@ export interface Aspect {
 
 export interface ChartData {
   name: string
+  pronouns?: string
   birth_datetime: string
   birth_location: BirthLocation
   planets: Planet[]

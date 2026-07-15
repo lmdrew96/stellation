@@ -6,6 +6,7 @@ class ChartRequest(BaseModel):
     birth_date: str  # YYYY-MM-DD
     birth_time: str  # HH:MM, 24-hour
     birth_place: str | None = None
+    pronouns: str | None = None
     manual_lat: float | None = None
     manual_lng: float | None = None
 
@@ -36,6 +37,7 @@ class Aspect(BaseModel):
 
 class ChartData(BaseModel):
     name: str
+    pronouns: str | None = None
     birth_datetime: str  # ISO8601, includes time (local, with UTC offset)
     birth_location: BirthLocation
     planets: list[Planet]

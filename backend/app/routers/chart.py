@@ -55,6 +55,7 @@ def create_chart(payload: ChartRequest) -> ChartData:
 
     return ChartData(
         name=payload.name,
+        pronouns=payload.pronouns,
         birth_datetime=local_dt.isoformat(),
         birth_location=BirthLocation(
             place_name=place_name, lat=lat, lng=lng, timezone=tz_name

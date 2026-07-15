@@ -13,6 +13,7 @@ export function BirthDataForm({ onSubmit, submitting, showManualCoords }: BirthD
   const [birthDate, setBirthDate] = useState('')
   const [birthTime, setBirthTime] = useState('')
   const [birthPlace, setBirthPlace] = useState('')
+  const [pronouns, setPronouns] = useState('')
   const [manualLat, setManualLat] = useState('')
   const [manualLng, setManualLng] = useState('')
 
@@ -23,6 +24,7 @@ export function BirthDataForm({ onSubmit, submitting, showManualCoords }: BirthD
       birth_date: birthDate,
       birth_time: birthTime,
       birth_place: birthPlace || undefined,
+      pronouns: pronouns || undefined,
     }
     if (showManualCoords && manualLat && manualLng) {
       payload.manual_lat = Number(manualLat)
@@ -71,6 +73,18 @@ export function BirthDataForm({ onSubmit, submitting, showManualCoords }: BirthD
             placeholder="City, State/Country"
             value={birthPlace}
             onChange={(e) => setBirthPlace(e.target.value)}
+          />
+        </div>
+      </div>
+
+      <div className="field-row">
+        <div className="field">
+          <label htmlFor="pronouns">Pronouns</label>
+          <input
+            id="pronouns"
+            placeholder="she/her, he/him, they/them…"
+            value={pronouns}
+            onChange={(e) => setPronouns(e.target.value)}
           />
         </div>
       </div>
