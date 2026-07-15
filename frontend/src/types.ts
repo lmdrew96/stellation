@@ -1,3 +1,5 @@
+export type ArtStyle = 'generative' | 'traditional'
+
 export interface ChartRequest {
   name: string
   birth_date: string

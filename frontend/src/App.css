@@ -296,10 +296,15 @@
   }
 }
 
-.chart-frame {
+.chart-carousel {
   position: relative;
+  z-index: 1;
   width: min(100%, 420px);
   margin: 0 auto 2.5rem;
+}
+
+.chart-frame {
+  position: relative;
   padding: 1.5rem;
 }
 
@@ -307,6 +312,79 @@
   display: block;
   width: 100%;
   border-radius: 50%;
+}
+
+.carousel-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  border: 1px solid var(--color-surface-line);
+  background: rgb(from var(--color-bg) r g b / 0.6);
+  color: var(--color-text);
+  font-size: 1.2rem;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.carousel-arrow:hover {
+  background: var(--color-accent-wash);
+  border-color: var(--color-accent-warm);
+}
+
+.carousel-arrow:focus-visible {
+  outline: 2px solid var(--color-accent-warm);
+  outline-offset: 2px;
+}
+
+.carousel-arrow--prev {
+  left: 0.25rem;
+}
+
+.carousel-arrow--next {
+  right: 0.25rem;
+}
+
+.carousel-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6rem;
+  margin-top: 0.5rem;
+}
+
+.carousel-label {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.carousel-dots {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.carousel-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  border: none;
+  background: var(--color-surface-line);
+  cursor: pointer;
+  padding: 0;
+}
+
+.carousel-dot[data-active='true'] {
+  background: var(--color-accent-warm);
 }
 
 /* ---------- reading ---------- */

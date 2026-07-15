@@ -1,6 +1,7 @@
 import io
 import math
 import os
+from typing import Literal
 
 # Serverless filesystems are read-only outside /tmp - matplotlib needs
 # somewhere writable for its font cache, or it rebuilds it on every cold
@@ -12,13 +13,18 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
+from matplotlib.path import Path
+from matplotlib.patches import PathPatch
 
 from app.models.schemas import ChartData
 from app.services.ephemeris import SIGNS
 
+ChartStyle = Literal["generative", "traditional"]
+
 RADIUS = 1.0
 DOT_SIZE = 110
 DOT_EDGE_WIDTH = 1.2
+MAX_ORB = 8.0
 
 # Every planet becomes a rippled orbit ring: its house sets how far out the
 # ring sits (house 1 near the center, house 12 near the rim), its aspect
@@ -93,6 +99,34 @@ def _aspect_counts(chart: ChartData) -> dict[str, int]:
     return counts
 
 
+def _orb_to_alpha(orb: float) -> float:
+    t = 1 - min(orb, MAX_ORB) / MAX_ORB
+    return 0.25 + 0.65 * t
+
+
+def _orb_to_width(orb: float) -> float:
+    t = 1 - min(orb, MAX_ORB) / MAX_ORB
+    return 0.6 + 2.0 * t
+
+
+def _draw_curved_aspect(ax, p1, p2, alpha: float, width: float, bow: float = 0.35) -> None:
+    x1, y1 = p1
+    x2, y2 = p2
+    mx, my = (x1 + x2) / 2, (y1 + y2) / 2
+    cx, cy = mx * (1 - bow), my * (1 - bow)  # bow the midpoint toward center
+    path = Path([(x1, y1), (cx, cy), (x2, y2)], [Path.MOVETO, Path.CURVE3, Path.CURVE3])
+    ax.add_patch(
+        PathPatch(path, facecolor="none", edgecolor=STRUCTURE_COLOR, alpha=alpha, linewidth=width)
+    )
+
+
+def _draw_aspect_lines(ax, chart: ChartData, positions: dict) -> None:
+    for aspect in chart.aspects:
+        p1 = positions[aspect.planet_a]
+        p2 = positions[aspect.planet_b]
+        _draw_curved_aspect(ax, p1, p2, _orb_to_alpha(aspect.orb), _orb_to_width(aspect.orb))
+
+
 def _orbit_ring(planet, aspect_count: int) -> tuple[np.ndarray, np.ndarray]:
     base_r = MIN_ORBIT_RADIUS + (planet.house - 1) / 11 * (
         MAX_ORBIT_RADIUS - MIN_ORBIT_RADIUS
@@ -120,7 +154,7 @@ def _draw_orbit_rings(ax, chart: ChartData) -> None:
         )
 
 
-def render_chart_svg(chart: ChartData) -> str:
+def render_chart_svg(chart: ChartData, style: ChartStyle = "generative") -> str:
     positions = {}
     for planet in chart.planets:
         lon = _absolute_longitude(planet.sign, planet.degree_in_sign)
@@ -135,11 +169,18 @@ def render_chart_svg(chart: ChartData) -> str:
     ax.set_aspect("equal")
     ax.axis("off")
 
+    # The generative rosettes are busy enough to carry the piece on their
+    # own, so the orientation ring steps back; the traditional wheel has
+    # nothing else going on, so it stays the focal structure.
+    circle_alpha = 0.7 if style == "traditional" else 0.4
     ax.add_patch(
-        plt.Circle((0, 0), RADIUS, fill=False, color=STRUCTURE_COLOR, linewidth=1.1, alpha=0.4)
+        plt.Circle((0, 0), RADIUS, fill=False, color=STRUCTURE_COLOR, linewidth=1.1, alpha=circle_alpha)
     )
 
-    _draw_orbit_rings(ax, chart)
+    if style == "traditional":
+        _draw_aspect_lines(ax, chart, positions)
+    else:
+        _draw_orbit_rings(ax, chart)
 
     for planet in chart.planets:
         x, y = positions[planet.name]

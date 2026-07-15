@@ -4,17 +4,23 @@ import { ApiError, fetchChart, fetchInterpretation, fetchRenderUrl } from './api
 import { AspectList } from './components/AspectList'
 import { AstrolabeRing } from './components/AstrolabeRing'
 import { BirthDataForm } from './components/BirthDataForm'
+import { ChartCarousel } from './components/ChartCarousel'
 import { GeneratingScreen } from './components/GeneratingScreen'
 import { PlanetList } from './components/PlanetList'
 import { ReadingDisplay } from './components/ReadingDisplay'
-import type { ChartData, ChartRequest, Interpretation } from './types'
+import type { ArtStyle, ChartData, ChartRequest, Interpretation } from './types'
 
 type HealthStatus = 'checking' | 'ok' | 'error'
+
+const ART_STYLES: { style: ArtStyle; label: string }[] = [
+  { style: 'generative', label: 'Generative' },
+  { style: 'traditional', label: 'Traditional' },
+]
 
 function App() {
   const [health, setHealth] = useState<HealthStatus>('checking')
   const [chart, setChart] = useState<ChartData | null>(null)
-  const [artUrl, setArtUrl] = useState<string | null>(null)
+  const [artUrls, setArtUrls] = useState<Partial<Record<ArtStyle, string>>>({})
   const [artStatus, setArtStatus] = useState<'idle' | 'loading' | 'error'>('idle')
   const [reading, setReading] = useState<Interpretation | null>(null)
   const [readingStatus, setReadingStatus] = useState<'idle' | 'loading' | 'error'>('idle')
@@ -22,7 +28,7 @@ function App() {
   const [submitting, setSubmitting] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [showManualCoords, setShowManualCoords] = useState(false)
-  const artUrlRef = useRef<string | null>(null)
+  const artUrlsRef = useRef<Partial<Record<ArtStyle, string>>>({})
 
   useEffect(() => {
     fetch('/api/health')
@@ -32,11 +38,16 @@ function App() {
 
   useEffect(() => {
     if (!chart) return
-    fetchRenderUrl(chart)
-      .then((url) => {
-        if (artUrlRef.current) URL.revokeObjectURL(artUrlRef.current)
-        artUrlRef.current = url
-        setArtUrl(url)
+    Promise.all(
+      ART_STYLES.map(({ style }) => fetchRenderUrl(chart, style).then((url) => [style, url] as const))
+    )
+      .then((pairs) => {
+        for (const url of Object.values(artUrlsRef.current)) {
+          if (url) URL.revokeObjectURL(url)
+        }
+        const next = Object.fromEntries(pairs) as Record<ArtStyle, string>
+        artUrlsRef.current = next
+        setArtUrls(next)
         setArtStatus('idle')
       })
       .catch(() => {
@@ -58,7 +69,7 @@ function App() {
       })
   }, [chart])
 
-  const artSettled = artUrl !== null || artStatus === 'error'
+  const artSettled = ART_STYLES.every(({ style }) => artUrls[style] !== undefined) || artStatus === 'error'
   const readingSettled = reading !== null || readingStatus === 'error'
   const isGenerating = chart !== null && !(artSettled && readingSettled)
 
@@ -67,7 +78,7 @@ function App() {
     setErrorMessage(null)
     try {
       const result = await fetchChart(payload)
-      setArtUrl(null)
+      setArtUrls({})
       setArtStatus('loading')
       setReading(null)
       setReadingStatus('loading')
@@ -113,11 +124,11 @@ function App() {
 
         {chart && !isGenerating && (
           <section className="reveal">
-            {artUrl && (
-              <div className="chart-frame">
-                <AstrolabeRing size={480} />
-                <img className="chart-art" src={artUrl} alt={`${chart.name}'s natal chart`} />
-              </div>
+            {ART_STYLES.every(({ style }) => artUrls[style]) && (
+              <ChartCarousel
+                name={chart.name}
+                slides={ART_STYLES.map(({ style, label }) => ({ label, url: artUrls[style]! }))}
+              />
             )}
             {readingStatus === 'error' && <p className="notice notice-error">{readingError}</p>}
             {reading && <ReadingDisplay reading={reading} />}

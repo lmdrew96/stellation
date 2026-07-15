@@ -1,4 +1,4 @@
-import type { ApiErrorDetail, ChartData, ChartRequest, Interpretation } from './types'
+import type { ApiErrorDetail, ArtStyle, ChartData, ChartRequest, Interpretation } from './types'
 
 export class ApiError extends Error {
   detail: ApiErrorDetail
@@ -28,8 +28,8 @@ export async function fetchChart(payload: ChartRequest): Promise<ChartData> {
   return res.json()
 }
 
-export async function fetchRenderUrl(chart: ChartData): Promise<string> {
-  const res = await fetch('/api/render', {
+export async function fetchRenderUrl(chart: ChartData, style: ArtStyle): Promise<string> {
+  const res = await fetch(`/api/render?style=${style}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(chart),
