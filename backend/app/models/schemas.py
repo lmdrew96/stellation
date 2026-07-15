@@ -4,6 +4,7 @@ from pydantic import BaseModel
 
 ZodiacMode = Literal["tropical", "sidereal"]
 HouseSystem = Literal["placidus", "whole_sign"]
+RelationshipType = Literal["romantic", "platonic", "familial"]
 
 
 class ChartRequest(BaseModel):
@@ -66,6 +67,7 @@ class Interpretation(BaseModel):
 class SynastryRequest(BaseModel):
     person_a: ChartRequest
     person_b: ChartRequest
+    relationship_type: RelationshipType
 
 
 class SynastryAspect(BaseModel):
@@ -80,6 +82,7 @@ class SynastryData(BaseModel):
     person_a: ChartData
     person_b: ChartData
     aspects: list[SynastryAspect]
+    relationship_type: RelationshipType
 
 
 class SynastryAspectInterpretation(BaseModel):

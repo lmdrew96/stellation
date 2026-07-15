@@ -43,6 +43,7 @@ def create_synastry(payload: SynastryRequest) -> SynastryData:
         person_a=chart_a,
         person_b=chart_b,
         aspects=[SynastryAspect(**a) for a in synastry_aspects],
+        relationship_type=payload.relationship_type,
     )
 
 

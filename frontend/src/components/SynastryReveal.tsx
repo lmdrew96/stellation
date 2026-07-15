@@ -36,7 +36,14 @@ export function SynastryReveal({
             />
           )}
           {readingStatus === 'error' && <p className="notice notice-error">{readingError}</p>}
-          {reading && <SynastryReadingDisplay reading={reading} nameA={nameA} nameB={nameB} />}
+          {reading && (
+            <SynastryReadingDisplay
+              reading={reading}
+              nameA={nameA}
+              nameB={nameB}
+              relationshipType={synastry.relationship_type}
+            />
+          )}
           <div className="synastry-placements">
             <PlanetList planets={synastry.person_a.planets} heading={`${nameA}'s Placements`} />
             <PlanetList planets={synastry.person_b.planets} heading={`${nameB}'s Placements`} />

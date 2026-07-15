@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
-import type { SynastryRequest } from '../types'
+import type { RelationshipType, SynastryRequest } from '../types'
 import { ChartSettingsFields, defaultChartSettings } from './ChartSettingsFields'
 import { PersonFields, emptyPersonFields, personFieldsToRequest } from './PersonFields'
 
@@ -20,12 +20,14 @@ export function SynastryForm({
   const [personA, setPersonA] = useState(emptyPersonFields())
   const [personB, setPersonB] = useState(emptyPersonFields())
   const [settings, setSettings] = useState(defaultChartSettings())
+  const [relationshipType, setRelationshipType] = useState<RelationshipType>('romantic')
 
   function handleSubmit(e: FormEvent) {
     e.preventDefault()
     onSubmit({
       person_a: { ...personFieldsToRequest(personA, showManualCoordsA), ...settings },
       person_b: { ...personFieldsToRequest(personB, showManualCoordsB), ...settings },
+      relationship_type: relationshipType,
     })
   }
 
@@ -38,6 +40,21 @@ export function SynastryForm({
       <PersonFields idPrefix="b" value={personB} onChange={setPersonB} showManualCoords={showManualCoordsB} />
 
       <ChartSettingsFields idPrefix="synastry-settings" value={settings} onChange={setSettings} />
+
+      <div className="field-row">
+        <div className="field">
+          <label htmlFor="synastry-relationship-type">Relationship</label>
+          <select
+            id="synastry-relationship-type"
+            value={relationshipType}
+            onChange={(e) => setRelationshipType(e.target.value as RelationshipType)}
+          >
+            <option value="romantic">Romantic</option>
+            <option value="platonic">Platonic</option>
+            <option value="familial">Familial</option>
+          </select>
+        </div>
+      </div>
 
       <button className="submit-button" type="submit" disabled={submitting}>
         {submitting ? 'Comparing…' : 'Compare charts'}

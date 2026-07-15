@@ -458,6 +458,16 @@
   margin-bottom: 1.5rem;
 }
 
+.reading-relationship-type {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-align: center;
+  color: var(--color-text-muted);
+  margin-bottom: 0.5rem;
+}
+
 .reading-synthesis {
   font-family: var(--font-display);
   font-style: italic;

@@ -59,23 +59,54 @@ def generate_interpretation(chart: ChartData) -> dict:
     return tool_use.input
 
 
-SYNASTRY_SYSTEM_PROMPT = (
-    "You are an astrologer writing a synastry (relationship compatibility) reading "
-    "comparing two people's natal charts. You are given structured data for both "
-    "people (their planet placements) and the cross-chart aspects between their "
-    "placements, as JSON. Ground every statement in the specific placements and "
-    "aspects provided - do not invent positions not present in the data. Each "
-    "person's 'pronouns' field, if present, tells you which pronouns to use for "
-    "them; if missing, use their name or 'they/them' rather than guessing. From "
-    "the full list of cross-chart aspects, select the 5-8 most significant "
-    "(tightest orb, and prioritizing aspects involving the Sun, Moon, Venus, and "
-    "Mars) and write a short blurb (2-4 sentences) for each, explaining what that "
-    "specific connection means for how these two people relate. Then write a "
-    "longer synthesis paragraph (4-6 sentences) describing the overall shape of "
-    "the relationship - where there's ease, where there's friction, and what "
-    "these two charts draw out in each other. This is a combined reading about "
-    "the pairing, not two separate individual readings."
-)
+# The same cross-chart aspects mean something different depending on what these
+# two people are to each other - a Venus-Mars square reads as romantic tension
+# between partners, but is beside the point between siblings. Each framing names
+# the planets/houses that matter most for that relationship and tells the model
+# what to de-emphasize, rather than leaving it to guess from the aspect list alone.
+SYNASTRY_RELATIONSHIP_FRAMING = {
+    "romantic": (
+        "These two people are romantic partners. Emphasize attraction, intimacy, "
+        "long-term compatibility, and how they handle conflict and desire together. "
+        "Weight aspects involving Venus, Mars, and the 5th, 7th, and 8th houses most "
+        "heavily."
+    ),
+    "platonic": (
+        "These two people are friends. Emphasize shared values, communication style, "
+        "mutual support, and what makes the friendship easy or effortful. Weight "
+        "aspects involving Mercury, Jupiter, and the 11th house most heavily, and "
+        "do not frame the connection in romantic or sexual terms even where Venus "
+        "or Mars aspects appear."
+    ),
+    "familial": (
+        "These two people are family members. Emphasize inherited patterns, "
+        "obligation versus autonomy, emotional caretaking, and long-run loyalty. "
+        "Weight aspects involving the Moon, Saturn, and the 4th house most heavily, "
+        "and do not frame the connection in romantic or sexual terms even where "
+        "Venus or Mars aspects appear."
+    ),
+}
+
+
+def _synastry_system_prompt(relationship_type: str) -> str:
+    return (
+        "You are an astrologer writing a synastry (relationship compatibility) reading "
+        "comparing two people's natal charts. You are given structured data for both "
+        "people (their planet placements) and the cross-chart aspects between their "
+        "placements, as JSON. Ground every statement in the specific placements and "
+        "aspects provided - do not invent positions not present in the data. Each "
+        "person's 'pronouns' field, if present, tells you which pronouns to use for "
+        "them; if missing, use their name or 'they/them' rather than guessing. "
+        f"{SYNASTRY_RELATIONSHIP_FRAMING[relationship_type]} From the full list of "
+        "cross-chart aspects, select the 5-8 most significant (tightest orb, and "
+        "prioritizing the placements called out above) and write a short blurb (2-4 "
+        "sentences) for each, explaining what that specific connection means for how "
+        "these two people relate. Then write a longer synthesis paragraph (4-6 "
+        "sentences) describing the overall shape of the relationship - where there's "
+        "ease, where there's friction, and what these two charts draw out in each "
+        "other. This is a combined reading about the pairing, not two separate "
+        "individual readings."
+    )
 
 SYNASTRY_INTERPRETATION_TOOL = {
     "name": "record_synastry_interpretation",
@@ -121,7 +152,7 @@ def generate_synastry_interpretation(synastry: SynastryData) -> dict:
     response = client.messages.create(
         model=settings.anthropic_model,
         max_tokens=4096,
-        system=SYNASTRY_SYSTEM_PROMPT,
+        system=_synastry_system_prompt(synastry.relationship_type),
         tools=[SYNASTRY_INTERPRETATION_TOOL],
         tool_choice={"type": "tool", "name": "record_synastry_interpretation"},
         messages=[{"role": "user", "content": synastry.model_dump_json()}],

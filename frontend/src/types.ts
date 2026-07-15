@@ -1,6 +1,7 @@
 export type ArtStyle = 'generative' | 'traditional'
 export type ZodiacMode = 'tropical' | 'sidereal'
 export type HouseSystem = 'placidus' | 'whole_sign'
+export type RelationshipType = 'romantic' | 'platonic' | 'familial'
 
 export interface ChartRequest {
   name: string
@@ -68,6 +69,7 @@ export interface Interpretation {
 export interface SynastryRequest {
   person_a: ChartRequest
   person_b: ChartRequest
+  relationship_type: RelationshipType
 }
 
 export interface SynastryAspect {
@@ -82,6 +84,7 @@ export interface SynastryData {
   person_a: ChartData
   person_b: ChartData
   aspects: SynastryAspect[]
+  relationship_type: RelationshipType
 }
 
 export interface SynastryAspectInterpretation {
