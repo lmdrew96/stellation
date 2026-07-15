@@ -87,12 +87,6 @@ function App() {
         <header className="masthead">
           <h1>Stellation</h1>
           <p className="tagline">A precise map of the sky at the moment you arrived.</p>
-          <p className="status">
-            Backend{' '}
-            <span className="status-value" data-state={health}>
-              {health}
-            </span>
-          </p>
         </header>
 
         <BirthDataForm
@@ -119,6 +113,11 @@ function App() {
           </section>
         )}
       </main>
+
+      <div className="backend-status" data-state={health}>
+        <span className="backend-status__dot" />
+        Backend {health}
+      </div>
     </div>
   )
 }
