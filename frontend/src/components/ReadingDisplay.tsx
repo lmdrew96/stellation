@@ -1,17 +1,22 @@
+import { PLANET_GLYPH } from '../glyphs'
 import type { Interpretation } from '../types'
 
 export function ReadingDisplay({ reading }: { reading: Interpretation }) {
   return (
-    <div className="reading">
+    <section className="reading">
       <h2>Your Reading</h2>
-      <p className="synthesis">{reading.synthesis}</p>
-      <ul>
+      <p className="reading-synthesis">{reading.synthesis}</p>
+      <div className="reading-rows">
         {reading.planet_interpretations.map((p) => (
-          <li key={p.planet}>
-            <strong>{p.planet}:</strong> {p.blurb}
-          </li>
+          <div className="reading-row" key={p.planet}>
+            <span className="reading-row__glyph">{PLANET_GLYPH[p.planet] ?? '•'}</span>
+            <div className="reading-row__body">
+              <h3>{p.planet}</h3>
+              <p>{p.blurb}</p>
+            </div>
+          </div>
         ))}
-      </ul>
-    </div>
+      </div>
+    </section>
   )
 }

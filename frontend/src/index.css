@@ -1,15 +1,25 @@
 :root {
+  /* Palette — unchanged. Same hex values as the chart art (render.py) so the
+     UI and the generated chart read as one object, not two apps. */
   --color-bg: #262423; /* Shadow Grey */
   --color-surface: #402b47; /* Midnight Violet */
   --color-text: #c9e0eb; /* Pale Sky */
   --color-text-muted: #7392b5; /* Dusty Denim */
   --color-accent: #8350c4; /* Deep Lilac */
-  --color-error: #c1552c; /* matches the chart's Fire element - the app's one warm accent */
+  --color-accent-warm: #d9c27e; /* Air (element color, reused sparingly for UI framing) */
+  --color-error: #c1552c; /* Fire */
 
-  --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
+  --color-accent-soft: rgb(from var(--color-accent) r g b / 0.35);
+  --color-accent-wash: rgb(from var(--color-accent) r g b / 0.12);
+  --color-warm-soft: rgb(from var(--color-accent-warm) r g b / 0.45);
+  --color-surface-line: rgb(from var(--color-text-muted) r g b / 0.25);
 
-  font: 18px/145% var(--sans);
-  letter-spacing: 0.18px;
+  --font-display: 'Cormorant Garamond', 'Iowan Old Style', 'Palatino Linotype', Georgia, serif;
+  --font-body: 'Space Grotesk', system-ui, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+
+  font: 400 18px/1.5 var(--font-body);
+  letter-spacing: 0.1px;
   color-scheme: dark;
   color: var(--color-text);
   background: var(--color-bg);
@@ -18,9 +28,15 @@
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 
-  @media (max-width: 1024px) {
+  @media (max-width: 640px) {
     font-size: 16px;
   }
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
 }
 
 #root {
@@ -32,31 +48,48 @@ body {
 }
 
 h1,
-h2 {
-  font-weight: 500;
+h2,
+h3 {
+  font-family: var(--font-display);
+  font-weight: 600;
   color: var(--color-text);
+  margin: 0;
 }
 
 h1 {
-  font-size: 40px;
-  letter-spacing: -1px;
-  margin: 32px 0;
-  @media (max-width: 1024px) {
-    font-size: 30px;
-    margin: 20px 0;
+  font-size: 3rem;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  @media (max-width: 640px) {
+    font-size: 2.25rem;
   }
 }
 
 h2 {
-  font-size: 22px;
-  line-height: 118%;
-  letter-spacing: -0.22px;
-  margin: 0 0 8px;
-  @media (max-width: 1024px) {
-    font-size: 19px;
-  }
+  font-size: 1.5rem;
+  font-weight: 500;
+  letter-spacing: 0.01em;
 }
 
 p {
   margin: 0;
+}
+
+a {
+  color: var(--color-accent-warm);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-accent-warm);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
 }

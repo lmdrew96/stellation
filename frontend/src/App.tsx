@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import './App.css'
 import { ApiError, fetchChart, fetchInterpretation, fetchRenderUrl } from './api'
 import { AspectList } from './components/AspectList'
+import { AstrolabeRing } from './components/AstrolabeRing'
 import { BirthDataForm } from './components/BirthDataForm'
 import { PlanetList } from './components/PlanetList'
 import { ReadingDisplay } from './components/ReadingDisplay'
@@ -76,31 +77,49 @@ function App() {
   }
 
   return (
-    <main className="app">
-      <h1>Stellation</h1>
-      <p>
-        Backend status: <strong>{health}</strong>
-      </p>
-
-      <BirthDataForm
-        onSubmit={handleSubmit}
-        submitting={submitting}
-        showManualCoords={showManualCoords}
-      />
-
-      {errorMessage && <p className="error">{errorMessage}</p>}
-
-      {chart && (
-        <>
-          {artUrl && <img className="chart-art" src={artUrl} alt={`${chart.name}'s natal chart`} />}
-          {readingStatus === 'loading' && <p>Reading the stars...</p>}
-          {readingStatus === 'error' && <p className="error">{readingError}</p>}
-          {reading && <ReadingDisplay reading={reading} />}
-          <PlanetList planets={chart.planets} />
-          <AspectList aspects={chart.aspects} />
-        </>
+    <div className="page">
+      {!chart && (
+        <div className="ring-field">
+          <AstrolabeRing size={560} spin />
+        </div>
       )}
-    </main>
+      <main className="app">
+        <header className="masthead">
+          <h1>Stellation</h1>
+          <p className="tagline">A precise map of the sky at the moment you arrived.</p>
+          <p className="status">
+            Backend{' '}
+            <span className="status-value" data-state={health}>
+              {health}
+            </span>
+          </p>
+        </header>
+
+        <BirthDataForm
+          onSubmit={handleSubmit}
+          submitting={submitting}
+          showManualCoords={showManualCoords}
+        />
+
+        {errorMessage && <p className="notice notice-error">{errorMessage}</p>}
+
+        {chart && (
+          <section className="reveal">
+            {artUrl && (
+              <div className="chart-frame">
+                <AstrolabeRing size={480} />
+                <img className="chart-art" src={artUrl} alt={`${chart.name}'s natal chart`} />
+              </div>
+            )}
+            {readingStatus === 'loading' && <p className="notice notice-loading">Reading the stars…</p>}
+            {readingStatus === 'error' && <p className="notice notice-error">{readingError}</p>}
+            {reading && <ReadingDisplay reading={reading} />}
+            <PlanetList planets={chart.planets} />
+            <AspectList aspects={chart.aspects} />
+          </section>
+        )}
+      </main>
+    </div>
   )
 }
 

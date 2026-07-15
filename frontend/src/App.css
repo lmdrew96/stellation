@@ -1,94 +1,414 @@
-.app {
-  max-width: 640px;
-  margin: 4rem auto;
-  padding: 0 1.5rem;
+.page {
+  position: relative;
+  min-height: 100svh;
+  overflow-x: clip;
 }
 
-form div {
+.app {
+  position: relative;
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 4rem 1.5rem 6rem;
+}
+
+/* ---------- ambient astrolabe motif ---------- */
+
+.ring-field {
+  position: absolute;
+  top: -8rem;
+  left: 50%;
+  transform: translateX(-50%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.astrolabe-ring {
+  overflow: visible;
+}
+
+.astrolabe-ring__outer {
+  fill: none;
+  stroke: var(--color-accent-warm);
+  stroke-width: 0.6;
+  opacity: 0.28;
+}
+
+.astrolabe-ring__inner {
+  fill: none;
+  stroke: var(--color-accent);
+  stroke-width: 0.6;
+  opacity: 0.22;
+}
+
+.astrolabe-ring__tick {
+  stroke: var(--color-accent-warm);
+  stroke-width: 0.8;
+  stroke-linecap: round;
+  opacity: 0.3;
+}
+
+.astrolabe-ring__tick--major {
+  stroke-width: 1.2;
+  opacity: 0.5;
+}
+
+.astrolabe-ring--spin {
+  animation: ring-spin 200s linear infinite;
+  transform-origin: 100px 100px;
+}
+
+@keyframes ring-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.chart-frame .astrolabe-ring {
+  position: absolute;
+  inset: -14px;
+  width: calc(100% + 28px);
+  height: calc(100% + 28px);
+}
+
+/* ---------- masthead ---------- */
+
+.masthead {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+  margin-bottom: 2.5rem;
+}
+
+.masthead h1 {
+  text-transform: uppercase;
+}
+
+.masthead .tagline {
+  margin-top: 0.6rem;
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 1.15rem;
+  color: var(--color-text-muted);
+}
+
+.masthead .status {
+  margin-top: 1.25rem;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.status-value {
+  color: var(--color-accent-warm);
+}
+
+.status-value[data-state='error'] {
+  color: var(--color-error);
+}
+
+/* ---------- birth data form ---------- */
+
+.form-card {
+  position: relative;
+  z-index: 1;
+  background: var(--color-surface);
+  border: 1px solid var(--color-surface-line);
+  border-radius: 4px;
+  padding: 2rem;
+  @media (max-width: 640px) {
+    padding: 1.5rem 1.25rem;
+  }
+}
+
+.field-row {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.1rem;
+  margin-bottom: 1.1rem;
+}
+
+.field-row--split {
+  grid-template-columns: 1fr 1fr;
+  @media (max-width: 560px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.field {
   display: flex;
   flex-direction: column;
-  margin-bottom: 0.75rem;
 }
 
-form label {
+.field label {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
   color: var(--color-text-muted);
-  font-size: 0.85rem;
-  margin-bottom: 0.25rem;
+  margin-bottom: 0.4rem;
 }
 
-form input {
-  background: var(--color-surface);
-  border: 1px solid var(--color-text-muted);
-  border-radius: 6px;
+.field input {
+  background: var(--color-bg);
+  border: 1px solid var(--color-surface-line);
+  border-radius: 3px;
   color: var(--color-text);
-  padding: 0.5rem 0.6rem;
-  font: inherit;
+  padding: 0.65rem 0.75rem;
+  font: 400 1rem var(--font-body);
+  color-scheme: dark;
 }
 
-form input:focus-visible {
-  outline: 2px solid var(--color-accent);
-  outline-offset: 1px;
-}
-
-form input::placeholder {
+.field input::placeholder {
   color: var(--color-text-muted);
   opacity: 0.7;
 }
 
-form button {
+.field input:focus-visible {
+  outline: 2px solid var(--color-accent-warm);
+  outline-offset: 1px;
+  border-color: var(--color-accent-warm);
+}
+
+.field-note {
+  grid-column: 1 / -1;
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+  margin: -0.3rem 0 0.2rem;
+}
+
+.submit-button {
+  width: 100%;
   margin-top: 0.5rem;
   background: var(--color-accent);
   color: var(--color-text);
-  border: none;
-  border-radius: 6px;
-  padding: 0.6rem 1.2rem;
-  font: inherit;
-  font-weight: 500;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  padding: 0.8rem 1.2rem;
+  font: 500 0.95rem var(--font-body);
+  letter-spacing: 0.03em;
   cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
 }
 
-form button:hover:not(:disabled) {
-  filter: brightness(1.1);
+.submit-button:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--color-accent) 85%, white);
 }
 
-form button:disabled {
+.submit-button:focus-visible {
+  outline: 2px solid var(--color-accent-warm);
+  outline-offset: 2px;
+}
+
+.submit-button:disabled {
   opacity: 0.6;
   cursor: default;
 }
 
-.error {
+/* ---------- notices ---------- */
+
+.notice {
+  position: relative;
+  z-index: 1;
+  margin-top: 1.25rem;
+  font-size: 0.95rem;
+}
+
+.notice-error {
   color: var(--color-error);
+}
+
+.notice-loading {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  color: var(--color-text-muted);
+  font-style: italic;
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+}
+
+.notice-loading::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-accent-warm);
+  animation: pulse-dot 1.4s ease-in-out infinite;
+  flex: none;
+}
+
+@keyframes pulse-dot {
+  0%,
+  100% {
+    opacity: 0.25;
+    transform: scale(0.85);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.15);
+  }
+}
+
+/* ---------- chart reveal ---------- */
+
+.reveal {
+  position: relative;
+  z-index: 1;
+  margin-top: 3rem;
+  animation: reveal-in 0.6s ease both;
+}
+
+@keyframes reveal-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.chart-frame {
+  position: relative;
+  width: min(100%, 420px);
+  margin: 0 auto 2.5rem;
+  padding: 1.5rem;
 }
 
 .chart-art {
   display: block;
   width: 100%;
-  max-width: 480px;
-  margin: 2rem auto;
-  border-radius: 8px;
+  border-radius: 50%;
 }
 
+/* ---------- reading ---------- */
+
 .reading {
-  background: var(--color-surface);
-  border-radius: 10px;
-  padding: 1.5rem;
-  margin: 1.5rem 0;
-  text-align: left;
+  margin-bottom: 2.5rem;
 }
 
 .reading h2 {
   text-align: center;
+  margin-bottom: 1.5rem;
 }
 
-.reading .synthesis {
+.reading-synthesis {
+  font-family: var(--font-display);
   font-style: italic;
+  font-size: 1.35rem;
+  line-height: 1.5;
+  text-align: center;
+  color: var(--color-text);
+  max-width: 34rem;
+  margin: 0 auto 2rem;
+}
+
+.reading-synthesis::before {
+  content: '\201C';
+}
+
+.reading-synthesis::after {
+  content: '\201D';
+}
+
+.reading-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+}
+
+.reading-row {
+  display: grid;
+  grid-template-columns: 2.5rem 1fr;
+  gap: 0.75rem;
+  padding-bottom: 1.1rem;
+  border-bottom: 1px solid var(--color-surface-line);
+}
+
+.reading-row:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.reading-row__glyph {
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  color: var(--color-accent-warm);
+  line-height: 1.3;
+}
+
+.reading-row__body h3 {
+  font-size: 1.05rem;
+  margin-bottom: 0.25rem;
+}
+
+.reading-row__body p {
+  color: var(--color-text-muted);
+  font-size: 0.95rem;
+  line-height: 1.55;
+}
+
+/* ---------- data tables (planets / aspects) ---------- */
+
+.data-section {
+  margin-bottom: 2rem;
+}
+
+.data-section h2 {
+  font-size: 1.1rem;
+  margin-bottom: 0.9rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--color-surface-line);
+}
+
+.data-table {
+  display: flex;
+  flex-direction: column;
+}
+
+.data-table__row {
+  display: grid;
+  grid-template-columns: 2rem 1fr auto;
+  align-items: baseline;
+  gap: 0.75rem;
+  padding: 0.55rem 0;
+  border-bottom: 1px solid var(--color-surface-line);
+  font-size: 0.92rem;
+}
+
+.data-table__row:last-child {
+  border-bottom: none;
+}
+
+.data-table__glyph {
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  color: var(--color-accent-warm);
+}
+
+.data-table__label {
   color: var(--color-text);
 }
 
-.reading ul {
-  padding-left: 1.2rem;
+.data-table__label .retrograde {
+  color: var(--color-error);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  margin-left: 0.4rem;
 }
 
-.reading li {
-  margin-bottom: 0.5rem;
+.data-table__meta {
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+.data-table__empty {
+  color: var(--color-text-muted);
+  font-style: italic;
+  font-size: 0.92rem;
 }
