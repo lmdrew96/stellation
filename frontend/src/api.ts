@@ -5,6 +5,7 @@ import type {
   ChartRequest,
   Interpretation,
   SynastryData,
+  SynastryInterpretation,
   SynastryRequest,
 } from './types'
 
@@ -75,6 +76,41 @@ export async function fetchInterpretation(chart: ChartData): Promise<Interpretat
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(chart),
+  })
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => null)
+    const rawDetail = body?.detail
+    const message = typeof rawDetail === 'string' ? rawDetail : rawDetail?.message
+    throw new ApiError({
+      error: 'interpret_failed',
+      message: message ?? 'Something went wrong generating the reading.',
+    })
+  }
+
+  return res.json()
+}
+
+export async function fetchSynastryRenderUrl(synastry: SynastryData, style: ArtStyle): Promise<string> {
+  const res = await fetch(`/api/synastry/render?style=${style}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(synastry),
+  })
+
+  if (!res.ok) {
+    throw new Error('Failed to render synastry art')
+  }
+
+  const blob = await res.blob()
+  return URL.createObjectURL(blob)
+}
+
+export async function fetchSynastryInterpretation(synastry: SynastryData): Promise<SynastryInterpretation> {
+  const res = await fetch('/api/synastry/interpret', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(synastry),
   })
 
   if (!res.ok) {

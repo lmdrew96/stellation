@@ -1,10 +1,15 @@
 import { PLANET_GLYPH } from '../glyphs'
 import type { Planet } from '../types'
 
-export function PlanetList({ planets }: { planets: Planet[] }) {
+interface PlanetListProps {
+  planets: Planet[]
+  heading?: string
+}
+
+export function PlanetList({ planets, heading = 'Placements' }: PlanetListProps) {
   return (
     <section className="data-section">
-      <h2>Placements</h2>
+      <h2>{heading}</h2>
       <div className="data-table">
         {planets.map((p) => (
           <div className="data-table__row" key={p.name}>

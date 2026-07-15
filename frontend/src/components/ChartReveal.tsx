@@ -9,12 +9,10 @@ import { ReadingDisplay } from './ReadingDisplay'
 
 interface ChartRevealProps extends ChartRevealState {
   chart: ChartData
-  heading?: string
 }
 
 export function ChartReveal({
   chart,
-  heading,
   artUrls,
   artError,
   reading,
@@ -24,7 +22,6 @@ export function ChartReveal({
 }: ChartRevealProps) {
   return (
     <section className="reveal">
-      {heading && <h2 className="reveal-heading">{heading}</h2>}
       {isGenerating && <GeneratingScreen />}
       {!isGenerating && (
         <>

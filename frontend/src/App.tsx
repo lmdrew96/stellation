@@ -4,9 +4,10 @@ import { ApiError, fetchChart, fetchSynastry } from './api'
 import { AstrolabeRing } from './components/AstrolabeRing'
 import { BirthDataForm } from './components/BirthDataForm'
 import { ChartReveal } from './components/ChartReveal'
-import { SynastryAspectList } from './components/SynastryAspectList'
 import { SynastryForm } from './components/SynastryForm'
+import { SynastryReveal } from './components/SynastryReveal'
 import { useChartReveal } from './hooks/useChartReveal'
+import { useSynastryReveal } from './hooks/useSynastryReveal'
 import type { ChartData, ChartRequest, SynastryData, SynastryRequest } from './types'
 
 type HealthStatus = 'checking' | 'ok' | 'error'
@@ -25,8 +26,7 @@ function App() {
   const [synastry, setSynastry] = useState<SynastryData | null>(null)
   const [showManualCoordsA, setShowManualCoordsA] = useState(false)
   const [showManualCoordsB, setShowManualCoordsB] = useState(false)
-  const revealA = useChartReveal(synastry?.person_a ?? null)
-  const revealB = useChartReveal(synastry?.person_b ?? null)
+  const synastryReveal = useSynastryReveal(synastry)
 
   useEffect(() => {
     fetch('/api/health')
@@ -137,17 +137,7 @@ function App() {
 
         {mode === 'solo' && chart && <ChartReveal chart={chart} {...soloReveal} />}
 
-        {mode === 'synastry' && synastry && (
-          <>
-            <ChartReveal chart={synastry.person_a} heading={synastry.person_a.name} {...revealA} />
-            <ChartReveal chart={synastry.person_b} heading={synastry.person_b.name} {...revealB} />
-            <SynastryAspectList
-              aspects={synastry.aspects}
-              nameA={synastry.person_a.name}
-              nameB={synastry.person_b.name}
-            />
-          </>
-        )}
+        {mode === 'synastry' && synastry && <SynastryReveal synastry={synastry} {...synastryReveal} />}
       </main>
 
       <div className="backend-status" data-state={health}>

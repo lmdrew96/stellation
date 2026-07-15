@@ -83,3 +83,15 @@ export interface SynastryData {
   person_b: ChartData
   aspects: SynastryAspect[]
 }
+
+export interface SynastryAspectInterpretation {
+  planet_a: string
+  planet_b: string
+  aspect_type: string
+  blurb: string
+}
+
+export interface SynastryInterpretation {
+  aspect_interpretations: SynastryAspectInterpretation[]
+  synthesis: string
+}

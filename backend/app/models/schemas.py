@@ -80,3 +80,15 @@ class SynastryData(BaseModel):
     person_a: ChartData
     person_b: ChartData
     aspects: list[SynastryAspect]
+
+
+class SynastryAspectInterpretation(BaseModel):
+    planet_a: str
+    planet_b: str
+    aspect_type: str
+    blurb: str
+
+
+class SynastryInterpretation(BaseModel):
+    aspect_interpretations: list[SynastryAspectInterpretation]
+    synthesis: str

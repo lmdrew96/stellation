@@ -9,7 +9,7 @@ interface SynastryAspectListProps {
 
 export function SynastryAspectList({ aspects, nameA, nameB }: SynastryAspectListProps) {
   return (
-    <section className="reveal data-section">
+    <section className="data-section">
       <h2>Synastry Aspects</h2>
       {aspects.length === 0 ? (
         <p className="data-table__empty">No major aspects between these two charts.</p>
