@@ -53,6 +53,20 @@ Runs on port 5173. The Vite dev server proxies `/api/*` to the backend
 
 Full data model and phase-by-phase build notes: `docs/stellation-spec.md`.
 
+## Deployment
+
+Deployed as a single Vercel project using [Services](https://vercel.com/docs/services) —
+`vercel.json` at the repo root defines `frontend` and `backend` as separate
+services sharing one deployment/domain, with `/api/*` rewritten to the
+backend and everything else to the frontend. Because both services share a
+domain, the browser sees `/api/*` calls as same-origin — no CORS config
+needed in production (the `CORS_ORIGINS` default in `backend/.env` is for
+local dev only, where Vite on :5173 and uvicorn on :8420 are different origins).
+
+**Required manual step:** add `ANTHROPIC_API_KEY` in the Vercel project's
+Environment Variables settings — it's never committed (`backend/.env` is
+gitignored) and there's nothing to configure in code.
+
 ## Design notes
 
 - **Ephemeris:** Moshier semi-analytic mode (`FLG_MOSEPH`), not full Swiss
@@ -70,5 +84,6 @@ Full data model and phase-by-phase build notes: `docs/stellation-spec.md`.
 
 ## Open questions (not yet decided — see spec doc)
 
-Art direction for Phase 5 (color/line style, background), persistence
-(currently fully ephemeral), and hosting target are intentionally deferred.
+Persistence (currently fully ephemeral — generate, view, done) is the one
+item from the spec's original open-questions list still unresolved. Art
+direction (Phase 5) and hosting target have both been decided.
