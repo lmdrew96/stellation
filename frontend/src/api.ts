@@ -6,6 +6,7 @@ import type {
   ChartData,
   ChartRequest,
   Interpretation,
+  RelationshipType,
   SavedSlugResponse,
   SavedSoloResponse,
   SavedSynastryResponse,
@@ -133,6 +134,25 @@ export async function fetchSynastryInterpretation(synastry: SynastryData): Promi
   if (!res.ok) {
     const body = await res.json().catch(() => null)
     throw new ApiError(parseErrorDetail(body, 'Something went wrong generating the reading.'))
+  }
+
+  return res.json()
+}
+
+export async function fetchSynastryFromSaved(
+  personA: ChartData,
+  personB: ChartRequest,
+  relationshipType: RelationshipType,
+): Promise<SynastryData> {
+  const res = await fetch('/api/synastry/from-saved', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ person_a: personA, person_b: personB, relationship_type: relationshipType }),
+  })
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => null)
+    throw new ApiError(parseErrorDetail(body, 'Something went wrong comparing the charts.'))
   }
 
   return res.json()

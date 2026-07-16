@@ -9,6 +9,7 @@ import {
   fetchSaturnReturn,
   fetchSolarReturn,
   fetchSynastry,
+  fetchSynastryFromSaved,
   fetchTransits,
 } from './api'
 import { AstrolabeRing } from './components/AstrolabeRing'
@@ -28,6 +29,7 @@ import type {
   ChartData,
   ChartRequest,
   Interpretation,
+  RelationshipType,
   SaturnReturnCycle,
   SynastryData,
   SynastryInterpretation,
@@ -71,7 +73,12 @@ function App() {
   const [savedRoute] = useState<SavedRoute | null>(() => matchSavedRoute(window.location.pathname))
   const [loadingSaved, setLoadingSaved] = useState(savedRoute !== null)
   const [savedLoadError, setSavedLoadError] = useState<string | null>(null)
-  const [viewingSaved, setViewingSaved] = useState(false)
+  // Tracked separately per mode (not one shared flag) - comparing from a
+  // shared solo chart, or submitting a fresh synastry form, must not affect
+  // whether the ORIGINAL shared chart still shows as already-saved if the
+  // visitor flips back to the Solo tab.
+  const [soloViewingSaved, setSoloViewingSaved] = useState(false)
+  const [synastryViewingSaved, setSynastryViewingSaved] = useState(false)
 
   const [mode, setMode] = useState<Mode>(() => savedRoute?.kind ?? 'solo')
   const [submitting, setSubmitting] = useState(false)
@@ -112,6 +119,10 @@ function App() {
   const [compositeError, setCompositeError] = useState<string | null>(null)
   const compositeReveal = useCompositeReveal(composite)
 
+  const [compareLoading, setCompareLoading] = useState(false)
+  const [compareError, setCompareError] = useState<string | null>(null)
+  const [showManualCoordsCompare, setShowManualCoordsCompare] = useState(false)
+
   useEffect(() => {
     fetch('/api/health')
       .then((res) => (res.ok ? setHealth('ok') : setHealth('error')))
@@ -125,7 +136,7 @@ function App() {
         .then((result) => {
           setChart(result.chart)
           setPresetInterpretation(result.interpretation)
-          setViewingSaved(true)
+          setSoloViewingSaved(true)
         })
         .catch((err) => {
           setSavedLoadError(
@@ -138,7 +149,7 @@ function App() {
         .then((result) => {
           setSynastry(result.synastry)
           setPresetSynastryInterpretation(result.interpretation)
-          setViewingSaved(true)
+          setSynastryViewingSaved(true)
         })
         .catch((err) => {
           setSavedLoadError(
@@ -163,7 +174,7 @@ function App() {
       // was about to be replaced anyway.
       setChart(result)
       setPresetInterpretation(undefined)
-      setViewingSaved(false)
+      setSoloViewingSaved(false)
       setShowManualCoords(false)
       setTransit(null)
       setTransitError(null)
@@ -259,7 +270,7 @@ function App() {
       // rather than cleared any earlier.
       setSynastry(result)
       setPresetSynastryInterpretation(undefined)
-      setViewingSaved(false)
+      setSynastryViewingSaved(false)
       setShowManualCoordsA(false)
       setShowManualCoordsB(false)
       setComposite(null)
@@ -302,6 +313,38 @@ function App() {
   function closeComposite() {
     setComposite(null)
     setCompositeError(null)
+  }
+
+  async function handleCompareSubmit(personB: ChartRequest, relationshipType: RelationshipType) {
+    if (!chart) return
+    setCompareLoading(true)
+    setCompareError(null)
+    try {
+      const result = await fetchSynastryFromSaved(chart, personB, relationshipType)
+      // Mirrors handleSynastrySubmit - this is a brand-new, unsaved reading,
+      // not a continuation of the shared solo chart it was compared against
+      // (soloViewingSaved is untouched, so flipping back to the Solo tab
+      // still shows the original chart as already-saved).
+      setSynastry(result)
+      setPresetSynastryInterpretation(undefined)
+      setSynastryViewingSaved(false)
+      setShowManualCoordsCompare(false)
+      setComposite(null)
+      setCompositeError(null)
+      setMode('synastry')
+      resetUrlToHome()
+    } catch (err) {
+      if (err instanceof ApiError) {
+        setCompareError(err.detail.message)
+        if (needsManualCoords(err.detail.error)) {
+          setShowManualCoordsCompare(true)
+        }
+      } else {
+        setCompareError('Something went wrong comparing the charts.')
+      }
+    } finally {
+      setCompareLoading(false)
+    }
   }
 
   function switchMode(next: Mode) {
@@ -374,7 +417,7 @@ function App() {
         {mode === 'solo' && chart && (
           <ChartReveal
             chart={chart}
-            viewingSaved={viewingSaved}
+            viewingSaved={soloViewingSaved}
             {...soloReveal}
             transit={transit}
             transitReveal={transitReveal}
@@ -395,13 +438,17 @@ function App() {
             saturnReturnError={saturnReturnError}
             onViewSaturnReturn={handleViewSaturnReturn}
             onCloseSaturnReturn={closeSaturnReturn}
+            compareLoading={compareLoading}
+            compareError={compareError}
+            showManualCoordsCompare={showManualCoordsCompare}
+            onCompareSubmit={handleCompareSubmit}
           />
         )}
 
         {mode === 'synastry' && synastry && (
           <SynastryReveal
             synastry={synastry}
-            viewingSaved={viewingSaved}
+            viewingSaved={synastryViewingSaved}
             {...synastryReveal}
             composite={composite}
             compositeReveal={compositeReveal}

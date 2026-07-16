@@ -3,7 +3,7 @@ import datetime as dt
 from app.models.schemas import Aspect, BirthLocation, ChartData, Planet
 from app.services.aspects import compute_aspects
 from app.services.ephemeris import (
-    SIGNS,
+    _absolute_longitude,
     _house_of,
     _sign_and_degree,
     compute_house_cusps,
@@ -22,10 +22,6 @@ def _circular_midpoint(lon_a: float, lon_b: float) -> float:
     if diff > 180:
         diff -= 360
     return (lon_a + diff / 2) % 360
-
-
-def _absolute_longitude(sign: str, degree_in_sign: float) -> float:
-    return SIGNS.index(sign) * 30 + degree_in_sign
 
 
 def _midpoint_datetime(iso_a: str, iso_b: str) -> str:

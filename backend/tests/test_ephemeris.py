@@ -1,6 +1,12 @@
 import swisseph as swe
 
-from app.services.ephemeris import SIGNS, _house_of, _sign_and_degree, compute_planets
+from app.services.ephemeris import (
+    SIGNS,
+    _absolute_longitude,
+    _house_of,
+    _sign_and_degree,
+    compute_planets,
+)
 
 
 class TestSignAndDegree:
@@ -31,6 +37,21 @@ class TestSignAndDegree:
     def test_every_sign_boundary_maps_correctly(self):
         for i, sign in enumerate(SIGNS):
             assert _sign_and_degree(i * 30.0) == (sign, 0.0)
+
+
+class TestAbsoluteLongitude:
+    """_absolute_longitude reconstructs a longitude from a saved chart's
+    sign/degree_in_sign - composite and synastry-from-saved both depend on
+    this being a faithful inverse of _sign_and_degree."""
+
+    def test_inverts_sign_and_degree(self):
+        for lon in (0.0, 15.5, 29.999, 30.0, 200.25, 359.9999):
+            sign, degree_in_sign = _sign_and_degree(lon)
+            assert _absolute_longitude(sign, degree_in_sign) == lon
+
+    def test_every_sign_start(self):
+        for i, sign in enumerate(SIGNS):
+            assert _absolute_longitude(sign, 0.0) == i * 30.0
 
 
 class TestHouseOf:

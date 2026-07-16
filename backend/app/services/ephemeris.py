@@ -107,6 +107,14 @@ def _sign_and_degree(longitude: float) -> tuple[str, float]:
     return SIGNS[sign_index], degree_in_sign
 
 
+def _absolute_longitude(sign: str, degree_in_sign: float) -> float:
+    """Inverse of _sign_and_degree - reconstructs an ecliptic longitude from
+    a stored Planet's sign/degree_in_sign, for chart math (composite,
+    synastry-from-saved) that only has a saved ChartData to work from, not
+    the original raw ephemeris positions."""
+    return SIGNS.index(sign) * 30 + degree_in_sign
+
+
 def _house_of(longitude: float, cusps: tuple[float, ...]) -> int:
     longitude %= 360
     for i in range(12):

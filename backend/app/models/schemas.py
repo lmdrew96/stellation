@@ -235,6 +235,18 @@ class SaturnReturnInterpretRequest(BaseModel):
     cycle: SaturnReturnCycle
 
 
+class SynastryFromSavedRequest(BaseModel):
+    # The shared-link side is already a built chart (loaded from a saved
+    # solo chart's /c/:slug) - no raw birth data survives a save, so unlike
+    # SynastryRequest this can't take two ChartRequests. person_b's
+    # zodiac/house_system get overridden server-side to match person_a
+    # regardless of what's sent here - cross-chart aspects are only
+    # meaningful when both charts are in the same zodiac frame.
+    person_a: ChartData
+    person_b: ChartRequest
+    relationship_type: RelationshipType
+
+
 class CompositeRequest(BaseModel):
     # Takes already-built charts rather than raw birth data: by the time a
     # composite view is requested, the frontend already has both people's

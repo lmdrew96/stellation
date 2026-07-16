@@ -4,9 +4,10 @@ import type { ChartRevealState } from '../hooks/useChartReveal'
 import type { SaturnReturnRevealState } from '../hooks/useSaturnReturnReveal'
 import type { SolarReturnRevealState } from '../hooks/useSolarReturnReveal'
 import type { TransitRevealState } from '../hooks/useTransitReveal'
-import type { ChartData, SaturnReturnCycle, TransitData } from '../types'
+import type { ChartData, ChartRequest, RelationshipType, SaturnReturnCycle, TransitData } from '../types'
 import { AspectList } from './AspectList'
 import { ChartCarousel } from './ChartCarousel'
+import { CompareForm } from './CompareForm'
 import { GeneratingScreen } from './GeneratingScreen'
 import { PlanetList } from './PlanetList'
 import { ReadingDisplay } from './ReadingDisplay'
@@ -38,6 +39,10 @@ interface ChartRevealProps extends ChartRevealState {
   saturnReturnError: string | null
   onViewSaturnReturn: (cycle?: SaturnReturnCycle) => void
   onCloseSaturnReturn: () => void
+  compareLoading: boolean
+  compareError: string | null
+  showManualCoordsCompare: boolean
+  onCompareSubmit: (personB: ChartRequest, relationshipType: RelationshipType) => void
 }
 
 export function ChartReveal({
@@ -68,6 +73,10 @@ export function ChartReveal({
   saturnReturnError,
   onViewSaturnReturn,
   onCloseSaturnReturn,
+  compareLoading,
+  compareError,
+  showManualCoordsCompare,
+  onCompareSubmit,
 }: ChartRevealProps) {
   return (
     <section className="reveal">
@@ -140,6 +149,15 @@ export function ChartReveal({
               onSelectCycle={onViewSaturnReturn}
               onClose={onCloseSaturnReturn}
               {...saturnReturnReveal}
+            />
+          )}
+          {reading && viewingSaved && (
+            <CompareForm
+              ownerName={chart.name}
+              loading={compareLoading}
+              error={compareError}
+              showManualCoords={showManualCoordsCompare}
+              onSubmit={onCompareSubmit}
             />
           )}
         </>
