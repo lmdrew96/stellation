@@ -247,6 +247,43 @@ def generate_aspect_insight(chart: ChartData, aspect: Aspect) -> dict:
     return tool_use.input
 
 
+# A solar return chart is shaped exactly like a solo ChartData (cast for the
+# moment the Sun returns to its natal degree, rather than for birth) - reuses
+# INTERPRETATION_TOOL as-is, only the system prompt changes to frame it as
+# this year's themes rather than a lifelong natal reading.
+SOLAR_RETURN_SYSTEM_PROMPT = (
+    "You are an astrologer writing a solar return chart interpretation. A "
+    "solar return chart is cast for the moment the Sun returns to the exact "
+    "degree it occupied at this person's birth - it happens once a year, "
+    "close to their birthday, and describes the themes of THIS specific "
+    "year, not their lifelong natal character. You are given the solar "
+    "return chart (planet placements and aspects) as JSON. The chart's "
+    "'pronouns' field, if present, tells you which pronouns to use; if "
+    "missing, use their name or 'they/them' rather than guessing. Ground "
+    "every statement in the specific placements and aspects provided - do "
+    "not invent positions not present in the data. Write a short blurb (2-4 "
+    "sentences) for each planet, framed as what it means for this year "
+    "specifically. Then write a longer synthesis paragraph (4-6 sentences) "
+    "naming the overall themes and turning points this year holds."
+)
+
+
+def generate_solar_return_interpretation(chart: ChartData) -> dict:
+    client = anthropic.Anthropic(api_key=settings.anthropic_api_key or None)
+
+    response = client.messages.create(
+        model=settings.anthropic_model,
+        max_tokens=4096,
+        system=SOLAR_RETURN_SYSTEM_PROMPT,
+        tools=[INTERPRETATION_TOOL],
+        tool_choice={"type": "tool", "name": "record_interpretation"},
+        messages=[{"role": "user", "content": chart.model_dump_json()}],
+    )
+
+    tool_use = next(b for b in response.content if b.type == "tool_use")
+    return tool_use.input
+
+
 # Deliberately not a full reading re-run: short, present-tense, and scoped to
 # whatever's tightest-orb right now rather than re-covering the whole chart.
 TRANSIT_SYSTEM_PROMPT = (

@@ -73,6 +73,23 @@ def now_jd_ut() -> float:
     return _utc_to_jd_ut(dt.datetime.now(dt.timezone.utc))
 
 
+def jd_ut_to_utc_datetime(jd_ut: float) -> dt.datetime:
+    year, month, day, hour, minute, seconds = swe.jdut1_to_utc(jd_ut, swe.GREG_CAL)
+    whole_seconds = int(seconds)
+    microseconds = round((seconds - whole_seconds) * 1_000_000)
+    return dt.datetime(
+        year, month, day, hour, minute, whole_seconds, microseconds, tzinfo=dt.timezone.utc
+    )
+
+
+def sun_longitude(jd_ut: float, zodiac: ZodiacMode = "tropical") -> float:
+    """Just the Sun's longitude, without the other nine bodies -
+    solar-return root-finding calls this many times per search."""
+    flags = CALC_FLAGS | (swe.FLG_SIDEREAL if zodiac == "sidereal" else 0)
+    xx, _retflags = swe.calc_ut(jd_ut, swe.SUN, flags)
+    return xx[0]
+
+
 def _sign_and_degree(longitude: float) -> tuple[str, float]:
     longitude %= 360
     sign_index = int(longitude // 30)

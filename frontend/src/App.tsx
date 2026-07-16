@@ -6,6 +6,7 @@ import {
   fetchComposite,
   fetchSavedSolo,
   fetchSavedSynastry,
+  fetchSolarReturn,
   fetchSynastry,
   fetchTransits,
 } from './api'
@@ -18,6 +19,7 @@ import { SynastryReveal } from './components/SynastryReveal'
 import { useBouncingRing } from './hooks/useBouncingRing'
 import { useChartReveal } from './hooks/useChartReveal'
 import { useCompositeReveal } from './hooks/useCompositeReveal'
+import { useSolarReturnReveal } from './hooks/useSolarReturnReveal'
 import { useSynastryReveal } from './hooks/useSynastryReveal'
 import { useTransitReveal } from './hooks/useTransitReveal'
 import type {
@@ -81,6 +83,11 @@ function App() {
   const [transitLoading, setTransitLoading] = useState(false)
   const [transitError, setTransitError] = useState<string | null>(null)
   const transitReveal = useTransitReveal(transit)
+
+  const [solarReturn, setSolarReturn] = useState<ChartData | null>(null)
+  const [solarReturnLoading, setSolarReturnLoading] = useState(false)
+  const [solarReturnError, setSolarReturnError] = useState<string | null>(null)
+  const solarReturnReveal = useSolarReturnReveal(solarReturn)
 
   const [synastry, setSynastry] = useState<SynastryData | null>(null)
   const [showManualCoordsA, setShowManualCoordsA] = useState(false)
@@ -150,6 +157,8 @@ function App() {
       setShowManualCoords(false)
       setTransit(null)
       setTransitError(null)
+      setSolarReturn(null)
+      setSolarReturnError(null)
       resetUrlToHome()
     } catch (err) {
       if (err instanceof ApiError) {
@@ -184,6 +193,27 @@ function App() {
   function closeTransits() {
     setTransit(null)
     setTransitError(null)
+  }
+
+  async function handleViewSolarReturn(locationOverride?: string) {
+    if (!chart) return
+    setSolarReturnLoading(true)
+    setSolarReturnError(null)
+    try {
+      const result = await fetchSolarReturn(chart, locationOverride)
+      setSolarReturn(result)
+    } catch (err) {
+      setSolarReturnError(
+        err instanceof ApiError ? err.detail.message : "Could not cast this year's chart."
+      )
+    } finally {
+      setSolarReturnLoading(false)
+    }
+  }
+
+  function closeSolarReturn() {
+    setSolarReturn(null)
+    setSolarReturnError(null)
   }
 
   async function handleSynastrySubmit(payload: SynastryRequest) {
@@ -318,6 +348,12 @@ function App() {
             transitError={transitError}
             onViewTransits={handleViewTransits}
             onCloseTransits={closeTransits}
+            solarReturn={solarReturn}
+            solarReturnReveal={solarReturnReveal}
+            solarReturnLoading={solarReturnLoading}
+            solarReturnError={solarReturnError}
+            onViewSolarReturn={handleViewSolarReturn}
+            onCloseSolarReturn={closeSolarReturn}
           />
         )}
 

@@ -1,6 +1,7 @@
 import { saveSoloChart } from '../api'
 import { ART_STYLES } from '../hooks/useChartReveal'
 import type { ChartRevealState } from '../hooks/useChartReveal'
+import type { SolarReturnRevealState } from '../hooks/useSolarReturnReveal'
 import type { TransitRevealState } from '../hooks/useTransitReveal'
 import type { ChartData, TransitData } from '../types'
 import { AspectList } from './AspectList'
@@ -9,6 +10,8 @@ import { GeneratingScreen } from './GeneratingScreen'
 import { PlanetList } from './PlanetList'
 import { ReadingDisplay } from './ReadingDisplay'
 import { SaveLink } from './SaveLink'
+import { SolarReturnReveal } from './SolarReturnReveal'
+import { SolarReturnTrigger } from './SolarReturnTrigger'
 import { TransitReveal } from './TransitReveal'
 
 interface ChartRevealProps extends ChartRevealState {
@@ -20,6 +23,12 @@ interface ChartRevealProps extends ChartRevealState {
   transitError: string | null
   onViewTransits: () => void
   onCloseTransits: () => void
+  solarReturn: ChartData | null
+  solarReturnReveal: SolarReturnRevealState
+  solarReturnLoading: boolean
+  solarReturnError: string | null
+  onViewSolarReturn: (locationOverride?: string) => void
+  onCloseSolarReturn: () => void
 }
 
 export function ChartReveal({
@@ -37,6 +46,12 @@ export function ChartReveal({
   transitError,
   onViewTransits,
   onCloseTransits,
+  solarReturn,
+  solarReturnReveal,
+  solarReturnLoading,
+  solarReturnError,
+  onViewSolarReturn,
+  onCloseSolarReturn,
 }: ChartRevealProps) {
   return (
     <section className="reveal">
@@ -72,6 +87,21 @@ export function ChartReveal({
             </div>
           )}
           {transit && <TransitReveal transit={transit} onClose={onCloseTransits} {...transitReveal} />}
+          {reading && !solarReturn && (
+            <SolarReturnTrigger
+              birthPlaceName={chart.birth_location.place_name}
+              loading={solarReturnLoading}
+              error={solarReturnError}
+              onSubmit={onViewSolarReturn}
+            />
+          )}
+          {solarReturn && (
+            <SolarReturnReveal
+              solarReturn={solarReturn}
+              onClose={onCloseSolarReturn}
+              {...solarReturnReveal}
+            />
+          )}
         </>
       )}
     </section>

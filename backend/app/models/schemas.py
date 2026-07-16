@@ -206,6 +206,16 @@ class TransitInterpretation(BaseModel):
     synthesis: str
 
 
+class SolarReturnRequest(BaseModel):
+    natal: ChartData
+    # Free-text place name; omitted/None means "use the birth location".
+    # No manual-lat/lng override here (unlike ChartRequest) - if geocoding
+    # fails, the message just asks for a more specific place name rather
+    # than surfacing a whole second manual-coordinates form for this one
+    # secondary feature.
+    location_override: str | None = None
+
+
 class CompositeRequest(BaseModel):
     # Takes already-built charts rather than raw birth data: by the time a
     # composite view is requested, the frontend already has both people's

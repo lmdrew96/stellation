@@ -241,6 +241,38 @@ export async function fetchCompositeInterpretation(chart: ChartData): Promise<In
   return res.json()
 }
 
+export async function fetchSolarReturn(natal: ChartData, locationOverride?: string): Promise<ChartData> {
+  const res = await fetch('/api/solar-return', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ natal, location_override: locationOverride }),
+  })
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => null)
+    throw new ApiError(parseErrorDetail(body, "Something went wrong casting this year's chart."))
+  }
+
+  return res.json()
+}
+
+export async function fetchSolarReturnInterpretation(chart: ChartData): Promise<Interpretation> {
+  const res = await fetch('/api/solar-return/interpret', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(chart),
+  })
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => null)
+    throw new ApiError(
+      parseErrorDetail(body, "Something went wrong generating this year's reading.")
+    )
+  }
+
+  return res.json()
+}
+
 export async function fetchTransits(natal: ChartData): Promise<TransitData> {
   const res = await fetch('/api/transits', {
     method: 'POST',
