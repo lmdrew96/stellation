@@ -1,6 +1,7 @@
+import datetime as dt
 from typing import Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 
 ZodiacMode = Literal["tropical", "sidereal"]
 HouseSystem = Literal["placidus", "whole_sign"]
@@ -17,6 +18,30 @@ class ChartRequest(BaseModel):
     house_system: HouseSystem = "placidus"
     manual_lat: float | None = None
     manual_lng: float | None = None
+
+    # Only the frontend's native date/time inputs reach these normally (always
+    # well-formed) - these validators exist for anyone calling the API
+    # directly, so a bad value becomes a clean 422 instead of an unhandled
+    # ValueError out of strptime in ephemeris.py:local_to_jd_ut. The format
+    # strings mirror local_to_jd_ut's exactly, so anything that passes here
+    # is guaranteed to parse there too.
+    @field_validator("birth_date")
+    @classmethod
+    def _validate_birth_date(cls, v: str) -> str:
+        try:
+            dt.datetime.strptime(v, "%Y-%m-%d")
+        except ValueError as exc:
+            raise ValueError("must be a valid date in YYYY-MM-DD format") from exc
+        return v
+
+    @field_validator("birth_time")
+    @classmethod
+    def _validate_birth_time(cls, v: str) -> str:
+        try:
+            dt.datetime.strptime(v, "%H:%M")
+        except ValueError as exc:
+            raise ValueError("must be a valid 24-hour time in HH:MM format") from exc
+        return v
 
 
 class BirthLocation(BaseModel):

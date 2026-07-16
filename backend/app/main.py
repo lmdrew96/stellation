@@ -1,10 +1,19 @@
 from fastapi import FastAPI
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+from slowapi.errors import RateLimitExceeded
 
 from app.config import settings
+from app.errors import unhandled_exception_handler, validation_exception_handler
+from app.rate_limit import limiter, rate_limit_exceeded_handler
 from app.routers import chart, health, interpret, render, synastry
 
 app = FastAPI(title="Stellation API")
+
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, rate_limit_exceeded_handler)
+app.add_exception_handler(RequestValidationError, validation_exception_handler)
+app.add_exception_handler(Exception, unhandled_exception_handler)
 
 app.add_middleware(
     CORSMiddleware,

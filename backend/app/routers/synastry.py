@@ -1,5 +1,5 @@
 import anthropic
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import Response
 
 from app.config import settings
@@ -9,6 +9,7 @@ from app.models.schemas import (
     SynastryInterpretation,
     SynastryRequest,
 )
+from app.rate_limit import limiter
 from app.services.aspects import compute_synastry_aspects
 from app.services.chart_builder import build_chart
 from app.services.interpretation import generate_synastry_interpretation
@@ -54,7 +55,8 @@ def render_synastry(synastry: SynastryData, style: ChartStyle = "generative") ->
 
 
 @router.post("/api/synastry/interpret", response_model=SynastryInterpretation)
-def interpret_synastry(synastry: SynastryData) -> dict:
+@limiter.limit("20/hour")
+def interpret_synastry(request: Request, synastry: SynastryData) -> dict:
     if not settings.anthropic_api_key:
         raise HTTPException(status_code=500, detail=_MISSING_KEY_MESSAGE)
 

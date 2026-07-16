@@ -18,6 +18,27 @@ export class ApiError extends Error {
   }
 }
 
+// The backend's own handwritten errors always send {detail: {error, message}},
+// but framework-level responses don't follow that contract: FastAPI's plain
+// 500 sends {detail: "Internal Server Error"} (a string) and older/unexpected
+// validation errors can send an array. Narrowing here means every caller gets
+// a real message instead of silently reading `.message` off the wrong shape.
+function parseErrorDetail(body: unknown, fallbackMessage: string): ApiErrorDetail {
+  const detail = (body as { detail?: unknown } | null)?.detail
+  if (
+    detail &&
+    typeof detail === 'object' &&
+    'message' in detail &&
+    typeof (detail as { message: unknown }).message === 'string'
+  ) {
+    return detail as ApiErrorDetail
+  }
+  if (typeof detail === 'string') {
+    return { error: 'unknown_error', message: detail }
+  }
+  return { error: 'unknown_error', message: fallbackMessage }
+}
+
 export async function fetchChart(payload: ChartRequest): Promise<ChartData> {
   const res = await fetch('/api/chart', {
     method: 'POST',
@@ -27,11 +48,7 @@ export async function fetchChart(payload: ChartRequest): Promise<ChartData> {
 
   if (!res.ok) {
     const body = await res.json().catch(() => null)
-    const detail: ApiErrorDetail = body?.detail ?? {
-      error: 'unknown_error',
-      message: 'Something went wrong generating the chart.',
-    }
-    throw new ApiError(detail)
+    throw new ApiError(parseErrorDetail(body, 'Something went wrong generating the chart.'))
   }
 
   return res.json()
@@ -46,11 +63,7 @@ export async function fetchSynastry(payload: SynastryRequest): Promise<SynastryD
 
   if (!res.ok) {
     const body = await res.json().catch(() => null)
-    const detail: ApiErrorDetail = body?.detail ?? {
-      error: 'unknown_error',
-      message: 'Something went wrong comparing the charts.',
-    }
-    throw new ApiError(detail)
+    throw new ApiError(parseErrorDetail(body, 'Something went wrong comparing the charts.'))
   }
 
   return res.json()
@@ -80,12 +93,7 @@ export async function fetchInterpretation(chart: ChartData): Promise<Interpretat
 
   if (!res.ok) {
     const body = await res.json().catch(() => null)
-    const rawDetail = body?.detail
-    const message = typeof rawDetail === 'string' ? rawDetail : rawDetail?.message
-    throw new ApiError({
-      error: 'interpret_failed',
-      message: message ?? 'Something went wrong generating the reading.',
-    })
+    throw new ApiError(parseErrorDetail(body, 'Something went wrong generating the reading.'))
   }
 
   return res.json()
@@ -115,12 +123,7 @@ export async function fetchSynastryInterpretation(synastry: SynastryData): Promi
 
   if (!res.ok) {
     const body = await res.json().catch(() => null)
-    const rawDetail = body?.detail
-    const message = typeof rawDetail === 'string' ? rawDetail : rawDetail?.message
-    throw new ApiError({
-      error: 'interpret_failed',
-      message: message ?? 'Something went wrong generating the reading.',
-    })
+    throw new ApiError(parseErrorDetail(body, 'Something went wrong generating the reading.'))
   }
 
   return res.json()

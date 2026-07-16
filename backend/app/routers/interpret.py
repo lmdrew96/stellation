@@ -1,8 +1,9 @@
 import anthropic
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 
 from app.config import settings
 from app.models.schemas import ChartData, Interpretation
+from app.rate_limit import limiter
 from app.services.interpretation import generate_interpretation
 
 router = APIRouter()
@@ -11,7 +12,8 @@ _MISSING_KEY_MESSAGE = "Anthropic API key is missing or invalid. Check backend/.
 
 
 @router.post("/api/interpret", response_model=Interpretation)
-def interpret_chart(chart: ChartData) -> dict:
+@limiter.limit("20/hour")
+def interpret_chart(request: Request, chart: ChartData) -> dict:
     if not settings.anthropic_api_key:
         raise HTTPException(status_code=500, detail=_MISSING_KEY_MESSAGE)
 
