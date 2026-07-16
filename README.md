@@ -31,6 +31,13 @@ built-in AI Assistant proxy squats on `*:8000`, which silently intercepts
 an issue on your machine, any port works as long as `vite.config.ts`'s
 proxy target and `CORS_ORIGINS` in `.env` stay in sync with it.
 
+Tests (pure-function ephemeris/aspect math, no API key needed):
+
+```sh
+.venv/bin/pip install -r requirements-dev.txt
+.venv/bin/pytest
+```
+
 ### Frontend
 
 ```sh

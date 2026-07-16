@@ -11,6 +11,11 @@ interface ChartCarouselProps {
   name: string
 }
 
+function downloadFilename(name: string, label: string): string {
+  const safeName = name.replace(/[^a-z0-9 &-]/gi, '').trim() || 'chart'
+  return `${safeName} - ${label}.svg`
+}
+
 export function ChartCarousel({ slides, name }: ChartCarouselProps) {
   const [index, setIndex] = useState(0)
   const slide = slides[index]
@@ -45,23 +50,28 @@ export function ChartCarousel({ slides, name }: ChartCarouselProps) {
           </>
         )}
       </div>
-      {slides.length > 1 && (
-        <div className="carousel-meta">
-          <p className="carousel-label">{slide.label}</p>
-          <div className="carousel-dots">
-            {slides.map((s, i) => (
-              <button
-                type="button"
-                key={s.label}
-                className="carousel-dot"
-                data-active={i === index}
-                onClick={() => setIndex(i)}
-                aria-label={`Show ${s.label} chart`}
-              />
-            ))}
-          </div>
-        </div>
-      )}
+      <div className="carousel-meta">
+        {slides.length > 1 && (
+          <>
+            <p className="carousel-label">{slide.label}</p>
+            <div className="carousel-dots">
+              {slides.map((s, i) => (
+                <button
+                  type="button"
+                  key={s.label}
+                  className="carousel-dot"
+                  data-active={i === index}
+                  onClick={() => setIndex(i)}
+                  aria-label={`Show ${s.label} chart`}
+                />
+              ))}
+            </div>
+          </>
+        )}
+        <a className="carousel-download" href={slide.url} download={downloadFilename(name, slide.label)}>
+          Download art
+        </a>
+      </div>
     </div>
   )
 }
