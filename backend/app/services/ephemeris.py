@@ -21,6 +21,12 @@ PLANETS = [
     ("Uranus", swe.URANUS),
     ("Neptune", swe.NEPTUNE),
     ("Pluto", swe.PLUTO),
+    # Mean Black Moon Lilith - the lunar apogee's osculating point, not a
+    # physical body. Chosen over asteroid Lilith (1181) specifically because
+    # it's computed the same way as every other body here (no ephemeris data
+    # file needed); real-body asteroids (and Chiron) require a .se1 file this
+    # app doesn't ship, and FLG_MOSEPH can't compute them without one.
+    ("Lilith", swe.MEAN_APOG),
 ]
 
 # Moshier semi-analytic ephemeris: no external data files needed, accurate to
@@ -155,6 +161,29 @@ def compute_house_cusps(
     house_flags = swe.FLG_SIDEREAL if zodiac == "sidereal" else 0
     cusps, _ascmc = swe.houses_ex(jd_ut, lat, lng, hsys, house_flags)
     return cusps
+
+
+def compute_angles(
+    jd_ut: float,
+    lat: float,
+    lng: float,
+    house_system: HouseSystem = "placidus",
+    zodiac: ZodiacMode = "tropical",
+) -> list[dict]:
+    """Ascendant and Midheaven - the true astronomical angle regardless of
+    house system. NOT the same as house_cusps[0]/[9]: those match exactly
+    for Placidus/Koch (which anchor houses 1 and 10 to these points), but
+    whole-sign cusps round down to the start of the rising/MC sign instead
+    of the exact degree - a second houses_ex call (cheap; no I/O) keeps this
+    independent of that house-system-dependent rounding."""
+    hsys = _HOUSE_SYSTEM_CODE[house_system]
+    house_flags = swe.FLG_SIDEREAL if zodiac == "sidereal" else 0
+    _cusps, ascmc = swe.houses_ex(jd_ut, lat, lng, hsys, house_flags)
+    angles = []
+    for name, longitude in (("Ascendant", ascmc[0]), ("Midheaven", ascmc[1])):
+        sign, degree_in_sign = _sign_and_degree(longitude)
+        angles.append({"name": name, "sign": sign, "degree_in_sign": round(degree_in_sign, 4)})
+    return angles
 
 
 def compute_planets(

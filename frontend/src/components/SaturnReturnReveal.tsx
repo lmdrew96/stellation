@@ -2,6 +2,7 @@ import { ART_STYLES } from '../hooks/useChartReveal'
 import type { SaturnReturnRevealState } from '../hooks/useSaturnReturnReveal'
 import type { ChartData, SaturnReturnCycle } from '../types'
 import { AspectList } from './AspectList'
+import { ChartAngles } from './ChartAngles'
 import { ChartCarousel } from './ChartCarousel'
 import { GeneratingScreen } from './GeneratingScreen'
 import { PlanetList } from './PlanetList'
@@ -75,6 +76,7 @@ export function SaturnReturnReveal({
           )}
           {readingStatus === 'error' && <p className="notice notice-error">{readingError}</p>}
           {reading && <ReadingDisplay reading={reading} heading="What This Return Holds" />}
+          <ChartAngles angles={saturnReturn.angles} />
           <PlanetList planets={saturnReturn.planets} heading="This Return's Placements" />
           <AspectList chart={saturnReturn} />
         </>

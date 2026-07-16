@@ -1,6 +1,6 @@
 import datetime as dt
 
-from app.models.schemas import Aspect, BirthLocation, ChartData, Planet
+from app.models.schemas import Angle, Aspect, BirthLocation, ChartData, Planet
 from app.services.aspects import compute_aspects
 from app.services.ephemeris import (
     _absolute_longitude,
@@ -62,7 +62,13 @@ def build_composite(person_a: ChartData, person_b: ChartData) -> ChartData:
 
     raw_positions = []
     for name, planet_a in planets_a.items():
-        planet_b = planets_b[name]
+        # .get(), not a plain lookup: a chart saved before a new placement
+        # (e.g. Lilith) was added won't have it under this name - skip it
+        # from the composite rather than a hard KeyError against a newer
+        # chart that does.
+        planet_b = planets_b.get(name)
+        if planet_b is None:
+            continue
         lon_a = _absolute_longitude(planet_a.sign, planet_a.degree_in_sign)
         lon_b = _absolute_longitude(planet_b.sign, planet_b.degree_in_sign)
         # A composite placement is a fixed midpoint, not a body in motion -
@@ -86,6 +92,18 @@ def build_composite(person_a: ChartData, person_b: ChartData) -> ChartData:
 
     aspects_raw = compute_aspects(raw_positions)
 
+    angles_a = {a.name: a for a in person_a.angles}
+    angles_b = {a.name: a for a in person_b.angles}
+    composite_angles = []
+    for name, angle_a in angles_a.items():
+        angle_b = angles_b.get(name)
+        if angle_b is None:
+            continue
+        lon_a = _absolute_longitude(angle_a.sign, angle_a.degree_in_sign)
+        lon_b = _absolute_longitude(angle_b.sign, angle_b.degree_in_sign)
+        sign, degree_in_sign = _sign_and_degree(_circular_midpoint(lon_a, lon_b))
+        composite_angles.append(Angle(name=name, sign=sign, degree_in_sign=round(degree_in_sign, 4)))
+
     # birth_datetime/birth_location are informational only here (a composite
     # chart has no real birth moment or place) - not used in any further
     # calculation, just satisfying ChartData's shape with something honest.
@@ -105,4 +123,5 @@ def build_composite(person_a: ChartData, person_b: ChartData) -> ChartData:
         birth_location=composite_location,
         planets=planets,
         aspects=[Aspect(**a) for a in aspects_raw],
+        angles=composite_angles,
     )

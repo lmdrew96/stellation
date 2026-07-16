@@ -2,6 +2,7 @@ import { ART_STYLES } from '../hooks/useChartReveal'
 import type { CompositeRevealState } from '../hooks/useCompositeReveal'
 import type { ChartData } from '../types'
 import { AspectList } from './AspectList'
+import { ChartAngles } from './ChartAngles'
 import { ChartCarousel } from './ChartCarousel'
 import { GeneratingScreen } from './GeneratingScreen'
 import { PlanetList } from './PlanetList'
@@ -43,6 +44,7 @@ export function CompositeReveal({
           )}
           {readingStatus === 'error' && <p className="notice notice-error">{readingError}</p>}
           {reading && <ReadingDisplay reading={reading} heading="The Relationship" />}
+          <ChartAngles angles={composite.angles} />
           <PlanetList planets={composite.planets} heading="Composite Placements" />
           <AspectList chart={composite} />
         </>

@@ -1,8 +1,13 @@
 from fastapi import HTTPException
 
-from app.models.schemas import Aspect, BirthLocation, ChartData, ChartRequest, Planet
+from app.models.schemas import Angle, Aspect, BirthLocation, ChartData, ChartRequest, Planet
 from app.services.aspects import compute_aspects
-from app.services.ephemeris import compute_planets, compute_raw_positions, local_to_jd_ut
+from app.services.ephemeris import (
+    compute_angles,
+    compute_planets,
+    compute_raw_positions,
+    local_to_jd_ut,
+)
 from app.services.geocode import GeocodeError, geocode_place
 from app.services.timezone import lookup_timezone
 
@@ -64,6 +69,7 @@ def build_chart(payload: ChartRequest) -> tuple[ChartData, list[dict]]:
         jd_ut, lat, lng, raw_positions, payload.house_system, payload.zodiac
     )
     aspects_raw = compute_aspects(raw_positions)
+    angles_raw = compute_angles(jd_ut, lat, lng, payload.house_system, payload.zodiac)
 
     chart = ChartData(
         name=payload.name,
@@ -76,5 +82,6 @@ def build_chart(payload: ChartRequest) -> tuple[ChartData, list[dict]]:
         ),
         planets=[Planet(**p) for p in planets_raw],
         aspects=[Aspect(**a) for a in aspects_raw],
+        angles=[Angle(**a) for a in angles_raw],
     )
     return chart, raw_positions

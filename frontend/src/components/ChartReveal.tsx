@@ -6,6 +6,7 @@ import type { SolarReturnRevealState } from '../hooks/useSolarReturnReveal'
 import type { TransitRevealState } from '../hooks/useTransitReveal'
 import type { ChartData, ChartRequest, RelationshipType, SaturnReturnCycle, TransitData } from '../types'
 import { AspectList } from './AspectList'
+import { ChartAngles } from './ChartAngles'
 import { ChartCarousel } from './ChartCarousel'
 import { CompareForm } from './CompareForm'
 import { GeneratingScreen } from './GeneratingScreen'
@@ -95,6 +96,7 @@ export function ChartReveal({
           )}
           {readingStatus === 'error' && <p className="notice notice-error">{readingError}</p>}
           {reading && <ReadingDisplay reading={reading} />}
+          <ChartAngles angles={chart.angles} />
           <PlanetList planets={chart.planets} />
           <AspectList chart={chart} />
           {reading && !transit && (

@@ -40,6 +40,12 @@ export interface Aspect {
   applying: boolean
 }
 
+export interface Angle {
+  name: string
+  sign: string
+  degree_in_sign: number
+}
+
 export interface ChartData {
   name: string
   pronouns?: string
@@ -49,6 +55,7 @@ export interface ChartData {
   birth_location: BirthLocation
   planets: Planet[]
   aspects: Aspect[]
+  angles: Angle[]
 }
 
 export interface ApiErrorDetail {

@@ -68,6 +68,17 @@ class Aspect(BaseModel):
     applying: bool
 
 
+class Angle(BaseModel):
+    # Ascendant/Midheaven - real chart points, but not bodies: no retrograde
+    # motion, and no independent "house" (the Ascendant IS house 1's cusp
+    # under most systems). Kept separate from Planet rather than stubbing
+    # those fields, and left out of aspect computation - shown as a headline
+    # fact ("Rising: Libra"), not a wheel point competing for aspects.
+    name: str
+    sign: str
+    degree_in_sign: float
+
+
 class ChartData(BaseModel):
     name: str
     pronouns: str | None = None
@@ -77,6 +88,10 @@ class ChartData(BaseModel):
     birth_location: BirthLocation
     planets: list[Planet]
     aspects: list[Aspect]
+    # Defaults to [] so charts saved before this field existed still
+    # deserialize cleanly (a required field would 500 on every old saved
+    # chart - see saved_charts.py/save.py's ValidationError handling).
+    angles: list[Angle] = []
 
 
 class PlanetInterpretation(BaseModel):

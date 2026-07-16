@@ -2,6 +2,7 @@ import { ART_STYLES } from '../hooks/useChartReveal'
 import type { SolarReturnRevealState } from '../hooks/useSolarReturnReveal'
 import type { ChartData } from '../types'
 import { AspectList } from './AspectList'
+import { ChartAngles } from './ChartAngles'
 import { ChartCarousel } from './ChartCarousel'
 import { GeneratingScreen } from './GeneratingScreen'
 import { PlanetList } from './PlanetList'
@@ -49,6 +50,7 @@ export function SolarReturnReveal({
           )}
           {readingStatus === 'error' && <p className="notice notice-error">{readingError}</p>}
           {reading && <ReadingDisplay reading={reading} heading="This Year's Themes" />}
+          <ChartAngles angles={solarReturn.angles} />
           <PlanetList planets={solarReturn.planets} heading="This Year's Placements" />
           <AspectList chart={solarReturn} />
         </>

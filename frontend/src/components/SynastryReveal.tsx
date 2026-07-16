@@ -3,6 +3,7 @@ import { ART_STYLES } from '../hooks/useChartReveal'
 import type { CompositeRevealState } from '../hooks/useCompositeReveal'
 import type { SynastryRevealState } from '../hooks/useSynastryReveal'
 import type { ChartData, SynastryData } from '../types'
+import { ChartAngles } from './ChartAngles'
 import { ChartCarousel } from './ChartCarousel'
 import { CompositeReveal } from './CompositeReveal'
 import { GeneratingScreen } from './GeneratingScreen'
@@ -66,8 +67,14 @@ export function SynastryReveal({
             />
           )}
           <div className="synastry-placements">
-            <PlanetList planets={synastry.person_a.planets} heading={`${nameA}'s Placements`} />
-            <PlanetList planets={synastry.person_b.planets} heading={`${nameB}'s Placements`} />
+            <div>
+              <ChartAngles angles={synastry.person_a.angles} />
+              <PlanetList planets={synastry.person_a.planets} heading={`${nameA}'s Placements`} />
+            </div>
+            <div>
+              <ChartAngles angles={synastry.person_b.angles} />
+              <PlanetList planets={synastry.person_b.planets} heading={`${nameB}'s Placements`} />
+            </div>
           </div>
           <SynastryAspectList synastry={synastry} nameA={nameA} nameB={nameB} />
           {reading && !composite && (

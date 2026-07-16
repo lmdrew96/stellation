@@ -634,6 +634,23 @@
   margin-bottom: 2rem;
 }
 
+.chart-angles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.5rem;
+  margin-bottom: 1.25rem;
+  font-size: 0.92rem;
+  color: var(--color-text);
+}
+
+.chart-angles__glyph {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.04em;
+  color: var(--color-accent-warm);
+  margin-right: 0.4rem;
+}
+
 .synastry-placements {
   display: grid;
   grid-template-columns: 1fr 1fr;

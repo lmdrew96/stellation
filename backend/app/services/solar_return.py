@@ -4,6 +4,7 @@ import zoneinfo
 from fastapi import HTTPException
 
 from app.models.schemas import (
+    Angle,
     Aspect,
     BirthLocation,
     ChartData,
@@ -14,6 +15,7 @@ from app.models.schemas import (
 from app.services.aspects import compute_aspects
 from app.services.ephemeris import (
     _utc_to_jd_ut,
+    compute_angles,
     compute_planets,
     compute_raw_positions,
     iso_to_jd_ut,
@@ -124,6 +126,7 @@ def build_solar_return(payload: SolarReturnRequest) -> ChartData:
         return_jd_ut, lat, lng, raw_positions, natal.house_system, natal.zodiac
     )
     aspects_raw = compute_aspects(raw_positions)
+    angles_raw = compute_angles(return_jd_ut, lat, lng, natal.house_system, natal.zodiac)
 
     return_utc_dt = jd_ut_to_utc_datetime(return_jd_ut)
     return_local_dt = return_utc_dt.astimezone(zoneinfo.ZoneInfo(tz_name))
@@ -137,4 +140,5 @@ def build_solar_return(payload: SolarReturnRequest) -> ChartData:
         birth_location=BirthLocation(place_name=place_name, lat=lat, lng=lng, timezone=tz_name),
         planets=[Planet(**p) for p in planets_raw],
         aspects=[Aspect(**a) for a in aspects_raw],
+        angles=[Angle(**a) for a in angles_raw],
     )

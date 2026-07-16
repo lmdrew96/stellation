@@ -59,25 +59,36 @@ ORBIT_LINEWIDTH = 1.4
 ORBIT_ALPHA = 0.55
 
 # Palette (Nae's pick): a cool violet/blue night scale for the UI, carried
-# into the chart so the two don't look like different apps. Elements need
-# warm/cool variety a monochrome palette can't supply on its own, so fire/
-# earth/air borrow outside it — water stays in-family (Dusty Denim).
+# into the chart so the two don't look like different apps.
 BG_COLOR = "#262423"  # Shadow Grey
 STRUCTURE_COLOR = "#8350C4"  # Deep Lilac - orientation ring
 LABEL_COLOR = "#C9E0EB"  # Pale Sky
 
-ELEMENT_OF_SIGN = {
-    "Aries": "Fire", "Leo": "Fire", "Sagittarius": "Fire",
-    "Taurus": "Earth", "Virgo": "Earth", "Capricorn": "Earth",
-    "Gemini": "Air", "Libra": "Air", "Aquarius": "Air",
-    "Cancer": "Water", "Scorpio": "Water", "Pisces": "Water",
-}
-
-ELEMENT_COLOR = {
-    "Fire": "#C1552C",
-    "Earth": "#7A6A35",
-    "Air": "#D9C27E",
-    "Water": "#7392B5",  # Dusty Denim
+# Categorical palette (11 planets incl. Lilith) computed via the dataviz
+# skill's OKLCH/CVD-simulation method, not eyeballed - see
+# scripts/validate_palette.js in that skill. Two planets in the same sign
+# used to render identically (color came from ELEMENT_COLOR[sign's
+# element], not planet identity) - that's the "confusing" this replaces.
+# Validated on this dark BG_COLOR surface, --pairs all (any two planet dots
+# can end up adjacent depending on real longitudes, so every pair needs to
+# be distinguishable, not just neighbors): worst all-pairs normal-vision
+# ΔE 14.4 (target 15 - 11 fully-distinct all-pairs categorical hues on one
+# dark surface is right at the practical ceiling; even the validator's own
+# 8-hue documented default can't clear all-pairs at full target), worst
+# CVD ΔE 6.2 (floor band, legal given every dot always carries its own name
+# label right next to it - never color-alone identification).
+PLANET_COLOR = {
+    "Sun": "#8f6800",
+    "Moon": "#007aa9",
+    "Mercury": "#949d00",
+    "Venus": "#00854d",
+    "Mars": "#e90e00",
+    "Jupiter": "#0062ff",
+    "Saturn": "#ba15da",
+    "Uranus": "#00aaa4",
+    "Neptune": "#af74d5",
+    "Pluto": "#dc1888",
+    "Lilith": "#d1747d",
 }
 
 # Labels nudge apart when two planets sit within this many degrees of each
@@ -176,7 +187,7 @@ def _draw_orbit_rings(
 ) -> None:
     for planet in sorted(planets, key=lambda p: p.house):
         x, y = _orbit_ring(planet, aspect_counts.get(planet.name, 0), min_r, max_r, ripple_ratio)
-        color = ELEMENT_COLOR[ELEMENT_OF_SIGN[planet.sign]]
+        color = PLANET_COLOR[planet.name]
         ax.plot(
             x, y, color=color, linewidth=ORBIT_LINEWIDTH, alpha=ORBIT_ALPHA,
             solid_capstyle="round", zorder=2,
@@ -215,7 +226,7 @@ def render_chart_svg(chart: ChartData, style: ChartStyle = "generative") -> str:
 
     for planet in chart.planets:
         x, y = positions[planet.name]
-        color = ELEMENT_COLOR[ELEMENT_OF_SIGN[planet.sign]]
+        color = PLANET_COLOR[planet.name]
         ax.scatter(
             [x], [y], s=DOT_SIZE, color=color, zorder=3,
             edgecolors=BG_COLOR, linewidths=DOT_EDGE_WIDTH,
@@ -254,7 +265,7 @@ def _draw_ring_dots(
     label_offsets = _label_offsets(planets)
     for planet in planets:
         x, y = positions[planet.name]
-        color = ELEMENT_COLOR[ELEMENT_OF_SIGN[planet.sign]]
+        color = PLANET_COLOR[planet.name]
         if filled:
             ax.scatter(
                 [x], [y], s=DOT_SIZE, color=color, zorder=3,

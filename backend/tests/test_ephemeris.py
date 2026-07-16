@@ -1,10 +1,12 @@
 import swisseph as swe
 
 from app.services.ephemeris import (
+    PLANETS,
     SIGNS,
     _absolute_longitude,
     _house_of,
     _sign_and_degree,
+    compute_angles,
     compute_planets,
 )
 
@@ -52,6 +54,43 @@ class TestAbsoluteLongitude:
     def test_every_sign_start(self):
         for i, sign in enumerate(SIGNS):
             assert _absolute_longitude(sign, 0.0) == i * 30.0
+
+
+class TestLilith:
+    def test_is_in_planets_list(self):
+        assert ("Lilith", swe.MEAN_APOG) in PLANETS
+
+    def test_computable_under_moshier_flags_with_no_data_file(self):
+        # Unlike Chiron or asteroid Lilith (both blocked without a bundled
+        # .se1 file - see PLANETS' comment), the mean apogee is an osculating
+        # point, not a physical body, so it needs no ephemeris data file.
+        xx, _retflags = swe.calc_ut(2451545.0, swe.MEAN_APOG, swe.FLG_MOSEPH | swe.FLG_SPEED)
+        assert 0.0 <= xx[0] < 360.0
+
+
+class TestComputeAngles:
+    JD_UT_2000_01_01_NOON = 2451545.0
+    LAT, LNG = 40.7128, -74.0060  # New York
+
+    def test_returns_ascendant_and_midheaven(self):
+        angles = compute_angles(self.JD_UT_2000_01_01_NOON, self.LAT, self.LNG)
+        names = [a["name"] for a in angles]
+        assert names == ["Ascendant", "Midheaven"]
+        for a in angles:
+            assert a["sign"] in SIGNS
+            assert 0.0 <= a["degree_in_sign"] < 30.0
+
+    def test_true_angle_independent_of_house_system(self):
+        # Unlike house cusps (whole-sign rounds cusp 1 down to the start of
+        # the rising sign), the Ascendant/Midheaven themselves are the same
+        # real astronomical points no matter which house system is asked for.
+        placidus = compute_angles(
+            self.JD_UT_2000_01_01_NOON, self.LAT, self.LNG, house_system="placidus"
+        )
+        whole_sign = compute_angles(
+            self.JD_UT_2000_01_01_NOON, self.LAT, self.LNG, house_system="whole_sign"
+        )
+        assert placidus == whole_sign
 
 
 class TestHouseOf:
