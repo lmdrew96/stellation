@@ -15,12 +15,14 @@ import {
 import { AstrolabeRing } from './components/AstrolabeRing'
 import { BirthDataForm } from './components/BirthDataForm'
 import { ChartReveal } from './components/ChartReveal'
+import { CompositeReveal } from './components/CompositeReveal'
 import { GeneratingScreen } from './components/GeneratingScreen'
 import { SynastryForm } from './components/SynastryForm'
 import { SynastryReveal } from './components/SynastryReveal'
 import { useBouncingRing } from './hooks/useBouncingRing'
 import { useChartReveal } from './hooks/useChartReveal'
 import { useCompositeReveal } from './hooks/useCompositeReveal'
+import type { CompositeInput } from './hooks/useCompositeReveal'
 import { defaultSaturnCycle, useSaturnReturnReveal } from './hooks/useSaturnReturnReveal'
 import { useSolarReturnReveal } from './hooks/useSolarReturnReveal'
 import { useSynastryReveal } from './hooks/useSynastryReveal'
@@ -33,6 +35,7 @@ import type {
   SaturnReturnCycle,
   SynastryData,
   SynastryInterpretation,
+  SynastryReadingType,
   SynastryRequest,
   TransitData,
 } from './types'
@@ -113,8 +116,15 @@ function App() {
     SynastryInterpretation | undefined
   >(undefined)
   const synastryReveal = useSynastryReveal(synastry, presetSynastryInterpretation)
+  // Which reading the synastry form last asked for - 'composite' means the
+  // form skipped straight to a blended chart, so the synastry reading
+  // itself (still fetched, for its person_a/person_b ChartData) never
+  // renders. Comparative's own "View Composite Chart" secondary trigger is
+  // unaffected - it always produces 'comparative' style viewing regardless
+  // of this flag.
+  const [synastryReadingType, setSynastryReadingType] = useState<SynastryReadingType>('comparative')
 
-  const [composite, setComposite] = useState<ChartData | null>(null)
+  const [composite, setComposite] = useState<CompositeInput | null>(null)
   const [compositeLoading, setCompositeLoading] = useState(false)
   const [compositeError, setCompositeError] = useState<string | null>(null)
   const compositeReveal = useCompositeReveal(composite)
@@ -261,7 +271,22 @@ function App() {
     setSaturnReturnError(null)
   }
 
-  async function handleSynastrySubmit(payload: SynastryRequest) {
+  async function generateComposite(synastryData: SynastryData) {
+    setCompositeLoading(true)
+    setCompositeError(null)
+    try {
+      const result = await fetchComposite(synastryData.person_a, synastryData.person_b)
+      setComposite({ chart: result, relationshipType: synastryData.relationship_type })
+    } catch (err) {
+      setCompositeError(
+        err instanceof ApiError ? err.detail.message : 'Could not build the composite chart.'
+      )
+    } finally {
+      setCompositeLoading(false)
+    }
+  }
+
+  async function handleSynastrySubmit(payload: SynastryRequest, readingType: SynastryReadingType) {
     setSubmitting(true)
     setErrorMessage(null)
     try {
@@ -275,7 +300,14 @@ function App() {
       setShowManualCoordsB(false)
       setComposite(null)
       setCompositeError(null)
+      setSynastryReadingType(readingType)
       resetUrlToHome()
+      // Awaited here (not fired-and-forgotten) so `submitting` - and the
+      // form's disabled/loading state - covers the whole composite build,
+      // not just the synastry fetch underneath it.
+      if (readingType === 'composite') {
+        await generateComposite(result)
+      }
     } catch (err) {
       if (err instanceof ApiError) {
         setErrorMessage(err.detail.message)
@@ -296,23 +328,23 @@ function App() {
 
   async function handleViewComposite() {
     if (!synastry) return
-    setCompositeLoading(true)
-    setCompositeError(null)
-    try {
-      const result = await fetchComposite(synastry.person_a, synastry.person_b)
-      setComposite(result)
-    } catch (err) {
-      setCompositeError(
-        err instanceof ApiError ? err.detail.message : 'Could not build the composite chart.'
-      )
-    } finally {
-      setCompositeLoading(false)
-    }
+    await generateComposite(synastry)
   }
 
   function closeComposite() {
     setComposite(null)
     setCompositeError(null)
+  }
+
+  // Unlike closeComposite (which just collapses the Comparative view's
+  // secondary composite section back to its trigger button), closing the
+  // primary Composite view clears the whole result - there's no
+  // Comparative reading underneath it to fall back to showing.
+  function closeCompositeAsPrimary() {
+    setComposite(null)
+    setCompositeError(null)
+    setSynastry(null)
+    setSynastryReadingType('comparative')
   }
 
   async function handleCompareSubmit(personB: ChartRequest, relationshipType: RelationshipType) {
@@ -331,6 +363,7 @@ function App() {
       setShowManualCoordsCompare(false)
       setComposite(null)
       setCompositeError(null)
+      setSynastryReadingType('comparative')
       setMode('synastry')
       resetUrlToHome()
     } catch (err) {
@@ -445,18 +478,22 @@ function App() {
           />
         )}
 
-        {mode === 'synastry' && synastry && (
+        {mode === 'synastry' && synastry && synastryReadingType === 'comparative' && (
           <SynastryReveal
             synastry={synastry}
             viewingSaved={synastryViewingSaved}
             {...synastryReveal}
-            composite={composite}
+            composite={composite?.chart ?? null}
             compositeReveal={compositeReveal}
             compositeLoading={compositeLoading}
             compositeError={compositeError}
             onViewComposite={handleViewComposite}
             onCloseComposite={closeComposite}
           />
+        )}
+
+        {mode === 'synastry' && synastryReadingType === 'composite' && composite && (
+          <CompositeReveal composite={composite.chart} onClose={closeCompositeAsPrimary} {...compositeReveal} />
         )}
       </main>
 

@@ -1,3 +1,4 @@
+import { saveSoloChart } from '../api'
 import { ART_STYLES } from '../hooks/useChartReveal'
 import type { CompositeRevealState } from '../hooks/useCompositeReveal'
 import type { ChartData } from '../types'
@@ -7,14 +8,17 @@ import { ChartCarousel } from './ChartCarousel'
 import { GeneratingScreen } from './GeneratingScreen'
 import { PlanetList } from './PlanetList'
 import { ReadingDisplay } from './ReadingDisplay'
+import { SaveLink } from './SaveLink'
 
 interface CompositeRevealProps extends CompositeRevealState {
   composite: ChartData
+  viewingSaved?: boolean
   onClose: () => void
 }
 
 export function CompositeReveal({
   composite,
+  viewingSaved,
   artUrls,
   artError,
   reading,
@@ -41,6 +45,9 @@ export function CompositeReveal({
               artLabel="composite chart"
               slides={ART_STYLES.map(({ style, label }) => ({ label, url: artUrls[style]! }))}
             />
+          )}
+          {reading && !viewingSaved && (
+            <SaveLink save={() => saveSoloChart(composite, reading)} pathPrefix="/c/" />
           )}
           {readingStatus === 'error' && <p className="notice notice-error">{readingError}</p>}
           {reading && <ReadingDisplay reading={reading} heading="The Relationship" />}

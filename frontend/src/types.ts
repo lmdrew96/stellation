@@ -3,6 +3,7 @@ export type SaturnReturnCycle = 1 | 2 | 3
 export type ZodiacMode = 'tropical' | 'sidereal'
 export type HouseSystem = 'placidus' | 'whole_sign'
 export type RelationshipType = 'romantic' | 'platonic' | 'familial'
+export type SynastryReadingType = 'comparative' | 'composite'
 
 export interface ChartRequest {
   name: string

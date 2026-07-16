@@ -2,7 +2,7 @@ import anthropic
 from fastapi import APIRouter, HTTPException, Request
 
 from app.config import settings
-from app.models.schemas import ChartData, CompositeRequest, Interpretation
+from app.models.schemas import ChartData, CompositeInterpretRequest, CompositeRequest, Interpretation
 from app.rate_limit import limiter
 from app.services.composite import build_composite
 from app.services.interpretation import generate_composite_interpretation
@@ -19,12 +19,12 @@ def create_composite(payload: CompositeRequest) -> ChartData:
 
 @router.post("/api/composite/interpret", response_model=Interpretation)
 @limiter.limit("20/hour")
-def interpret_composite(request: Request, chart: ChartData) -> dict:
+def interpret_composite(request: Request, payload: CompositeInterpretRequest) -> dict:
     if not settings.anthropic_api_key:
         raise HTTPException(status_code=500, detail=_MISSING_KEY_MESSAGE)
 
     try:
-        return generate_composite_interpretation(chart)
+        return generate_composite_interpretation(payload.chart, payload.relationship_type)
     except anthropic.AuthenticationError as exc:
         raise HTTPException(status_code=500, detail=_MISSING_KEY_MESSAGE) from exc
     except anthropic.APIStatusError as exc:

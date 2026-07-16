@@ -269,3 +269,11 @@ class CompositeRequest(BaseModel):
     # would waste work and risk a different result than what synastry used.
     person_a: ChartData
     person_b: ChartData
+
+
+class CompositeInterpretRequest(BaseModel):
+    chart: ChartData
+    # The composite chart itself is relationship-agnostic (same midpoint
+    # math regardless), but the reading isn't - a friendship's composite
+    # shouldn't read as romantic any more than its synastry would.
+    relationship_type: RelationshipType

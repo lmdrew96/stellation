@@ -245,11 +245,14 @@ export async function fetchComposite(personA: ChartData, personB: ChartData): Pr
   return res.json()
 }
 
-export async function fetchCompositeInterpretation(chart: ChartData): Promise<Interpretation> {
+export async function fetchCompositeInterpretation(
+  chart: ChartData,
+  relationshipType: RelationshipType,
+): Promise<Interpretation> {
   const res = await fetch('/api/composite/interpret', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(chart),
+    body: JSON.stringify({ chart, relationship_type: relationshipType }),
   })
 
   if (!res.ok) {
