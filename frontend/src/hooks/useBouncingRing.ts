@@ -9,16 +9,33 @@ export interface BouncingRingState {
 // Slow, ambient drift - matches the ~200s pace of the ring's own spin
 // animation rather than reading as a distracting screensaver.
 const SPEED_PX_PER_SEC = 28
-const MAX_SIZE = 480
-const SIZE_RATIO = 0.4
+const MAX_SIZE = 400
+// The ring stays confined to background ambience behind the header - it
+// bounces off the left/right window edges at full width, but its vertical
+// range is capped to the top slice of the viewport so it never drifts down
+// into (and behind) the form.
+const TOP_BAND_RATIO = 0.25
+const SIZE_TO_BAND_RATIO = 0.7
 
-function computeSize(): number {
-  return Math.min(Math.min(window.innerWidth, window.innerHeight) * SIZE_RATIO, MAX_SIZE)
+interface Bounds {
+  size: number
+  maxX: number
+  maxY: number
+}
+
+function computeBounds(): Bounds {
+  const bandHeight = window.innerHeight * TOP_BAND_RATIO
+  const size = Math.min(bandHeight * SIZE_TO_BAND_RATIO, window.innerWidth * 0.5, MAX_SIZE)
+  return {
+    size,
+    maxX: window.innerWidth - size,
+    maxY: Math.max(0, bandHeight - size),
+  }
 }
 
 function centeredState(): BouncingRingState {
-  const size = computeSize()
-  return { x: (window.innerWidth - size) / 2, y: (window.innerHeight - size) / 2, size }
+  const { size, maxX, maxY } = computeBounds()
+  return { x: maxX / 2, y: maxY / 2, size }
 }
 
 // DVD-screensaver-style bounce, computed against the live viewport (not the
@@ -32,9 +49,9 @@ export function useBouncingRing(active: boolean): BouncingRingState {
     if (!active) return
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
 
-    let size = computeSize()
-    let x = (window.innerWidth - size) / 2
-    let y = (window.innerHeight - size) / 2
+    let { size, maxX, maxY } = computeBounds()
+    let x = maxX / 2
+    let y = maxY / 2
     let vx = SPEED_PX_PER_SEC
     let vy = SPEED_PX_PER_SEC * 0.6
     let lastTime: number | null = null
@@ -45,10 +62,7 @@ export function useBouncingRing(active: boolean): BouncingRingState {
       // teleport across the screen in one jump when it regains focus.
       const dt = Math.min((time - lastTime) / 1000, 0.1)
       lastTime = time
-
-      size = computeSize()
-      const maxX = window.innerWidth - size
-      const maxY = window.innerHeight - size
+      ;({ size, maxX, maxY } = computeBounds())
 
       x += vx * dt
       y += vy * dt

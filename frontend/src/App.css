@@ -17,18 +17,15 @@
    the AstrolabeRing size prop) so the DVD-screensaver-style bounce always
    matches the actual viewport, at any window size. top/left: 0 is just the
    fixed-position anchor the JS translate offsets are computed against.
-   z-index sits above the form card (z-index: 1) rather than below it -
-   bouncing across the full viewport means it regularly passes behind
-   content, and at z-index: 0 that content is opaque enough to hide it for
-   long stretches, defeating the point of a visible bounce. Thin, low-
-   opacity strokes plus pointer-events: none keep it from reading as
-   intrusive or blocking interaction while it drifts over the form. */
+   useBouncingRing caps the vertical range to the top slice of the viewport,
+   so at z-index: 0 (behind the form card's z-index: 1) it stays confined to
+   background ambience behind the header instead of crossing into the form. */
 .ring-field {
   position: fixed;
   top: 0;
   left: 0;
   pointer-events: none;
-  z-index: 2;
+  z-index: 0;
   will-change: transform;
 }
 
