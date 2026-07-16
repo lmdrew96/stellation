@@ -22,6 +22,22 @@
   z-index: 0;
 }
 
+/* The ring's fixed 560px size has no room to breathe on a narrow viewport -
+   left: 50%/translateX(-50%) centers it, but the overflow past each edge
+   gets clipped by .page's overflow-x: clip, so most of the ring effectively
+   disappears instead of just peeking out. Scale it down so it stays inside
+   the window instead of running past the edges. */
+@media (max-width: 640px) {
+  .ring-field {
+    top: -5rem;
+  }
+
+  .ring-field .astrolabe-ring {
+    width: min(90vw, 380px);
+    height: min(90vw, 380px);
+  }
+}
+
 .astrolabe-ring {
   overflow: visible;
 }

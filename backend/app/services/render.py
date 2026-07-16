@@ -13,8 +13,6 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
-from matplotlib.collections import LineCollection
-from matplotlib.colors import LinearSegmentedColormap
 from matplotlib.path import Path
 from matplotlib.patches import PathPatch
 
@@ -280,31 +278,6 @@ def _draw_synastry_dots(
         )
 
 
-def _bezier_points(p1, p2, bow: float, n: int = 40) -> tuple[np.ndarray, np.ndarray]:
-    x1, y1 = p1
-    x2, y2 = p2
-    mx, my = (x1 + x2) / 2, (y1 + y2) / 2
-    cx, cy = mx * (1 - bow), my * (1 - bow)
-    t = np.linspace(0, 1, n)
-    x = (1 - t) ** 2 * x1 + 2 * (1 - t) * t * cx + t**2 * x2
-    y = (1 - t) ** 2 * y1 + 2 * (1 - t) * t * cy + t**2 * y2
-    return x, y
-
-
-def _draw_synastry_ribbon(
-    ax, p1, p2, color_a: str, color_b: str, alpha: float, width: float, bow: float = 0.2
-) -> None:
-    x, y = _bezier_points(p1, p2, bow)
-    points = np.array([x, y]).T.reshape(-1, 1, 2)
-    segments = np.concatenate([points[:-1], points[1:]], axis=1)
-    cmap = LinearSegmentedColormap.from_list("ribbon", [color_a, color_b])
-    lc = LineCollection(
-        segments, cmap=cmap, array=np.linspace(0, 1, len(segments)),
-        linewidths=width, alpha=alpha, capstyle="round", zorder=2,
-    )
-    ax.add_collection(lc)
-
-
 def _draw_synastry_traditional(
     ax, synastry: SynastryData, positions_a: dict, positions_b: dict
 ) -> None:
@@ -329,9 +302,12 @@ def _synastry_aspect_counts(synastry: SynastryData) -> tuple[dict[str, int], dic
     return counts_a, counts_b
 
 
-def _draw_synastry_generative(
-    ax, synastry: SynastryData, positions_a: dict, positions_b: dict
-) -> None:
+def _draw_synastry_generative(ax, synastry: SynastryData) -> None:
+    # Cross-chart aspects still shape the art here - they just show up as
+    # extra petals (via _synastry_aspect_counts) on the two orbit-wave bands
+    # rather than as separate connecting lines. Explicit aspect lines are
+    # what the "traditional" style is for; the generative style stays pure
+    # orbit waves, same visual language as a solo chart's rosette.
     counts_a, counts_b = _synastry_aspect_counts(synastry)
     _draw_orbit_rings(
         ax, synastry.person_a, counts_a,
@@ -343,18 +319,6 @@ def _draw_synastry_generative(
         min_r=SYNASTRY_INNER_ORBIT_MIN, max_r=SYNASTRY_INNER_ORBIT_MAX,
         ripple_ratio=SYNASTRY_RIPPLE_RATIO,
     )
-
-    planets_a = {p.name: p for p in synastry.person_a.planets}
-    planets_b = {p.name: p for p in synastry.person_b.planets}
-    for aspect in synastry.aspects:
-        p1 = positions_a[aspect.planet_a]
-        p2 = positions_b[aspect.planet_b]
-        color_a = ELEMENT_COLOR[ELEMENT_OF_SIGN[planets_a[aspect.planet_a].sign]]
-        color_b = ELEMENT_COLOR[ELEMENT_OF_SIGN[planets_b[aspect.planet_b].sign]]
-        _draw_synastry_ribbon(
-            ax, p1, p2, color_a, color_b,
-            _orb_to_alpha(aspect.orb), _orb_to_width(aspect.orb) * 0.85,
-        )
 
 
 def render_synastry_svg(synastry: SynastryData, style: ChartStyle = "generative") -> str:
@@ -383,7 +347,7 @@ def render_synastry_svg(synastry: SynastryData, style: ChartStyle = "generative"
     if style == "traditional":
         _draw_synastry_traditional(ax, synastry, positions_a, positions_b)
     else:
-        _draw_synastry_generative(ax, synastry, positions_a, positions_b)
+        _draw_synastry_generative(ax, synastry)
 
     _draw_synastry_dots(ax, synastry.person_a, positions_a, filled=True, fontsize=8)
     _draw_synastry_dots(ax, synastry.person_b, positions_b, filled=False, fontsize=7)
