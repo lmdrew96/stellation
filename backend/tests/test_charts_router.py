@@ -1,6 +1,9 @@
+import pytest
+from fastapi import HTTPException
+
 import app.routers.charts as charts_router
 from app.models.schemas import SavedChartSummary
-from app.routers.charts import get_my_charts
+from app.routers.charts import delete_my_chart, get_my_charts
 
 SUMMARY = SavedChartSummary(
     slug="abc123",
@@ -28,3 +31,30 @@ class TestGetMyCharts:
 
         assert calls == ["user_123"]
         assert result.charts == [SUMMARY]
+
+
+class TestDeleteMyChart:
+    def test_returns_204_when_deleted(self, monkeypatch):
+        calls = []
+
+        def fake_delete_chart(slug, user_id):
+            calls.append((slug, user_id))
+            return True
+
+        monkeypatch.setattr(charts_router, "delete_chart", fake_delete_chart)
+
+        response = delete_my_chart(slug="abc123", user_id="user_123")
+
+        assert calls == [("abc123", "user_123")]
+        assert response.status_code == 204
+
+    def test_raises_404_when_nothing_was_deleted(self, monkeypatch):
+        # Covers both "slug doesn't exist" and "slug belongs to someone
+        # else" - delete_chart collapses both to a False rowcount so this
+        # route never leaks which case it was.
+        monkeypatch.setattr(charts_router, "delete_chart", lambda slug, user_id: False)
+
+        with pytest.raises(HTTPException) as exc_info:
+            delete_my_chart(slug="not-mine", user_id="user_123")
+
+        assert exc_info.value.status_code == 404

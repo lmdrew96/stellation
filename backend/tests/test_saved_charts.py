@@ -107,6 +107,45 @@ class TestInsertRetriesOnCollision:
         assert conn.last_params[-1] is None
 
 
+class _FakeDeleteConnection:
+    """Models the DELETE path - rowcount is the only signal delete_chart
+    reads, separate from _FakeConnection (INSERT) and _FakeSelectConnection
+    (fetchall) since neither models a rowcount-bearing cursor."""
+
+    def __init__(self, rowcount: int):
+        self.rowcount = rowcount
+        self.last_params = None
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc, tb):
+        return False
+
+    def execute(self, query, params=None):
+        self.last_params = params
+        return self
+
+
+class TestDeleteChart:
+    def test_returns_true_when_a_row_was_deleted(self, monkeypatch):
+        conn = _FakeDeleteConnection(rowcount=1)
+        monkeypatch.setattr(saved_charts, "get_connection", lambda: conn)
+
+        result = saved_charts.delete_chart("abc123", "user_123")
+
+        assert result is True
+        assert conn.last_params == ("abc123", "user_123")
+
+    def test_returns_false_when_no_row_matched(self, monkeypatch):
+        conn = _FakeDeleteConnection(rowcount=0)
+        monkeypatch.setattr(saved_charts, "get_connection", lambda: conn)
+
+        result = saved_charts.delete_chart("missing", "user_123")
+
+        assert result is False
+
+
 class TestListChartsForUser:
     def test_solo_row_uses_chart_name_and_chart_kind(self, monkeypatch):
         chart = _chart("Alex")

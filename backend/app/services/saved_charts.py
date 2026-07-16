@@ -123,3 +123,16 @@ def list_charts_for_user(user_id: str) -> list[SavedChartSummary]:
             (user_id,),
         ).fetchall()
     return [_summarize(slug, kind, payload, created_at) for slug, kind, payload, created_at in rows]
+
+
+def delete_chart(slug: str, user_id: str) -> bool:
+    # Scoped to user_id in the WHERE clause (not just slug) so one signed-in
+    # user can never delete another's saved chart, or an anonymous save (its
+    # user_id is NULL, which never equals a real user_id) - the row count is
+    # the only signal the caller needs to tell "deleted" from "not yours/
+    # doesn't exist".
+    with get_connection() as conn:
+        cur = conn.execute(
+            "DELETE FROM saved_charts WHERE slug = %s AND user_id = %s", (slug, user_id)
+        )
+    return cur.rowcount > 0

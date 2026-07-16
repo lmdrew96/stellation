@@ -220,6 +220,18 @@ export async function fetchMyCharts(token: string): Promise<SavedChartSummary[]>
   return data.charts
 }
 
+export async function deleteChart(slug: string, token: string): Promise<void> {
+  const res = await fetch(`/api/charts/${slug}`, {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${token}` },
+  })
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => null)
+    throw new ApiError(parseErrorDetail(body, 'Could not delete that chart.'))
+  }
+}
+
 export async function fetchSavedSolo(slug: string): Promise<SavedSoloResponse> {
   const res = await fetch(`/api/save/solo/${slug}`)
 

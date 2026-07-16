@@ -1,6 +1,6 @@
 import { useAuth } from '@clerk/react'
-import { useEffect, useState } from 'react'
-import { ApiError, fetchMyCharts } from '../api'
+import { useCallback, useEffect, useState } from 'react'
+import { ApiError, deleteChart as deleteChartRequest, fetchMyCharts } from '../api'
 import type { SavedChartSummary } from '../types'
 
 export type MyChartsStatus = 'loading' | 'ready' | 'error' | 'signed-out'
@@ -9,6 +9,7 @@ export interface MyChartsState {
   status: MyChartsStatus
   charts: SavedChartSummary[]
   errorMessage: string | null
+  deleteChart: (slug: string) => Promise<void>
 }
 
 // Only ever mounted when clerkEnabled (see App.tsx), so useAuth() is safe
@@ -44,5 +45,18 @@ export function useMyCharts(): MyChartsState {
       })
   }, [isLoaded, isSignedIn, getToken])
 
-  return { status, charts, errorMessage }
+  // useCallback so the identity stays stable across renders - MyChartsList
+  // passes this into per-row click handlers, and a fresh function every
+  // render would be a footgun for any future effect that depends on it.
+  const deleteChart = useCallback(
+    async (slug: string) => {
+      const token = await getToken()
+      if (!token) throw new Error('no token')
+      await deleteChartRequest(slug, token)
+      setCharts((current) => current.filter((chart) => chart.slug !== slug))
+    },
+    [getToken],
+  )
+
+  return { status, charts, errorMessage, deleteChart }
 }
