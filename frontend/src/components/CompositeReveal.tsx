@@ -1,19 +1,19 @@
 import { ART_STYLES } from '../hooks/useChartReveal'
-import type { TransitRevealState } from '../hooks/useTransitReveal'
-import type { TransitData } from '../types'
+import type { CompositeRevealState } from '../hooks/useCompositeReveal'
+import type { ChartData } from '../types'
+import { AspectList } from './AspectList'
 import { ChartCarousel } from './ChartCarousel'
 import { GeneratingScreen } from './GeneratingScreen'
 import { PlanetList } from './PlanetList'
-import { TransitAspectList } from './TransitAspectList'
-import { TransitReadingDisplay } from './TransitReadingDisplay'
+import { ReadingDisplay } from './ReadingDisplay'
 
-interface TransitRevealProps extends TransitRevealState {
-  transit: TransitData
+interface CompositeRevealProps extends CompositeRevealState {
+  composite: ChartData
   onClose: () => void
 }
 
-export function TransitReveal({
-  transit,
+export function CompositeReveal({
+  composite,
   artUrls,
   artError,
   reading,
@@ -21,11 +21,11 @@ export function TransitReveal({
   readingError,
   isGenerating,
   onClose,
-}: TransitRevealProps) {
+}: CompositeRevealProps) {
   return (
     <section className="reveal sub-reveal">
       <div className="sub-reveal__header">
-        <h2 className="sub-reveal__title">Today's Transits</h2>
+        <h2 className="sub-reveal__title">Composite Chart</h2>
         <button type="button" className="sub-reveal__close" onClick={onClose}>
           Close
         </button>
@@ -36,15 +36,15 @@ export function TransitReveal({
           {artError && <p className="notice notice-error">{artError}</p>}
           {ART_STYLES.every(({ style }) => artUrls[style]) && (
             <ChartCarousel
-              name={transit.natal.name}
-              artLabel="transit chart"
+              name={composite.name}
+              artLabel="composite chart"
               slides={ART_STYLES.map(({ style, label }) => ({ label, url: artUrls[style]! }))}
             />
           )}
           {readingStatus === 'error' && <p className="notice notice-error">{readingError}</p>}
-          {reading && <TransitReadingDisplay reading={reading} />}
-          <PlanetList planets={transit.transiting_planets} heading="Sky Right Now" />
-          <TransitAspectList aspects={transit.aspects} />
+          {reading && <ReadingDisplay reading={reading} heading="The Relationship" />}
+          <PlanetList planets={composite.planets} heading="Composite Placements" />
+          <AspectList chart={composite} />
         </>
       )}
     </section>

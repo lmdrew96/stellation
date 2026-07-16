@@ -204,3 +204,12 @@ class TransitAspectInterpretation(BaseModel):
 class TransitInterpretation(BaseModel):
     aspect_interpretations: list[TransitAspectInterpretation]
     synthesis: str
+
+
+class CompositeRequest(BaseModel):
+    # Takes already-built charts rather than raw birth data: by the time a
+    # composite view is requested, the frontend already has both people's
+    # ChartData from the synastry request that got it there - re-geocoding
+    # would waste work and risk a different result than what synastry used.
+    person_a: ChartData
+    person_b: ChartData

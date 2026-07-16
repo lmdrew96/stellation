@@ -3,6 +3,7 @@ import './App.css'
 import {
   ApiError,
   fetchChart,
+  fetchComposite,
   fetchSavedSolo,
   fetchSavedSynastry,
   fetchSynastry,
@@ -16,6 +17,7 @@ import { SynastryForm } from './components/SynastryForm'
 import { SynastryReveal } from './components/SynastryReveal'
 import { useBouncingRing } from './hooks/useBouncingRing'
 import { useChartReveal } from './hooks/useChartReveal'
+import { useCompositeReveal } from './hooks/useCompositeReveal'
 import { useSynastryReveal } from './hooks/useSynastryReveal'
 import { useTransitReveal } from './hooks/useTransitReveal'
 import type {
@@ -87,6 +89,11 @@ function App() {
     SynastryInterpretation | undefined
   >(undefined)
   const synastryReveal = useSynastryReveal(synastry, presetSynastryInterpretation)
+
+  const [composite, setComposite] = useState<ChartData | null>(null)
+  const [compositeLoading, setCompositeLoading] = useState(false)
+  const [compositeError, setCompositeError] = useState<string | null>(null)
+  const compositeReveal = useCompositeReveal(composite)
 
   useEffect(() => {
     fetch('/api/health')
@@ -191,6 +198,8 @@ function App() {
       setViewingSaved(false)
       setShowManualCoordsA(false)
       setShowManualCoordsB(false)
+      setComposite(null)
+      setCompositeError(null)
       resetUrlToHome()
     } catch (err) {
       if (err instanceof ApiError) {
@@ -208,6 +217,27 @@ function App() {
     } finally {
       setSubmitting(false)
     }
+  }
+
+  async function handleViewComposite() {
+    if (!synastry) return
+    setCompositeLoading(true)
+    setCompositeError(null)
+    try {
+      const result = await fetchComposite(synastry.person_a, synastry.person_b)
+      setComposite(result)
+    } catch (err) {
+      setCompositeError(
+        err instanceof ApiError ? err.detail.message : 'Could not build the composite chart.'
+      )
+    } finally {
+      setCompositeLoading(false)
+    }
+  }
+
+  function closeComposite() {
+    setComposite(null)
+    setCompositeError(null)
   }
 
   function switchMode(next: Mode) {
@@ -292,7 +322,17 @@ function App() {
         )}
 
         {mode === 'synastry' && synastry && (
-          <SynastryReveal synastry={synastry} viewingSaved={viewingSaved} {...synastryReveal} />
+          <SynastryReveal
+            synastry={synastry}
+            viewingSaved={viewingSaved}
+            {...synastryReveal}
+            composite={composite}
+            compositeReveal={compositeReveal}
+            compositeLoading={compositeLoading}
+            compositeError={compositeError}
+            onViewComposite={handleViewComposite}
+            onCloseComposite={closeComposite}
+          />
         )}
       </main>
 

@@ -104,6 +104,24 @@ def compute_raw_positions(jd_ut: float, zodiac: ZodiacMode = "tropical") -> list
     return positions
 
 
+def compute_house_cusps(
+    jd_ut: float,
+    lat: float,
+    lng: float,
+    house_system: HouseSystem = "placidus",
+    zodiac: ZodiacMode = "tropical",
+) -> tuple[float, ...]:
+    # houses_ex with FLG_SIDEREAL returns cusps already shifted into the same
+    # sidereal frame calc_ut uses for planets, so both are directly
+    # comparable with no manual ayanamsa math - important for whole-sign
+    # houses specifically, whose cusps sit at sign boundaries that differ
+    # between the tropical and sidereal ascendant.
+    hsys = _HOUSE_SYSTEM_CODE[house_system]
+    house_flags = swe.FLG_SIDEREAL if zodiac == "sidereal" else 0
+    cusps, _ascmc = swe.houses_ex(jd_ut, lat, lng, hsys, house_flags)
+    return cusps
+
+
 def compute_planets(
     jd_ut: float,
     lat: float,
@@ -112,14 +130,7 @@ def compute_planets(
     house_system: HouseSystem = "placidus",
     zodiac: ZodiacMode = "tropical",
 ) -> list[dict]:
-    # houses_ex with FLG_SIDEREAL returns cusps already shifted into the same
-    # sidereal frame calc_ut used above for planets, so both are directly
-    # comparable with no manual ayanamsa math - important for whole-sign
-    # houses specifically, whose cusps sit at sign boundaries that differ
-    # between the tropical and sidereal ascendant.
-    hsys = _HOUSE_SYSTEM_CODE[house_system]
-    house_flags = swe.FLG_SIDEREAL if zodiac == "sidereal" else 0
-    cusps, _ascmc = swe.houses_ex(jd_ut, lat, lng, hsys, house_flags)
+    cusps = compute_house_cusps(jd_ut, lat, lng, house_system, zodiac)
 
     planets = []
     for p in raw_positions:

@@ -7,6 +7,15 @@ from app.services.geocode import GeocodeError, geocode_place
 from app.services.timezone import lookup_timezone
 
 
+def tag_person_error(exc: HTTPException, person: str) -> HTTPException:
+    """Attach which of the two people in a two-chart request (synastry,
+    composite) a build_chart failure came from, so the frontend can reveal
+    manual-coordinate fields for the right person instead of both."""
+    if isinstance(exc.detail, dict):
+        exc.detail = {**exc.detail, "person": person}
+    return exc
+
+
 def build_chart(payload: ChartRequest) -> tuple[ChartData, list[dict]]:
     """Resolve a birth data request into a full chart plus the raw
     longitude/speed positions aspect math needs. Shared by the solo chart

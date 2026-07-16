@@ -1,10 +1,15 @@
 import { PLANET_GLYPH } from '../glyphs'
 import type { Interpretation } from '../types'
 
-export function ReadingDisplay({ reading }: { reading: Interpretation }) {
+interface ReadingDisplayProps {
+  reading: Interpretation
+  heading?: string
+}
+
+export function ReadingDisplay({ reading, heading = 'Your Reading' }: ReadingDisplayProps) {
   return (
     <section className="reading">
-      <h2>Your Reading</h2>
+      <h2>{heading}</h2>
       <p className="reading-synthesis">{reading.synthesis}</p>
       <div className="reading-rows">
         {reading.planet_interpretations.map((p) => (

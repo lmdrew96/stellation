@@ -58,10 +58,11 @@ export function ChartReveal({
           <PlanetList planets={chart.planets} />
           <AspectList chart={chart} />
           {reading && !transit && (
-            <div className="transit-trigger">
+            <div className="reveal-trigger">
               <button
                 type="button"
-                className="transit-trigger__button"
+                className="reveal-trigger__button"
+                data-icon="☉"
                 onClick={onViewTransits}
                 disabled={transitLoading}
               >

@@ -1,8 +1,10 @@
 import { saveSynastryChart } from '../api'
 import { ART_STYLES } from '../hooks/useChartReveal'
+import type { CompositeRevealState } from '../hooks/useCompositeReveal'
 import type { SynastryRevealState } from '../hooks/useSynastryReveal'
-import type { SynastryData } from '../types'
+import type { ChartData, SynastryData } from '../types'
 import { ChartCarousel } from './ChartCarousel'
+import { CompositeReveal } from './CompositeReveal'
 import { GeneratingScreen } from './GeneratingScreen'
 import { PlanetList } from './PlanetList'
 import { SaveLink } from './SaveLink'
@@ -12,6 +14,12 @@ import { SynastryReadingDisplay } from './SynastryReadingDisplay'
 interface SynastryRevealProps extends SynastryRevealState {
   synastry: SynastryData
   viewingSaved?: boolean
+  composite: ChartData | null
+  compositeReveal: CompositeRevealState
+  compositeLoading: boolean
+  compositeError: string | null
+  onViewComposite: () => void
+  onCloseComposite: () => void
 }
 
 export function SynastryReveal({
@@ -23,6 +31,12 @@ export function SynastryReveal({
   readingError,
   isGenerating,
   viewingSaved,
+  composite,
+  compositeReveal,
+  compositeLoading,
+  compositeError,
+  onViewComposite,
+  onCloseComposite,
 }: SynastryRevealProps) {
   const nameA = synastry.person_a.name
   const nameB = synastry.person_b.name
@@ -56,6 +70,23 @@ export function SynastryReveal({
             <PlanetList planets={synastry.person_b.planets} heading={`${nameB}'s Placements`} />
           </div>
           <SynastryAspectList synastry={synastry} nameA={nameA} nameB={nameB} />
+          {reading && !composite && (
+            <div className="reveal-trigger">
+              <button
+                type="button"
+                className="reveal-trigger__button"
+                data-icon="⚭"
+                onClick={onViewComposite}
+                disabled={compositeLoading}
+              >
+                {compositeLoading ? 'Blending the charts…' : 'View Composite Chart'}
+              </button>
+              {compositeError && <p className="notice notice-error">{compositeError}</p>}
+            </div>
+          )}
+          {composite && (
+            <CompositeReveal composite={composite} onClose={onCloseComposite} {...compositeReveal} />
+          )}
         </>
       )}
     </section>

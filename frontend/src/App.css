@@ -754,9 +754,9 @@
   font-style: italic;
 }
 
-/* ---------- transits ---------- */
+/* ---------- secondary chart views (transits, composite, solar return) ---------- */
 
-.transit-trigger {
+.reveal-trigger {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -764,7 +764,7 @@
   margin: 0.5rem 0 2rem;
 }
 
-.transit-trigger__button {
+.reveal-trigger__button {
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
@@ -781,32 +781,32 @@
   transition: color 0.15s ease, border-color 0.15s ease;
 }
 
-.transit-trigger__button::before {
-  content: '☉';
+.reveal-trigger__button::before {
+  content: attr(data-icon);
 }
 
-.transit-trigger__button:hover:not(:disabled) {
+.reveal-trigger__button:hover:not(:disabled) {
   color: var(--color-accent-warm);
   border-color: var(--color-accent-warm);
 }
 
-.transit-trigger__button:focus-visible {
+.reveal-trigger__button:focus-visible {
   outline: 2px solid var(--color-accent-warm);
   outline-offset: 2px;
 }
 
-.transit-trigger__button:disabled {
+.reveal-trigger__button:disabled {
   cursor: default;
   opacity: 0.6;
 }
 
-.transit-reveal {
+.sub-reveal {
   margin-top: 3.5rem;
   padding-top: 2.5rem;
   border-top: 1px solid var(--color-surface-line);
 }
 
-.transit-reveal__header {
+.sub-reveal__header {
   display: flex;
   align-items: baseline;
   justify-content: center;
@@ -814,11 +814,11 @@
   margin-bottom: 0.5rem;
 }
 
-.transit-reveal__title {
+.sub-reveal__title {
   text-align: center;
 }
 
-.transit-reveal__close {
+.sub-reveal__close {
   background: none;
   border: none;
   color: var(--color-text-muted);
@@ -829,11 +829,11 @@
   cursor: pointer;
 }
 
-.transit-reveal__close:hover {
+.sub-reveal__close:hover {
   color: var(--color-accent-warm);
 }
 
-.transit-reveal__close:focus-visible {
+.sub-reveal__close:focus-visible {
   outline: 2px solid var(--color-accent-warm);
   outline-offset: 2px;
 }

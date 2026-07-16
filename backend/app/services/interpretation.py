@@ -61,6 +61,44 @@ def generate_interpretation(chart: ChartData) -> dict:
     return tool_use.input
 
 
+# A composite chart is shaped exactly like a solo ChartData (same planets/
+# aspects fields), so it reuses INTERPRETATION_TOOL as-is - only the system
+# prompt changes, to frame the reading as "the relationship" rather than a
+# single person's personality.
+COMPOSITE_SYSTEM_PROMPT = (
+    "You are an astrologer writing a composite chart interpretation. A "
+    "composite chart is not either person's individual chart - each planet "
+    "sits at the midpoint of the two people's placements, and the result "
+    "represents the relationship itself as its own entity, not either person "
+    "separately. You are given the composite chart (planet placements and "
+    "aspects) as JSON; its 'name' field names both people, e.g. 'Alex & "
+    "Sam'. Refer to 'this relationship' or 'the two of you' throughout - "
+    "never describe it as one person's personality or traits. Ground every "
+    "statement in the specific placements and aspects provided - do not "
+    "invent positions not present in the data. Write a short blurb (2-4 "
+    "sentences) for each planet in the chart, framed as what that placement "
+    "means for the relationship. Then write a longer synthesis paragraph "
+    "(4-6 sentences) describing what this relationship is like as its own "
+    "entity - its character, its tendencies, what it draws out."
+)
+
+
+def generate_composite_interpretation(chart: ChartData) -> dict:
+    client = anthropic.Anthropic(api_key=settings.anthropic_api_key or None)
+
+    response = client.messages.create(
+        model=settings.anthropic_model,
+        max_tokens=4096,
+        system=COMPOSITE_SYSTEM_PROMPT,
+        tools=[INTERPRETATION_TOOL],
+        tool_choice={"type": "tool", "name": "record_interpretation"},
+        messages=[{"role": "user", "content": chart.model_dump_json()}],
+    )
+
+    tool_use = next(b for b in response.content if b.type == "tool_use")
+    return tool_use.input
+
+
 # The same cross-chart aspects mean something different depending on what these
 # two people are to each other - a Venus-Mars square reads as romantic tension
 # between partners, but is beside the point between siblings. Each framing names
