@@ -4,6 +4,7 @@ export type ZodiacMode = 'tropical' | 'sidereal'
 export type HouseSystem = 'placidus' | 'whole_sign'
 export type RelationshipType = 'romantic' | 'platonic' | 'familial'
 export type SynastryReadingType = 'comparative' | 'composite'
+export type ChartKind = 'natal' | 'composite'
 
 export interface ChartRequest {
   name: string
@@ -57,6 +58,7 @@ export interface ChartData {
   planets: Planet[]
   aspects: Aspect[]
   angles: Angle[]
+  chart_kind: ChartKind
 }
 
 export interface ApiErrorDetail {

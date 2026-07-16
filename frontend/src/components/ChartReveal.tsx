@@ -79,6 +79,11 @@ export function ChartReveal({
   showManualCoordsCompare,
   onCompareSubmit,
 }: ChartRevealProps) {
+  // Composite charts carry a synthetic midpoint birth_datetime/birth_location
+  // (see composite.py) - transits, solar/Saturn return, and synastry are all
+  // computed relative to a real birth moment, so none of them are meaningful
+  // for a composite.
+  const isComposite = chart.chart_kind === 'composite'
   return (
     <section className="reveal">
       {isGenerating && <GeneratingScreen />}
@@ -99,7 +104,7 @@ export function ChartReveal({
           <ChartAngles angles={chart.angles} />
           <PlanetList planets={chart.planets} />
           <AspectList chart={chart} />
-          {reading && !transit && (
+          {reading && !transit && !isComposite && (
             <div className="reveal-trigger">
               <button
                 type="button"
@@ -114,7 +119,7 @@ export function ChartReveal({
             </div>
           )}
           {transit && <TransitReveal transit={transit} onClose={onCloseTransits} {...transitReveal} />}
-          {reading && !solarReturn && (
+          {reading && !solarReturn && !isComposite && (
             <SolarReturnTrigger
               birthPlaceName={chart.birth_location.place_name}
               loading={solarReturnLoading}
@@ -129,7 +134,7 @@ export function ChartReveal({
               {...solarReturnReveal}
             />
           )}
-          {reading && !saturnReturn && (
+          {reading && !saturnReturn && !isComposite && (
             <div className="reveal-trigger">
               <button
                 type="button"
@@ -153,7 +158,7 @@ export function ChartReveal({
               {...saturnReturnReveal}
             />
           )}
-          {reading && viewingSaved && (
+          {reading && viewingSaved && !isComposite && (
             <CompareForm
               ownerName={chart.name}
               loading={compareLoading}

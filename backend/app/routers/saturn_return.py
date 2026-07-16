@@ -4,6 +4,7 @@ from fastapi import APIRouter, HTTPException, Request
 from app.config import settings
 from app.models.schemas import ChartData, Interpretation, SaturnReturnInterpretRequest, SaturnReturnRequest
 from app.rate_limit import limiter
+from app.services.chart_builder import reject_composite_chart
 from app.services.interpretation import generate_saturn_return_interpretation
 from app.services.saturn_return import build_saturn_return
 
@@ -14,6 +15,7 @@ _MISSING_KEY_MESSAGE = "Anthropic API key is missing or invalid. Check backend/.
 
 @router.post("/api/saturn-return", response_model=ChartData)
 def create_saturn_return(payload: SaturnReturnRequest) -> ChartData:
+    reject_composite_chart(payload.natal)
     return build_saturn_return(payload)
 
 

@@ -124,4 +124,5 @@ def build_composite(person_a: ChartData, person_b: ChartData) -> ChartData:
         planets=planets,
         aspects=[Aspect(**a) for a in aspects_raw],
         angles=composite_angles,
+        chart_kind="composite",
     )

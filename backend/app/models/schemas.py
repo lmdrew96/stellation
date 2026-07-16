@@ -79,6 +79,9 @@ class Angle(BaseModel):
     degree_in_sign: float
 
 
+ChartKind = Literal["natal", "composite"]
+
+
 class ChartData(BaseModel):
     name: str
     pronouns: str | None = None
@@ -92,6 +95,12 @@ class ChartData(BaseModel):
     # deserialize cleanly (a required field would 500 on every old saved
     # chart - see saved_charts.py/save.py's ValidationError handling).
     angles: list[Angle] = []
+    # Defaults to "natal" so charts saved before this field existed still
+    # deserialize cleanly. Only build_composite sets "composite" - a
+    # composite's birth_datetime/birth_location are a synthetic midpoint,
+    # not a real birth moment, so anything computed relative to them
+    # (transits, solar/Saturn return, synastry) is meaningless.
+    chart_kind: ChartKind = "natal"
 
 
 class PlanetInterpretation(BaseModel):

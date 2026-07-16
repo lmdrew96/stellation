@@ -21,6 +21,23 @@ def tag_person_error(exc: HTTPException, person: str) -> HTTPException:
     return exc
 
 
+def reject_composite_chart(chart: ChartData) -> None:
+    """Defense in depth for transits/solar-return/Saturn-return/synastry-from-
+    saved: a composite's birth_datetime/birth_location is a synthetic
+    midpoint (see build_composite), not a real birth moment, so anything
+    computed relative to it is meaningless. The frontend already hides these
+    triggers for composites (ChartReveal.tsx), but the API can always be
+    called directly."""
+    if chart.chart_kind == "composite":
+        raise HTTPException(
+            status_code=422,
+            detail={
+                "error": "composite_chart_unsupported",
+                "message": "This isn't available for composite charts.",
+            },
+        )
+
+
 def build_chart(payload: ChartRequest) -> tuple[ChartData, list[dict]]:
     """Resolve a birth data request into a full chart plus the raw
     longitude/speed positions aspect math needs. Shared by the solo chart

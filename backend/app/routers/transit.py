@@ -6,6 +6,7 @@ from app.config import settings
 from app.models.schemas import TransitData, TransitInterpretation, TransitRequest
 from app.rate_limit import limiter
 from app.services.interpretation import generate_transit_interpretation
+from app.services.chart_builder import reject_composite_chart
 from app.services.render import ChartStyle, render_transit_svg
 from app.services.transits import build_transits
 
@@ -16,6 +17,7 @@ _MISSING_KEY_MESSAGE = "Anthropic API key is missing or invalid. Check backend/.
 
 @router.post("/api/transits", response_model=TransitData)
 def create_transits(payload: TransitRequest) -> TransitData:
+    reject_composite_chart(payload.natal)
     return build_transits(payload)
 
 

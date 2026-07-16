@@ -14,7 +14,7 @@ from app.models.schemas import (
 )
 from app.rate_limit import limiter
 from app.services.aspects import compute_synastry_aspects
-from app.services.chart_builder import build_chart, tag_person_error
+from app.services.chart_builder import build_chart, reject_composite_chart, tag_person_error
 from app.services.ephemeris import _absolute_longitude
 from app.services.interpretation import (
     generate_synastry_aspect_insight,
@@ -51,6 +51,7 @@ def create_synastry(payload: SynastryRequest) -> SynastryData:
 
 @router.post("/api/synastry/from-saved", response_model=SynastryData)
 def create_synastry_from_saved(payload: SynastryFromSavedRequest) -> SynastryData:
+    reject_composite_chart(payload.person_a)
     # Force the visitor's chart into person_a's zodiac/house_system - cross-
     # chart aspects compare raw longitudes directly, and tropical vs sidereal
     # alone is a ~24deg offset, so a mismatch would silently produce
