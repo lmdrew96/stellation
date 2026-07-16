@@ -6,7 +6,9 @@ import type {
   ChartData,
   ChartRequest,
   Interpretation,
+  MyChartsResponse,
   RelationshipType,
+  SavedChartSummary,
   SavedSlugResponse,
   SavedSoloResponse,
   SavedSynastryResponse,
@@ -158,10 +160,20 @@ export async function fetchSynastryFromSaved(
   return res.json()
 }
 
-export async function saveSoloChart(chart: ChartData, interpretation: Interpretation): Promise<string> {
+// A save must always succeed anonymously - the Authorization header is only
+// attached when the caller actually has a token, never required.
+function authHeaders(token: string | undefined): Record<string, string> {
+  return token ? { Authorization: `Bearer ${token}` } : {}
+}
+
+export async function saveSoloChart(
+  chart: ChartData,
+  interpretation: Interpretation,
+  token?: string,
+): Promise<string> {
   const res = await fetch('/api/save/solo', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...authHeaders(token) },
     body: JSON.stringify({ chart, interpretation }),
   })
 
@@ -177,10 +189,11 @@ export async function saveSoloChart(chart: ChartData, interpretation: Interpreta
 export async function saveSynastryChart(
   synastry: SynastryData,
   interpretation: SynastryInterpretation,
+  token?: string,
 ): Promise<string> {
   const res = await fetch('/api/save/synastry', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...authHeaders(token) },
     body: JSON.stringify({ synastry, interpretation }),
   })
 
@@ -191,6 +204,20 @@ export async function saveSynastryChart(
 
   const data: SavedSlugResponse = await res.json()
   return data.slug
+}
+
+export async function fetchMyCharts(token: string): Promise<SavedChartSummary[]> {
+  const res = await fetch('/api/charts/mine', {
+    headers: { Authorization: `Bearer ${token}` },
+  })
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => null)
+    throw new ApiError(parseErrorDetail(body, 'Could not load your saved charts.'))
+  }
+
+  const data: MyChartsResponse = await res.json()
+  return data.charts
 }
 
 export async function fetchSavedSolo(slug: string): Promise<SavedSoloResponse> {

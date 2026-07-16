@@ -1,7 +1,8 @@
 import psycopg
 import pydantic
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 
+from app.auth import get_optional_user_id
 from app.db import DatabaseNotConfiguredError
 from app.models.schemas import (
     SavedSlugResponse,
@@ -40,9 +41,13 @@ _STALE_PAYLOAD_DETAIL = {
 
 @router.post("/api/save/solo", response_model=SavedSlugResponse)
 @limiter.limit("20/hour")
-def create_saved_solo(request: Request, payload: SaveSoloRequest) -> dict:
+def create_saved_solo(
+    request: Request,
+    payload: SaveSoloRequest,
+    user_id: str | None = Depends(get_optional_user_id),
+) -> dict:
     try:
-        slug = save_solo_chart(payload.chart, payload.interpretation)
+        slug = save_solo_chart(payload.chart, payload.interpretation, user_id)
     except DatabaseNotConfiguredError as exc:
         raise HTTPException(status_code=500, detail=_DB_NOT_CONFIGURED_DETAIL) from exc
     except psycopg.OperationalError as exc:
@@ -52,9 +57,13 @@ def create_saved_solo(request: Request, payload: SaveSoloRequest) -> dict:
 
 @router.post("/api/save/synastry", response_model=SavedSlugResponse)
 @limiter.limit("20/hour")
-def create_saved_synastry(request: Request, payload: SaveSynastryRequest) -> dict:
+def create_saved_synastry(
+    request: Request,
+    payload: SaveSynastryRequest,
+    user_id: str | None = Depends(get_optional_user_id),
+) -> dict:
     try:
-        slug = save_synastry_chart(payload.synastry, payload.interpretation)
+        slug = save_synastry_chart(payload.synastry, payload.interpretation, user_id)
     except DatabaseNotConfiguredError as exc:
         raise HTTPException(status_code=500, detail=_DB_NOT_CONFIGURED_DETAIL) from exc
     except psycopg.OperationalError as exc:

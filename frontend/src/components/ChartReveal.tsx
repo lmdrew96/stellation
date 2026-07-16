@@ -97,7 +97,7 @@ export function ChartReveal({
             />
           )}
           {reading && !viewingSaved && (
-            <SaveLink save={() => saveSoloChart(chart, reading)} pathPrefix="/c/" />
+            <SaveLink save={(token) => saveSoloChart(chart, reading, token)} pathPrefix="/c/" />
           )}
           {readingStatus === 'error' && <p className="notice notice-error">{readingError}</p>}
           {reading && <ReadingDisplay reading={reading} />}

@@ -160,6 +160,20 @@ class SavedSlugResponse(BaseModel):
     slug: str
 
 
+class SavedChartSummary(BaseModel):
+    slug: str
+    kind: Literal["solo", "synastry"]
+    # Only meaningful when kind == "solo" - SynastryData has no chart_kind of
+    # its own, a synastry reading is never itself a composite.
+    chart_kind: ChartKind | None = None
+    name: str
+    created_at: dt.datetime
+
+
+class MyChartsResponse(BaseModel):
+    charts: list[SavedChartSummary]
+
+
 class SavedSoloResponse(BaseModel):
     chart: ChartData
     interpretation: Interpretation

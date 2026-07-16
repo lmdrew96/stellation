@@ -2,7 +2,7 @@ import type { SavedLinkPrefix } from '../hooks/useSaveLink'
 import { useSaveLink } from '../hooks/useSaveLink'
 
 interface SaveLinkProps {
-  save: () => Promise<string>
+  save: (token: string | undefined) => Promise<string>
   pathPrefix: SavedLinkPrefix
 }
 

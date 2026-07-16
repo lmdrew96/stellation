@@ -2,14 +2,19 @@ import psycopg
 
 from app.config import settings
 
-SCHEMA_SQL = """
-CREATE TABLE IF NOT EXISTS saved_charts (
-    slug TEXT PRIMARY KEY,
-    kind TEXT NOT NULL CHECK (kind IN ('solo', 'synastry')),
-    payload JSONB NOT NULL,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
-);
-"""
+SCHEMA_STATEMENTS = [
+    """
+    CREATE TABLE IF NOT EXISTS saved_charts (
+        slug TEXT PRIMARY KEY,
+        kind TEXT NOT NULL CHECK (kind IN ('solo', 'synastry')),
+        payload JSONB NOT NULL,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+    """,
+    # Nullable - anonymous saves (no signed-in user) keep working exactly as
+    # before, this only gets populated when a Clerk-authenticated save happens.
+    "ALTER TABLE saved_charts ADD COLUMN IF NOT EXISTS user_id TEXT;",
+]
 
 
 class DatabaseNotConfiguredError(RuntimeError):

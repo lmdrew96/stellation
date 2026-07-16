@@ -55,7 +55,7 @@ export function SynastryReveal({
             />
           )}
           {reading && !viewingSaved && (
-            <SaveLink save={() => saveSynastryChart(synastry, reading)} pathPrefix="/s/" />
+            <SaveLink save={(token) => saveSynastryChart(synastry, reading, token)} pathPrefix="/s/" />
           )}
           {readingStatus === 'error' && <p className="notice notice-error">{readingError}</p>}
           {reading && (

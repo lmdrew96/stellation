@@ -124,6 +124,18 @@ export interface SavedSlugResponse {
   slug: string
 }
 
+export interface SavedChartSummary {
+  slug: string
+  kind: 'solo' | 'synastry'
+  chart_kind: ChartKind | null
+  name: string
+  created_at: string
+}
+
+export interface MyChartsResponse {
+  charts: SavedChartSummary[]
+}
+
 export interface SavedSoloResponse {
   chart: ChartData
   interpretation: Interpretation

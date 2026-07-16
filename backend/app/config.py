@@ -8,6 +8,7 @@ class Settings(BaseSettings):
     anthropic_model: str = "claude-haiku-4-5"
     cors_origins: list[str] = ["http://localhost:5173"]
     database_url: str = ""
+    clerk_secret_key: str = ""
 
 
 settings = Settings()

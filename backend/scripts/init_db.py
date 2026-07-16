@@ -6,12 +6,13 @@ after DATABASE_URL is set in Vercel:
     .venv/bin/python -m scripts.init_db
 """
 
-from app.db import SCHEMA_SQL, get_connection
+from app.db import SCHEMA_STATEMENTS, get_connection
 
 
 def main() -> None:
     with get_connection() as conn:
-        conn.execute(SCHEMA_SQL)
+        for statement in SCHEMA_STATEMENTS:
+            conn.execute(statement)
     print("saved_charts table is ready.")
 
 

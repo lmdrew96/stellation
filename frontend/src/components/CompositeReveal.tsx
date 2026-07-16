@@ -47,7 +47,7 @@ export function CompositeReveal({
             />
           )}
           {reading && !viewingSaved && (
-            <SaveLink save={() => saveSoloChart(composite, reading)} pathPrefix="/c/" />
+            <SaveLink save={(token) => saveSoloChart(composite, reading, token)} pathPrefix="/c/" />
           )}
           {readingStatus === 'error' && <p className="notice notice-error">{readingError}</p>}
           {reading && <ReadingDisplay reading={reading} heading="The Relationship" />}

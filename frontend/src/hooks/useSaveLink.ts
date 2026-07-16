@@ -1,5 +1,6 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useContext, useState } from 'react'
 import { ApiError } from '../api'
+import { AuthTokenContext } from '../authTokenContext'
 
 export type SaveStatus = 'idle' | 'saving' | 'saved' | 'error'
 export type SavedLinkPrefix = '/c/' | '/s/'
@@ -15,16 +16,21 @@ export interface SaveLinkState {
 
 // Shared by the solo and synastry reveal screens - only the save call and
 // the URL prefix ('/c/' vs '/s/') differ between them.
-export function useSaveLink(save: () => Promise<string>, pathPrefix: SavedLinkPrefix): SaveLinkState {
+export function useSaveLink(
+  save: (token: string | undefined) => Promise<string>,
+  pathPrefix: SavedLinkPrefix,
+): SaveLinkState {
   const [status, setStatus] = useState<SaveStatus>('idle')
   const [slug, setSlug] = useState<string | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
+  const getToken = useContext(AuthTokenContext)
 
   const handleSave = useCallback(() => {
     setStatus('saving')
     setErrorMessage(null)
-    save()
+    getToken()
+      .then((token) => save(token))
       .then((newSlug) => {
         setSlug(newSlug)
         setStatus('saved')
@@ -35,7 +41,7 @@ export function useSaveLink(save: () => Promise<string>, pathPrefix: SavedLinkPr
         setStatus('error')
         setErrorMessage(err instanceof ApiError ? err.detail.message : 'Could not save this chart.')
       })
-  }, [save, pathPrefix])
+  }, [save, pathPrefix, getToken])
 
   const handleCopy = useCallback(() => {
     if (!slug) return

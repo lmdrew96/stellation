@@ -1,3 +1,4 @@
+import { Show } from '@clerk/react'
 import { useEffect, useState } from 'react'
 import './App.css'
 import {
@@ -12,11 +13,14 @@ import {
   fetchSynastryFromSaved,
   fetchTransits,
 } from './api'
+import { clerkEnabled } from './clerkConfig'
+import { AccountControls } from './components/AccountControls'
 import { AstrolabeRing } from './components/AstrolabeRing'
 import { BirthDataForm } from './components/BirthDataForm'
 import { ChartReveal } from './components/ChartReveal'
 import { CompositeReveal } from './components/CompositeReveal'
 import { GeneratingScreen } from './components/GeneratingScreen'
+import { MyChartsList } from './components/MyChartsList'
 import { SynastryForm } from './components/SynastryForm'
 import { SynastryReveal } from './components/SynastryReveal'
 import { useBouncingRing } from './hooks/useBouncingRing'
@@ -41,7 +45,7 @@ import type {
 } from './types'
 
 type HealthStatus = 'checking' | 'ok' | 'error'
-type Mode = 'solo' | 'synastry'
+type Mode = 'solo' | 'synastry' | 'mine'
 
 // Both mean "we couldn't resolve coordinates from the place name" - a
 // missing birth_place hits the same wall as an unresolvable one, so both
@@ -386,7 +390,9 @@ function App() {
     resetUrlToHome()
   }
 
-  const hasResult = loadingSaved || (mode === 'solo' ? chart !== null : synastry !== null)
+  const hasResult =
+    loadingSaved ||
+    (mode === 'solo' ? chart !== null : mode === 'synastry' ? synastry !== null : false)
   const ring = useBouncingRing(!hasResult)
 
   return (
@@ -398,6 +404,7 @@ function App() {
       )}
       <main className="app">
         <header className="masthead">
+          {clerkEnabled && <AccountControls />}
           <h1>Stellation</h1>
           <p className="tagline">A precise map of the sky at the moment you arrived.</p>
         </header>
@@ -425,6 +432,19 @@ function App() {
               >
                 Synastry
               </button>
+              {clerkEnabled && (
+                <Show when="signed-in">
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={mode === 'mine'}
+                    data-active={mode === 'mine'}
+                    onClick={() => switchMode('mine')}
+                  >
+                    My Charts
+                  </button>
+                </Show>
+              )}
             </div>
 
             {mode === 'solo' ? (
@@ -433,14 +453,14 @@ function App() {
                 submitting={submitting}
                 showManualCoords={showManualCoords}
               />
-            ) : (
+            ) : mode === 'synastry' ? (
               <SynastryForm
                 onSubmit={handleSynastrySubmit}
                 submitting={submitting}
                 showManualCoordsA={showManualCoordsA}
                 showManualCoordsB={showManualCoordsB}
               />
-            )}
+            ) : null}
           </>
         )}
 
@@ -495,6 +515,8 @@ function App() {
         {mode === 'synastry' && synastryReadingType === 'composite' && composite && (
           <CompositeReveal composite={composite.chart} onClose={closeCompositeAsPrimary} {...compositeReveal} />
         )}
+
+        {mode === 'mine' && clerkEnabled && <MyChartsList />}
       </main>
 
       <div className="backend-status" data-state={health}>

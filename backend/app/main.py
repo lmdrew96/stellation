@@ -8,6 +8,7 @@ from app.errors import unhandled_exception_handler, validation_exception_handler
 from app.rate_limit import limiter, rate_limit_exceeded_handler
 from app.routers import (
     chart,
+    charts,
     composite,
     health,
     interpret,
@@ -39,6 +40,7 @@ app.include_router(render.router)
 app.include_router(interpret.router)
 app.include_router(synastry.router)
 app.include_router(save.router)
+app.include_router(charts.router)
 app.include_router(transit.router)
 app.include_router(composite.router)
 app.include_router(solar_return.router)
