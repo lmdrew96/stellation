@@ -1,7 +1,9 @@
+import json
+
 import anthropic
 
 from app.config import settings
-from app.models.schemas import ChartData, SynastryData
+from app.models.schemas import Aspect, ChartData, SynastryAspect, SynastryData
 
 SYSTEM_PROMPT = (
     "You are an astrologer writing natal chart interpretations. You are given "
@@ -156,6 +158,97 @@ def generate_synastry_interpretation(synastry: SynastryData) -> dict:
         tools=[SYNASTRY_INTERPRETATION_TOOL],
         tool_choice={"type": "tool", "name": "record_synastry_interpretation"},
         messages=[{"role": "user", "content": synastry.model_dump_json()}],
+    )
+
+    tool_use = next(b for b in response.content if b.type == "tool_use")
+    return tool_use.input
+
+
+# The full reading already covers each planet (natal) or the top 5-8 aspects
+# (synastry) - clicking a specific aspect asks for a closer look at just that
+# one connection, including aspects the full reading didn't have room to
+# mention. Still given the whole chart as context (not just the aspect in
+# isolation) so the answer stays grounded in the rest of the placements.
+ASPECT_INSIGHT_SYSTEM_PROMPT = (
+    "You are an astrologer. You are given a full natal chart (planet placements "
+    "and aspects) as JSON, plus one specific aspect from that chart the person "
+    "wants a closer look at. Write a single focused blurb (3-5 sentences) about "
+    "that one aspect - what it means, how the two planets' signs and houses "
+    "shape its expression, and how it might show up in daily life. Ground every "
+    "statement in the chart data provided - do not invent positions not present "
+    "in the data. The chart may include a 'pronouns' field for the person the "
+    "chart belongs to - if present, use those pronouns. If missing, refer to "
+    "them by name or with 'they/them' rather than guessing a gender."
+)
+
+ASPECT_INSIGHT_TOOL = {
+    "name": "record_aspect_insight",
+    "description": "Record the focused aspect insight as structured data.",
+    "input_schema": {
+        "type": "object",
+        "properties": {"blurb": {"type": "string"}},
+        "required": ["blurb"],
+    },
+}
+
+
+def generate_aspect_insight(chart: ChartData, aspect: Aspect) -> dict:
+    client = anthropic.Anthropic(api_key=settings.anthropic_api_key or None)
+
+    payload = {"chart": chart.model_dump(mode="json"), "aspect": aspect.model_dump(mode="json")}
+    response = client.messages.create(
+        model=settings.anthropic_model,
+        max_tokens=1024,
+        system=ASPECT_INSIGHT_SYSTEM_PROMPT,
+        tools=[ASPECT_INSIGHT_TOOL],
+        tool_choice={"type": "tool", "name": "record_aspect_insight"},
+        messages=[{"role": "user", "content": json.dumps(payload)}],
+    )
+
+    tool_use = next(b for b in response.content if b.type == "tool_use")
+    return tool_use.input
+
+
+def _synastry_aspect_insight_system_prompt(relationship_type: str) -> str:
+    return (
+        "You are an astrologer. You are given a full synastry comparison "
+        "(both people's placements and the cross-chart aspects between them) "
+        "as JSON, plus one specific cross-chart aspect the person wants a "
+        "closer look at. Write a single focused blurb (3-5 sentences) about "
+        "what that one connection means for how these two people relate - not "
+        "a general reading of the whole relationship, just this aspect. Ground "
+        "every statement in the data provided - do not invent positions not "
+        "present in the data. Each person's 'pronouns' field, if present, "
+        "tells you which pronouns to use for them; if missing, use their name "
+        f"or 'they/them' rather than guessing. {SYNASTRY_RELATIONSHIP_FRAMING[relationship_type]}"
+    )
+
+
+SYNASTRY_ASPECT_INSIGHT_TOOL = {
+    "name": "record_synastry_aspect_insight",
+    "description": "Record the focused synastry aspect insight as structured data.",
+    "input_schema": {
+        "type": "object",
+        "properties": {"blurb": {"type": "string"}},
+        "required": ["blurb"],
+    },
+}
+
+
+def generate_synastry_aspect_insight(synastry: SynastryData, aspect: SynastryAspect) -> dict:
+    client = anthropic.Anthropic(api_key=settings.anthropic_api_key or None)
+
+    payload = {
+        "synastry": synastry.model_dump(mode="json"),
+        "aspect": aspect.model_dump(mode="json"),
+    }
+    response = client.messages.create(
+        model=settings.anthropic_model,
+        max_tokens=1024,
+        system=_synastry_aspect_insight_system_prompt(synastry.relationship_type),
+        tools=[SYNASTRY_ASPECT_INSIGHT_TOOL],
+        tool_choice={"type": "tool", "name": "record_synastry_aspect_insight"},
+        messages=[{"role": "user", "content": json.dumps(payload)}],
     )
 
     tool_use = next(b for b in response.content if b.type == "tool_use")

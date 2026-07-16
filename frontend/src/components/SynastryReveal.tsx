@@ -55,7 +55,7 @@ export function SynastryReveal({
             <PlanetList planets={synastry.person_a.planets} heading={`${nameA}'s Placements`} />
             <PlanetList planets={synastry.person_b.planets} heading={`${nameB}'s Placements`} />
           </div>
-          <SynastryAspectList aspects={synastry.aspects} nameA={nameA} nameB={nameB} />
+          <SynastryAspectList synastry={synastry} nameA={nameA} nameB={nameB} />
         </>
       )}
     </section>

@@ -1,12 +1,15 @@
 import type {
   ApiErrorDetail,
   ArtStyle,
+  Aspect,
+  AspectInsight,
   ChartData,
   ChartRequest,
   Interpretation,
   SavedSlugResponse,
   SavedSoloResponse,
   SavedSynastryResponse,
+  SynastryAspect,
   SynastryData,
   SynastryInterpretation,
   SynastryRequest,
@@ -184,6 +187,39 @@ export async function fetchSavedSynastry(slug: string): Promise<SavedSynastryRes
   if (!res.ok) {
     const body = await res.json().catch(() => null)
     throw new ApiError(parseErrorDetail(body, 'Could not load that saved reading.'))
+  }
+
+  return res.json()
+}
+
+export async function fetchAspectInsight(chart: ChartData, aspect: Aspect): Promise<AspectInsight> {
+  const res = await fetch('/api/aspect-insight', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ chart, aspect }),
+  })
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => null)
+    throw new ApiError(parseErrorDetail(body, 'Something went wrong reading this aspect.'))
+  }
+
+  return res.json()
+}
+
+export async function fetchSynastryAspectInsight(
+  synastry: SynastryData,
+  aspect: SynastryAspect,
+): Promise<AspectInsight> {
+  const res = await fetch('/api/synastry/aspect-insight', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ synastry, aspect }),
+  })
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => null)
+    throw new ApiError(parseErrorDetail(body, 'Something went wrong reading this aspect.'))
   }
 
   return res.json()

@@ -122,3 +122,7 @@ export interface SavedSynastryResponse {
   synastry: SynastryData
   interpretation: SynastryInterpretation
 }
+
+export interface AspectInsight {
+  blurb: string
+}

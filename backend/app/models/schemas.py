@@ -144,3 +144,17 @@ class SavedSoloResponse(BaseModel):
 class SavedSynastryResponse(BaseModel):
     synastry: SynastryData
     interpretation: SynastryInterpretation
+
+
+class AspectInsightRequest(BaseModel):
+    chart: ChartData
+    aspect: Aspect
+
+
+class SynastryAspectInsightRequest(BaseModel):
+    synastry: SynastryData
+    aspect: SynastryAspect
+
+
+class AspectInsight(BaseModel):
+    blurb: str

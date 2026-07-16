@@ -42,7 +42,7 @@ export function ChartReveal({
           {readingStatus === 'error' && <p className="notice notice-error">{readingError}</p>}
           {reading && <ReadingDisplay reading={reading} />}
           <PlanetList planets={chart.planets} />
-          <AspectList aspects={chart.aspects} />
+          <AspectList chart={chart} />
         </>
       )}
     </section>

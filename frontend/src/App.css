@@ -674,7 +674,7 @@
   font-size: 0.92rem;
 }
 
-.data-table__row:last-child {
+.data-table__item:last-child .data-table__row {
   border-bottom: none;
 }
 
@@ -706,4 +706,41 @@
   color: var(--color-text-muted);
   font-style: italic;
   font-size: 0.92rem;
+}
+
+.data-table__row--clickable {
+  width: 100%;
+  background: none;
+  border: none;
+  border-radius: 2px;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.data-table__row--clickable:hover {
+  background: var(--color-accent-wash);
+}
+
+.data-table__row--clickable:focus-visible {
+  outline: 2px solid var(--color-accent-warm);
+  outline-offset: -2px;
+}
+
+.data-table__insight {
+  padding: 0 0 0.9rem;
+  margin-top: -0.55rem;
+  border-bottom: 1px solid var(--color-surface-line);
+  font-size: 0.92rem;
+  line-height: 1.55;
+  color: var(--color-text-muted);
+  animation: reveal-in 0.3s ease both;
+}
+
+.data-table__item:last-child .data-table__insight {
+  border-bottom: none;
+}
+
+.data-table__insight-loading {
+  font-style: italic;
 }

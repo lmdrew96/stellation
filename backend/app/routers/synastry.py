@@ -4,7 +4,9 @@ from fastapi.responses import Response
 
 from app.config import settings
 from app.models.schemas import (
+    AspectInsight,
     SynastryAspect,
+    SynastryAspectInsightRequest,
     SynastryData,
     SynastryInterpretation,
     SynastryRequest,
@@ -12,7 +14,10 @@ from app.models.schemas import (
 from app.rate_limit import limiter
 from app.services.aspects import compute_synastry_aspects
 from app.services.chart_builder import build_chart
-from app.services.interpretation import generate_synastry_interpretation
+from app.services.interpretation import (
+    generate_synastry_aspect_insight,
+    generate_synastry_interpretation,
+)
 from app.services.render import ChartStyle, render_synastry_svg
 
 router = APIRouter()
@@ -62,6 +67,26 @@ def interpret_synastry(request: Request, synastry: SynastryData) -> dict:
 
     try:
         return generate_synastry_interpretation(synastry)
+    except anthropic.AuthenticationError as exc:
+        raise HTTPException(status_code=500, detail=_MISSING_KEY_MESSAGE) from exc
+    except anthropic.APIStatusError as exc:
+        raise HTTPException(
+            status_code=502, detail=f"Anthropic API error: {exc.message}"
+        ) from exc
+    except anthropic.APIConnectionError as exc:
+        raise HTTPException(
+            status_code=502, detail="Could not reach the Anthropic API."
+        ) from exc
+
+
+@router.post("/api/synastry/aspect-insight", response_model=AspectInsight)
+@limiter.limit("60/hour")
+def synastry_aspect_insight(request: Request, payload: SynastryAspectInsightRequest) -> dict:
+    if not settings.anthropic_api_key:
+        raise HTTPException(status_code=500, detail=_MISSING_KEY_MESSAGE)
+
+    try:
+        return generate_synastry_aspect_insight(payload.synastry, payload.aspect)
     except anthropic.AuthenticationError as exc:
         raise HTTPException(status_code=500, detail=_MISSING_KEY_MESSAGE) from exc
     except anthropic.APIStatusError as exc:
