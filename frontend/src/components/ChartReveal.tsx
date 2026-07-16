@@ -1,14 +1,16 @@
 import { saveSoloChart } from '../api'
 import { ART_STYLES } from '../hooks/useChartReveal'
 import type { ChartRevealState } from '../hooks/useChartReveal'
+import type { SaturnReturnRevealState } from '../hooks/useSaturnReturnReveal'
 import type { SolarReturnRevealState } from '../hooks/useSolarReturnReveal'
 import type { TransitRevealState } from '../hooks/useTransitReveal'
-import type { ChartData, TransitData } from '../types'
+import type { ChartData, SaturnReturnCycle, TransitData } from '../types'
 import { AspectList } from './AspectList'
 import { ChartCarousel } from './ChartCarousel'
 import { GeneratingScreen } from './GeneratingScreen'
 import { PlanetList } from './PlanetList'
 import { ReadingDisplay } from './ReadingDisplay'
+import { SaturnReturnReveal } from './SaturnReturnReveal'
 import { SaveLink } from './SaveLink'
 import { SolarReturnReveal } from './SolarReturnReveal'
 import { SolarReturnTrigger } from './SolarReturnTrigger'
@@ -29,6 +31,13 @@ interface ChartRevealProps extends ChartRevealState {
   solarReturnError: string | null
   onViewSolarReturn: (locationOverride?: string) => void
   onCloseSolarReturn: () => void
+  saturnReturn: ChartData | null
+  saturnReturnCycle: SaturnReturnCycle | null
+  saturnReturnReveal: SaturnReturnRevealState
+  saturnReturnLoading: boolean
+  saturnReturnError: string | null
+  onViewSaturnReturn: (cycle?: SaturnReturnCycle) => void
+  onCloseSaturnReturn: () => void
 }
 
 export function ChartReveal({
@@ -52,6 +61,13 @@ export function ChartReveal({
   solarReturnError,
   onViewSolarReturn,
   onCloseSolarReturn,
+  saturnReturn,
+  saturnReturnCycle,
+  saturnReturnReveal,
+  saturnReturnLoading,
+  saturnReturnError,
+  onViewSaturnReturn,
+  onCloseSaturnReturn,
 }: ChartRevealProps) {
   return (
     <section className="reveal">
@@ -100,6 +116,30 @@ export function ChartReveal({
               solarReturn={solarReturn}
               onClose={onCloseSolarReturn}
               {...solarReturnReveal}
+            />
+          )}
+          {reading && !saturnReturn && (
+            <div className="reveal-trigger">
+              <button
+                type="button"
+                className="reveal-trigger__button"
+                data-icon="♄"
+                onClick={() => onViewSaturnReturn()}
+                disabled={saturnReturnLoading}
+              >
+                {saturnReturnLoading ? 'Casting your return…' : 'View Your Saturn Return'}
+              </button>
+              {saturnReturnError && <p className="notice notice-error">{saturnReturnError}</p>}
+            </div>
+          )}
+          {saturnReturn && saturnReturnCycle && (
+            <SaturnReturnReveal
+              saturnReturn={saturnReturn}
+              cycle={saturnReturnCycle}
+              loading={saturnReturnLoading}
+              onSelectCycle={onViewSaturnReturn}
+              onClose={onCloseSaturnReturn}
+              {...saturnReturnReveal}
             />
           )}
         </>

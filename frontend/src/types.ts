@@ -1,4 +1,5 @@
 export type ArtStyle = 'generative' | 'traditional'
+export type SaturnReturnCycle = 1 | 2 | 3
 export type ZodiacMode = 'tropical' | 'sidereal'
 export type HouseSystem = 'placidus' | 'whole_sign'
 export type RelationshipType = 'romantic' | 'platonic' | 'familial'

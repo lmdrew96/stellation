@@ -6,6 +6,7 @@ import {
   fetchComposite,
   fetchSavedSolo,
   fetchSavedSynastry,
+  fetchSaturnReturn,
   fetchSolarReturn,
   fetchSynastry,
   fetchTransits,
@@ -19,6 +20,7 @@ import { SynastryReveal } from './components/SynastryReveal'
 import { useBouncingRing } from './hooks/useBouncingRing'
 import { useChartReveal } from './hooks/useChartReveal'
 import { useCompositeReveal } from './hooks/useCompositeReveal'
+import { defaultSaturnCycle, useSaturnReturnReveal } from './hooks/useSaturnReturnReveal'
 import { useSolarReturnReveal } from './hooks/useSolarReturnReveal'
 import { useSynastryReveal } from './hooks/useSynastryReveal'
 import { useTransitReveal } from './hooks/useTransitReveal'
@@ -26,6 +28,7 @@ import type {
   ChartData,
   ChartRequest,
   Interpretation,
+  SaturnReturnCycle,
   SynastryData,
   SynastryInterpretation,
   SynastryRequest,
@@ -88,6 +91,13 @@ function App() {
   const [solarReturnLoading, setSolarReturnLoading] = useState(false)
   const [solarReturnError, setSolarReturnError] = useState<string | null>(null)
   const solarReturnReveal = useSolarReturnReveal(solarReturn)
+
+  const [saturnReturn, setSaturnReturn] = useState<{ chart: ChartData; cycle: SaturnReturnCycle } | null>(
+    null
+  )
+  const [saturnReturnLoading, setSaturnReturnLoading] = useState(false)
+  const [saturnReturnError, setSaturnReturnError] = useState<string | null>(null)
+  const saturnReturnReveal = useSaturnReturnReveal(saturnReturn)
 
   const [synastry, setSynastry] = useState<SynastryData | null>(null)
   const [showManualCoordsA, setShowManualCoordsA] = useState(false)
@@ -159,6 +169,8 @@ function App() {
       setTransitError(null)
       setSolarReturn(null)
       setSolarReturnError(null)
+      setSaturnReturn(null)
+      setSaturnReturnError(null)
       resetUrlToHome()
     } catch (err) {
       if (err instanceof ApiError) {
@@ -214,6 +226,28 @@ function App() {
   function closeSolarReturn() {
     setSolarReturn(null)
     setSolarReturnError(null)
+  }
+
+  async function handleViewSaturnReturn(cycle?: SaturnReturnCycle) {
+    if (!chart) return
+    const targetCycle = cycle ?? defaultSaturnCycle(chart.birth_datetime)
+    setSaturnReturnLoading(true)
+    setSaturnReturnError(null)
+    try {
+      const result = await fetchSaturnReturn(chart, targetCycle)
+      setSaturnReturn({ chart: result, cycle: targetCycle })
+    } catch (err) {
+      setSaturnReturnError(
+        err instanceof ApiError ? err.detail.message : 'Could not cast this Saturn return.'
+      )
+    } finally {
+      setSaturnReturnLoading(false)
+    }
+  }
+
+  function closeSaturnReturn() {
+    setSaturnReturn(null)
+    setSaturnReturnError(null)
   }
 
   async function handleSynastrySubmit(payload: SynastryRequest) {
@@ -354,6 +388,13 @@ function App() {
             solarReturnError={solarReturnError}
             onViewSolarReturn={handleViewSolarReturn}
             onCloseSolarReturn={closeSolarReturn}
+            saturnReturn={saturnReturn?.chart ?? null}
+            saturnReturnCycle={saturnReturn?.cycle ?? null}
+            saturnReturnReveal={saturnReturnReveal}
+            saturnReturnLoading={saturnReturnLoading}
+            saturnReturnError={saturnReturnError}
+            onViewSaturnReturn={handleViewSaturnReturn}
+            onCloseSaturnReturn={closeSaturnReturn}
           />
         )}
 

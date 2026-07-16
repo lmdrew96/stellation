@@ -82,12 +82,22 @@ def jd_ut_to_utc_datetime(jd_ut: float) -> dt.datetime:
     )
 
 
+def _body_longitude(jd_ut: float, body: int, zodiac: ZodiacMode) -> float:
+    flags = CALC_FLAGS | (swe.FLG_SIDEREAL if zodiac == "sidereal" else 0)
+    xx, _retflags = swe.calc_ut(jd_ut, body, flags)
+    return xx[0]
+
+
 def sun_longitude(jd_ut: float, zodiac: ZodiacMode = "tropical") -> float:
     """Just the Sun's longitude, without the other nine bodies -
     solar-return root-finding calls this many times per search."""
-    flags = CALC_FLAGS | (swe.FLG_SIDEREAL if zodiac == "sidereal" else 0)
-    xx, _retflags = swe.calc_ut(jd_ut, swe.SUN, flags)
-    return xx[0]
+    return _body_longitude(jd_ut, swe.SUN, zodiac)
+
+
+def saturn_longitude(jd_ut: float, zodiac: ZodiacMode = "tropical") -> float:
+    """Just Saturn's longitude, without the other nine bodies -
+    Saturn-return root-finding calls this many times per search."""
+    return _body_longitude(jd_ut, swe.SATURN, zodiac)
 
 
 def _sign_and_degree(longitude: float) -> tuple[str, float]:

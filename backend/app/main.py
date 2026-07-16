@@ -13,6 +13,7 @@ from app.routers import (
     interpret,
     render,
     save,
+    saturn_return,
     solar_return,
     synastry,
     transit,
@@ -41,3 +42,4 @@ app.include_router(save.router)
 app.include_router(transit.router)
 app.include_router(composite.router)
 app.include_router(solar_return.router)
+app.include_router(saturn_return.router)

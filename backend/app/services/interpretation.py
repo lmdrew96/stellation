@@ -284,6 +284,69 @@ def generate_solar_return_interpretation(chart: ChartData) -> dict:
     return tool_use.input
 
 
+# A Saturn return chart is shaped exactly like a solo ChartData (cast for the
+# moment transiting Saturn returns to its natal degree, rather than for
+# birth) - reuses INTERPRETATION_TOOL as-is, only the system prompt changes.
+# Unlike a solar return, the framing genuinely differs by which return this
+# is (~29 / ~58 / ~87), so the cycle number has to be threaded in explicitly.
+_SATURN_RETURN_CYCLE_FRAMING = {
+    1: (
+        "This is the FIRST Saturn return, around age 29 - the classic threshold "
+        "into full adulthood. It's when the structures a person built (or "
+        "avoided building) in their twenties get tested: career direction, "
+        "relationships, identity, what they're actually responsible for. Frame "
+        "this as a reckoning and a foundation-laying, not a crisis."
+    ),
+    2: (
+        "This is the SECOND Saturn return, around age 58 - a midlife-to-elder "
+        "passage. It's less about building new structures than reassessing the "
+        "ones built over the previous ~29 years: career, family, legacy. Frame "
+        "this as consolidation, refinement, and stepping into earned authority, "
+        "not decline."
+    ),
+    3: (
+        "This is the THIRD Saturn return, around age 87 - a rare late-life "
+        "return reached by relatively few. Frame this around legacy, hard-won "
+        "wisdom, and the review of a life fully lived, not new ambition."
+    ),
+}
+
+
+def _saturn_return_system_prompt(cycle: int) -> str:
+    return (
+        "You are an astrologer writing a Saturn return chart interpretation. A "
+        "Saturn return happens when transiting Saturn returns to the exact "
+        "degree it occupied at this person's birth - roughly every 29.5 years, "
+        f"marking a major threshold of maturation and restructuring. "
+        f"{_SATURN_RETURN_CYCLE_FRAMING[cycle]} You are given the Saturn return "
+        "chart (planet placements and aspects) as JSON. The chart's 'pronouns' "
+        "field, if present, tells you which pronouns to use; if missing, use "
+        "their name or 'they/them' rather than guessing. Ground every "
+        "statement in the specific placements and aspects provided - do not "
+        "invent positions not present in the data. Write a short blurb (2-4 "
+        "sentences) for each planet, framed around what it means for this "
+        "particular return. Then write a longer synthesis paragraph (4-6 "
+        "sentences) naming the overall themes of what's being tested, "
+        "dismantled, or built during this period."
+    )
+
+
+def generate_saturn_return_interpretation(chart: ChartData, cycle: int) -> dict:
+    client = anthropic.Anthropic(api_key=settings.anthropic_api_key or None)
+
+    response = client.messages.create(
+        model=settings.anthropic_model,
+        max_tokens=4096,
+        system=_saturn_return_system_prompt(cycle),
+        tools=[INTERPRETATION_TOOL],
+        tool_choice={"type": "tool", "name": "record_interpretation"},
+        messages=[{"role": "user", "content": chart.model_dump_json()}],
+    )
+
+    tool_use = next(b for b in response.content if b.type == "tool_use")
+    return tool_use.input
+
+
 # Deliberately not a full reading re-run: short, present-tense, and scoped to
 # whatever's tightest-orb right now rather than re-covering the whole chart.
 TRANSIT_SYSTEM_PROMPT = (

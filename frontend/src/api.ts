@@ -9,6 +9,7 @@ import type {
   SavedSlugResponse,
   SavedSoloResponse,
   SavedSynastryResponse,
+  SaturnReturnCycle,
   SynastryAspect,
   SynastryData,
   SynastryInterpretation,
@@ -268,6 +269,39 @@ export async function fetchSolarReturnInterpretation(chart: ChartData): Promise<
     throw new ApiError(
       parseErrorDetail(body, "Something went wrong generating this year's reading.")
     )
+  }
+
+  return res.json()
+}
+
+export async function fetchSaturnReturn(natal: ChartData, cycle: SaturnReturnCycle): Promise<ChartData> {
+  const res = await fetch('/api/saturn-return', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ natal, cycle }),
+  })
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => null)
+    throw new ApiError(parseErrorDetail(body, 'Something went wrong casting this Saturn return.'))
+  }
+
+  return res.json()
+}
+
+export async function fetchSaturnReturnInterpretation(
+  chart: ChartData,
+  cycle: SaturnReturnCycle,
+): Promise<Interpretation> {
+  const res = await fetch('/api/saturn-return/interpret', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ chart, cycle }),
+  })
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => null)
+    throw new ApiError(parseErrorDetail(body, 'Something went wrong generating this reading.'))
   }
 
   return res.json()

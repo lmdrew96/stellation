@@ -216,6 +216,25 @@ class SolarReturnRequest(BaseModel):
     location_override: str | None = None
 
 
+SaturnReturnCycle = Literal[1, 2, 3]
+
+
+class SaturnReturnRequest(BaseModel):
+    natal: ChartData
+    # Which return in the person's life: ~29 / ~58 / ~87. Unlike solar
+    # return (always "this year"), Saturn returns are rare enough that the
+    # caller has to say which one it wants.
+    cycle: SaturnReturnCycle = 1
+
+
+class SaturnReturnInterpretRequest(BaseModel):
+    chart: ChartData
+    # The interpretation copy differs meaningfully by cycle (first return =
+    # stepping into adulthood, second = midlife reassessment, third = late-
+    # life review) - the return ChartData alone doesn't carry that context.
+    cycle: SaturnReturnCycle
+
+
 class CompositeRequest(BaseModel):
     # Takes already-built charts rather than raw birth data: by the time a
     # composite view is requested, the frontend already has both people's
