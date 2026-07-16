@@ -883,6 +883,41 @@
 
 /* ---------- secondary chart views (transits, composite, solar return) ---------- */
 
+/* A single discoverable row for the "more views" actions (transits, solar
+   return, saturn return, composite) - these used to be spread out below the
+   reading, angles, planets, and aspect lists, which meant scrolling past a
+   wall of text to find them. Grouping them right under the chart art keeps
+   them in one predictable place instead of interspersed with content. */
+.chart-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 1rem 0 2rem;
+}
+
+.chart-actions__label {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  margin: 0;
+}
+
+.chart-actions__row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.chart-actions__row .reveal-trigger,
+.chart-actions__row .solar-return-trigger {
+  margin: 0;
+}
+
 .reveal-trigger {
   display: flex;
   flex-direction: column;

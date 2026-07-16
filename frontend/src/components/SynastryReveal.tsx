@@ -57,6 +57,28 @@ export function SynastryReveal({
           {reading && !viewingSaved && (
             <SaveLink save={(token) => saveSynastryChart(synastry, reading, token)} pathPrefix="/s/" />
           )}
+          {reading && !composite && (
+            <div className="chart-actions">
+              <p className="chart-actions__label">More views of this reading</p>
+              <div className="chart-actions__row">
+                <div className="reveal-trigger">
+                  <button
+                    type="button"
+                    className="reveal-trigger__button"
+                    data-icon="⚭"
+                    onClick={onViewComposite}
+                    disabled={compositeLoading}
+                  >
+                    {compositeLoading ? 'Blending the charts…' : 'Composite Chart'}
+                  </button>
+                  {compositeError && <p className="notice notice-error">{compositeError}</p>}
+                </div>
+              </div>
+            </div>
+          )}
+          {composite && (
+            <CompositeReveal composite={composite} onClose={onCloseComposite} {...compositeReveal} />
+          )}
           {readingStatus === 'error' && <p className="notice notice-error">{readingError}</p>}
           {reading && (
             <SynastryReadingDisplay
@@ -77,23 +99,6 @@ export function SynastryReveal({
             </div>
           </div>
           <SynastryAspectList synastry={synastry} nameA={nameA} nameB={nameB} />
-          {reading && !composite && (
-            <div className="reveal-trigger">
-              <button
-                type="button"
-                className="reveal-trigger__button"
-                data-icon="⚭"
-                onClick={onViewComposite}
-                disabled={compositeLoading}
-              >
-                {compositeLoading ? 'Blending the charts…' : 'View Composite Chart'}
-              </button>
-              {compositeError && <p className="notice notice-error">{compositeError}</p>}
-            </div>
-          )}
-          {composite && (
-            <CompositeReveal composite={composite} onClose={onCloseComposite} {...compositeReveal} />
-          )}
         </>
       )}
     </section>

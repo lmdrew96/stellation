@@ -99,54 +99,56 @@ export function ChartReveal({
           {reading && !viewingSaved && (
             <SaveLink save={(token) => saveSoloChart(chart, reading, token)} pathPrefix="/c/" />
           )}
-          {readingStatus === 'error' && <p className="notice notice-error">{readingError}</p>}
-          {reading && <ReadingDisplay reading={reading} />}
-          <ChartAngles angles={chart.angles} />
-          <PlanetList planets={chart.planets} />
-          <AspectList chart={chart} />
-          {reading && !transit && !isComposite && (
-            <div className="reveal-trigger">
-              <button
-                type="button"
-                className="reveal-trigger__button"
-                data-icon="☉"
-                onClick={onViewTransits}
-                disabled={transitLoading}
-              >
-                {transitLoading ? 'Reading the sky…' : "View Today's Transits"}
-              </button>
-              {transitError && <p className="notice notice-error">{transitError}</p>}
+          {reading && !isComposite && (!transit || !solarReturn || !saturnReturn) && (
+            <div className="chart-actions">
+              <p className="chart-actions__label">More views of this chart</p>
+              <div className="chart-actions__row">
+                {!transit && (
+                  <div className="reveal-trigger">
+                    <button
+                      type="button"
+                      className="reveal-trigger__button"
+                      data-icon="☉"
+                      onClick={onViewTransits}
+                      disabled={transitLoading}
+                    >
+                      {transitLoading ? 'Reading the sky…' : "Today's Transits"}
+                    </button>
+                    {transitError && <p className="notice notice-error">{transitError}</p>}
+                  </div>
+                )}
+                {!solarReturn && (
+                  <SolarReturnTrigger
+                    birthPlaceName={chart.birth_location.place_name}
+                    loading={solarReturnLoading}
+                    error={solarReturnError}
+                    onSubmit={onViewSolarReturn}
+                  />
+                )}
+                {!saturnReturn && (
+                  <div className="reveal-trigger">
+                    <button
+                      type="button"
+                      className="reveal-trigger__button"
+                      data-icon="♄"
+                      onClick={() => onViewSaturnReturn()}
+                      disabled={saturnReturnLoading}
+                    >
+                      {saturnReturnLoading ? 'Casting your return…' : 'Your Saturn Return'}
+                    </button>
+                    {saturnReturnError && <p className="notice notice-error">{saturnReturnError}</p>}
+                  </div>
+                )}
+              </div>
             </div>
           )}
           {transit && <TransitReveal transit={transit} onClose={onCloseTransits} {...transitReveal} />}
-          {reading && !solarReturn && !isComposite && (
-            <SolarReturnTrigger
-              birthPlaceName={chart.birth_location.place_name}
-              loading={solarReturnLoading}
-              error={solarReturnError}
-              onSubmit={onViewSolarReturn}
-            />
-          )}
           {solarReturn && (
             <SolarReturnReveal
               solarReturn={solarReturn}
               onClose={onCloseSolarReturn}
               {...solarReturnReveal}
             />
-          )}
-          {reading && !saturnReturn && !isComposite && (
-            <div className="reveal-trigger">
-              <button
-                type="button"
-                className="reveal-trigger__button"
-                data-icon="♄"
-                onClick={() => onViewSaturnReturn()}
-                disabled={saturnReturnLoading}
-              >
-                {saturnReturnLoading ? 'Casting your return…' : 'View Your Saturn Return'}
-              </button>
-              {saturnReturnError && <p className="notice notice-error">{saturnReturnError}</p>}
-            </div>
           )}
           {saturnReturn && saturnReturnCycle && (
             <SaturnReturnReveal
@@ -158,6 +160,11 @@ export function ChartReveal({
               {...saturnReturnReveal}
             />
           )}
+          {readingStatus === 'error' && <p className="notice notice-error">{readingError}</p>}
+          {reading && <ReadingDisplay reading={reading} />}
+          <ChartAngles angles={chart.angles} />
+          <PlanetList planets={chart.planets} />
+          <AspectList chart={chart} />
           {reading && viewingSaved && !isComposite && (
             <CompareForm
               ownerName={chart.name}
