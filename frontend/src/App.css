@@ -13,29 +13,23 @@
 
 /* ---------- ambient astrolabe motif ---------- */
 
+/* position/size are fully driven by useBouncingRing (inline transform +
+   the AstrolabeRing size prop) so the DVD-screensaver-style bounce always
+   matches the actual viewport, at any window size. top/left: 0 is just the
+   fixed-position anchor the JS translate offsets are computed against.
+   z-index sits above the form card (z-index: 1) rather than below it -
+   bouncing across the full viewport means it regularly passes behind
+   content, and at z-index: 0 that content is opaque enough to hide it for
+   long stretches, defeating the point of a visible bounce. Thin, low-
+   opacity strokes plus pointer-events: none keep it from reading as
+   intrusive or blocking interaction while it drifts over the form. */
 .ring-field {
-  position: absolute;
-  top: -8rem;
-  left: 50%;
-  transform: translateX(-50%);
+  position: fixed;
+  top: 0;
+  left: 0;
   pointer-events: none;
-  z-index: 0;
-}
-
-/* The ring's fixed 560px size has no room to breathe on a narrow viewport -
-   left: 50%/translateX(-50%) centers it, but the overflow past each edge
-   gets clipped by .page's overflow-x: clip, so most of the ring effectively
-   disappears instead of just peeking out. Scale it down so it stays inside
-   the window instead of running past the edges. */
-@media (max-width: 640px) {
-  .ring-field {
-    top: -5rem;
-  }
-
-  .ring-field .astrolabe-ring {
-    width: min(90vw, 380px);
-    height: min(90vw, 380px);
-  }
+  z-index: 2;
+  will-change: transform;
 }
 
 .astrolabe-ring {

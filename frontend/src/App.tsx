@@ -6,6 +6,7 @@ import { BirthDataForm } from './components/BirthDataForm'
 import { ChartReveal } from './components/ChartReveal'
 import { SynastryForm } from './components/SynastryForm'
 import { SynastryReveal } from './components/SynastryReveal'
+import { useBouncingRing } from './hooks/useBouncingRing'
 import { useChartReveal } from './hooks/useChartReveal'
 import { useSynastryReveal } from './hooks/useSynastryReveal'
 import type { ChartData, ChartRequest, SynastryData, SynastryRequest } from './types'
@@ -95,12 +96,13 @@ function App() {
   }
 
   const hasResult = mode === 'solo' ? chart !== null : synastry !== null
+  const ring = useBouncingRing(!hasResult)
 
   return (
     <div className="page">
       {!hasResult && (
-        <div className="ring-field">
-          <AstrolabeRing size={560} spin />
+        <div className="ring-field" style={{ transform: `translate(${ring.x}px, ${ring.y}px)` }}>
+          <AstrolabeRing size={ring.size} spin />
         </div>
       )}
       <main className="app">
