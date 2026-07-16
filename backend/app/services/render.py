@@ -64,8 +64,8 @@ BG_COLOR = "#262423"  # Shadow Grey
 STRUCTURE_COLOR = "#8350C4"  # Deep Lilac - orientation ring
 LABEL_COLOR = "#C9E0EB"  # Pale Sky
 
-# Categorical palette (11 planets incl. Lilith) computed via the dataviz
-# skill's OKLCH/CVD-simulation method, not eyeballed - see
+# Categorical palette (12 placements incl. Lilith, Chiron) computed via the
+# dataviz skill's OKLCH/CVD-simulation method, not eyeballed - see
 # scripts/validate_palette.js in that skill. Two planets in the same sign
 # used to render identically (color came from ELEMENT_COLOR[sign's
 # element], not planet identity) - that's the "confusing" this replaces.
@@ -76,7 +76,11 @@ LABEL_COLOR = "#C9E0EB"  # Pale Sky
 # dark surface is right at the practical ceiling; even the validator's own
 # 8-hue documented default can't clear all-pairs at full target), worst
 # CVD ΔE 6.2 (floor band, legal given every dot always carries its own name
-# label right next to it - never color-alone identification).
+# label right next to it - never color-alone identification). Chiron
+# (#6c42a9, deep indigo) was picked by exhaustive OKLCH search against the
+# other 11 specifically: its own worst pairing is 16.5 (vs Moon) normal /
+# 8.0 (full target, not just the floor) CVD - it doesn't regress the
+# pre-existing 14.4/6.2 worst pairs above, both of which predate it.
 PLANET_COLOR = {
     "Sun": "#8f6800",
     "Moon": "#007aa9",
@@ -89,6 +93,7 @@ PLANET_COLOR = {
     "Neptune": "#af74d5",
     "Pluto": "#dc1888",
     "Lilith": "#d1747d",
+    "Chiron": "#6c42a9",
 }
 
 # Labels nudge apart when two planets sit within this many degrees of each

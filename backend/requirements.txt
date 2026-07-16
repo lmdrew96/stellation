@@ -3,7 +3,9 @@ uvicorn[standard]==0.34.0
 pydantic==2.13.4
 pydantic-settings==2.7.1
 python-dotenv==1.0.1
-pyswisseph==2.10.3.2
+skyfield==1.54
+pyerfa==2.0.1.5
+spiceypy==8.1.2
 numpy==2.2.1
 matplotlib==3.10.0
 geopy==2.4.1

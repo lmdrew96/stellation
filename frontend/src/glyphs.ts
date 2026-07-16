@@ -10,6 +10,7 @@ export const PLANET_GLYPH: Record<string, string> = {
   Neptune: '♆',
   Pluto: '♇',
   Lilith: '⚸',
+  Chiron: '⚷',
 }
 
 export const ASPECT_GLYPH: Record<string, string> = {
@@ -44,4 +45,5 @@ export const PLANET_COLOR: Record<string, string> = {
   Neptune: '#af74d5',
   Pluto: '#dc1888',
   Lilith: '#d1747d',
+  Chiron: '#6c42a9',
 }
