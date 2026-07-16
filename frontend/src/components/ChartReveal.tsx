@@ -36,11 +36,11 @@ export function ChartReveal({
               slides={ART_STYLES.map(({ style, label }) => ({ label, url: artUrls[style]! }))}
             />
           )}
-          {readingStatus === 'error' && <p className="notice notice-error">{readingError}</p>}
-          {reading && <ReadingDisplay reading={reading} />}
           {reading && !viewingSaved && (
             <SaveLink save={() => saveSoloChart(chart, reading)} pathPrefix="/c/" />
           )}
+          {readingStatus === 'error' && <p className="notice notice-error">{readingError}</p>}
+          {reading && <ReadingDisplay reading={reading} />}
           <PlanetList planets={chart.planets} />
           <AspectList aspects={chart.aspects} />
         </>

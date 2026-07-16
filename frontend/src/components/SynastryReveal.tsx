@@ -39,6 +39,9 @@ export function SynastryReveal({
               slides={ART_STYLES.map(({ style, label }) => ({ label, url: artUrls[style]! }))}
             />
           )}
+          {reading && !viewingSaved && (
+            <SaveLink save={() => saveSynastryChart(synastry, reading)} pathPrefix="/s/" />
+          )}
           {readingStatus === 'error' && <p className="notice notice-error">{readingError}</p>}
           {reading && (
             <SynastryReadingDisplay
@@ -47,9 +50,6 @@ export function SynastryReveal({
               nameB={nameB}
               relationshipType={synastry.relationship_type}
             />
-          )}
-          {reading && !viewingSaved && (
-            <SaveLink save={() => saveSynastryChart(synastry, reading)} pathPrefix="/s/" />
           )}
           <div className="synastry-placements">
             <PlanetList planets={synastry.person_a.planets} heading={`${nameA}'s Placements`} />
