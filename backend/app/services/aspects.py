@@ -52,6 +52,43 @@ def compute_aspects(raw_positions: list[dict]) -> list[dict]:
     return aspects
 
 
+def compute_transit_aspects(natal: list[dict], transiting: list[dict]) -> list[dict]:
+    """Cross-chart aspects between a person's frozen natal placements and the
+    live sky (or a chosen moment). Unlike synastry's two-natal-chart case,
+    there IS a single "now" here - the natal side never moves, so applying/
+    separating is driven entirely by the transiting planet's own speed."""
+    names_natal = [p["name"] for p in natal]
+    names_transiting = [p["name"] for p in transiting]
+    longitudes_natal = np.array([p["longitude"] for p in natal])
+    longitudes_transiting = np.array([p["longitude"] for p in transiting])
+    speeds_transiting = np.array([p["speed"] for p in transiting])
+
+    separations = _separation_matrix(longitudes_transiting, longitudes_natal)
+    future_transiting = longitudes_transiting + speeds_transiting * _LOOKAHEAD_DAYS
+    future_separations = _separation_matrix(future_transiting, longitudes_natal)
+
+    aspects = []
+    for i, transiting_name in enumerate(names_transiting):
+        for j, natal_name in enumerate(names_natal):
+            separation = separations[i, j]
+            for aspect_type, exact_angle, orb_limit in ASPECTS:
+                orb = abs(separation - exact_angle)
+                if orb <= orb_limit:
+                    future_orb = abs(future_separations[i, j] - exact_angle)
+                    aspects.append(
+                        {
+                            "transiting_planet": transiting_name,
+                            "natal_planet": natal_name,
+                            "aspect_type": aspect_type,
+                            "exact_angle": exact_angle,
+                            "orb": round(float(orb), 4),
+                            "applying": bool(future_orb < orb),
+                        }
+                    )
+                    break
+    return aspects
+
+
 def compute_synastry_aspects(raw_a: list[dict], raw_b: list[dict]) -> list[dict]:
     """Cross-chart aspects between two people's placements. No applying/
     separating here - that concept describes motion forward from a single

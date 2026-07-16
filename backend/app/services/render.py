@@ -16,7 +16,7 @@ import numpy as np
 from matplotlib.path import Path
 from matplotlib.patches import PathPatch
 
-from app.models.schemas import ChartData, SynastryData
+from app.models.schemas import ChartData, Planet, SynastryData, TransitData
 from app.services.ephemeris import SIGNS
 
 ChartStyle = Literal["generative", "traditional"]
@@ -168,15 +168,13 @@ def _orbit_ring(
 
 def _draw_orbit_rings(
     ax,
-    chart: ChartData,
-    aspect_counts: dict[str, int] | None = None,
+    planets: list[Planet],
+    aspect_counts: dict[str, int],
     min_r: float = MIN_ORBIT_RADIUS,
     max_r: float = MAX_ORBIT_RADIUS,
     ripple_ratio: float = RIPPLE_RATIO,
 ) -> None:
-    if aspect_counts is None:
-        aspect_counts = _aspect_counts(chart)
-    for planet in sorted(chart.planets, key=lambda p: p.house):
+    for planet in sorted(planets, key=lambda p: p.house):
         x, y = _orbit_ring(planet, aspect_counts.get(planet.name, 0), min_r, max_r, ripple_ratio)
         color = ELEMENT_COLOR[ELEMENT_OF_SIGN[planet.sign]]
         ax.plot(
@@ -213,7 +211,7 @@ def render_chart_svg(chart: ChartData, style: ChartStyle = "generative") -> str:
     if style == "traditional":
         _draw_aspect_lines(ax, chart, positions)
     else:
-        _draw_orbit_rings(ax, chart)
+        _draw_orbit_rings(ax, chart.planets, _aspect_counts(chart))
 
     for planet in chart.planets:
         x, y = positions[planet.name]
@@ -241,20 +239,20 @@ def render_chart_svg(chart: ChartData, style: ChartStyle = "generative") -> str:
     return buf.getvalue()
 
 
-def _synastry_positions(chart: ChartData, radius: float) -> dict[str, tuple[float, float]]:
+def _ring_positions(planets: list[Planet], radius: float) -> dict[str, tuple[float, float]]:
     positions = {}
-    for planet in chart.planets:
+    for planet in planets:
         lon = _absolute_longitude(planet.sign, planet.degree_in_sign)
         theta = math.radians(lon)
         positions[planet.name] = (radius * math.cos(theta), radius * math.sin(theta))
     return positions
 
 
-def _draw_synastry_dots(
-    ax, chart: ChartData, positions: dict, filled: bool, fontsize: float
+def _draw_ring_dots(
+    ax, planets: list[Planet], positions: dict, filled: bool, fontsize: float
 ) -> None:
-    label_offsets = _label_offsets(chart.planets)
-    for planet in chart.planets:
+    label_offsets = _label_offsets(planets)
+    for planet in planets:
         x, y = positions[planet.name]
         color = ELEMENT_COLOR[ELEMENT_OF_SIGN[planet.sign]]
         if filled:
@@ -310,20 +308,20 @@ def _draw_synastry_generative(ax, synastry: SynastryData) -> None:
     # orbit waves, same visual language as a solo chart's rosette.
     counts_a, counts_b = _synastry_aspect_counts(synastry)
     _draw_orbit_rings(
-        ax, synastry.person_a, counts_a,
+        ax, synastry.person_a.planets, counts_a,
         min_r=SYNASTRY_OUTER_ORBIT_MIN, max_r=SYNASTRY_OUTER_ORBIT_MAX,
         ripple_ratio=SYNASTRY_RIPPLE_RATIO,
     )
     _draw_orbit_rings(
-        ax, synastry.person_b, counts_b,
+        ax, synastry.person_b.planets, counts_b,
         min_r=SYNASTRY_INNER_ORBIT_MIN, max_r=SYNASTRY_INNER_ORBIT_MAX,
         ripple_ratio=SYNASTRY_RIPPLE_RATIO,
     )
 
 
 def render_synastry_svg(synastry: SynastryData, style: ChartStyle = "generative") -> str:
-    positions_a = _synastry_positions(synastry.person_a, RADIUS)
-    positions_b = _synastry_positions(synastry.person_b, SYNASTRY_INNER_RADIUS)
+    positions_a = _ring_positions(synastry.person_a.planets, RADIUS)
+    positions_b = _ring_positions(synastry.person_b.planets, SYNASTRY_INNER_RADIUS)
 
     fig, ax = plt.subplots(figsize=(6, 6))
     fig.patch.set_facecolor(BG_COLOR)
@@ -349,8 +347,83 @@ def render_synastry_svg(synastry: SynastryData, style: ChartStyle = "generative"
     else:
         _draw_synastry_generative(ax, synastry)
 
-    _draw_synastry_dots(ax, synastry.person_a, positions_a, filled=True, fontsize=8)
-    _draw_synastry_dots(ax, synastry.person_b, positions_b, filled=False, fontsize=7)
+    _draw_ring_dots(ax, synastry.person_a.planets, positions_a, filled=True, fontsize=8)
+    _draw_ring_dots(ax, synastry.person_b.planets, positions_b, filled=False, fontsize=7)
+
+    ax.set_xlim(-1.35, 1.35)
+    ax.set_ylim(-1.35, 1.35)
+
+    buf = io.StringIO()
+    fig.savefig(buf, format="svg", bbox_inches="tight", facecolor=BG_COLOR)
+    plt.close(fig)
+    return buf.getvalue()
+
+
+def _draw_transit_aspect_lines(
+    ax, transit: TransitData, natal_positions: dict, transiting_positions: dict
+) -> None:
+    for aspect in transit.aspects:
+        p1 = transiting_positions[aspect.transiting_planet]
+        p2 = natal_positions[aspect.natal_planet]
+        alpha, width = _orb_to_alpha(aspect.orb), _orb_to_width(aspect.orb)
+        _draw_curved_aspect(ax, p1, p2, alpha, width, bow=0.2)
+
+
+def _transit_aspect_counts(transit: TransitData) -> tuple[dict[str, int], dict[str, int]]:
+    natal_counts = _aspect_counts(transit.natal)
+    transiting_counts: dict[str, int] = {}
+    for aspect in transit.aspects:
+        natal_counts[aspect.natal_planet] = natal_counts.get(aspect.natal_planet, 0) + 1
+        transiting_counts[aspect.transiting_planet] = (
+            transiting_counts.get(aspect.transiting_planet, 0) + 1
+        )
+    return natal_counts, transiting_counts
+
+
+def _draw_transit_generative(ax, transit: TransitData) -> None:
+    natal_counts, transiting_counts = _transit_aspect_counts(transit)
+    _draw_orbit_rings(
+        ax, transit.natal.planets, natal_counts,
+        min_r=SYNASTRY_OUTER_ORBIT_MIN, max_r=SYNASTRY_OUTER_ORBIT_MAX,
+        ripple_ratio=SYNASTRY_RIPPLE_RATIO,
+    )
+    _draw_orbit_rings(
+        ax, transit.transiting_planets, transiting_counts,
+        min_r=SYNASTRY_INNER_ORBIT_MIN, max_r=SYNASTRY_INNER_ORBIT_MAX,
+        ripple_ratio=SYNASTRY_RIPPLE_RATIO,
+    )
+
+
+def render_transit_svg(transit: TransitData, style: ChartStyle = "generative") -> str:
+    natal_positions = _ring_positions(transit.natal.planets, RADIUS)
+    transiting_positions = _ring_positions(transit.transiting_planets, SYNASTRY_INNER_RADIUS)
+
+    fig, ax = plt.subplots(figsize=(6, 6))
+    fig.patch.set_facecolor(BG_COLOR)
+    ax.set_facecolor(BG_COLOR)
+    ax.set_aspect("equal")
+    ax.axis("off")
+
+    circle_alpha = 0.6 if style == "traditional" else 0.35
+    ax.add_patch(
+        plt.Circle(
+            (0, 0), RADIUS, fill=False, color=STRUCTURE_COLOR, linewidth=1.1, alpha=circle_alpha
+        )
+    )
+    ax.add_patch(
+        plt.Circle(
+            (0, 0), SYNASTRY_INNER_RADIUS, fill=False, color=STRUCTURE_COLOR,
+            linewidth=1.0, alpha=circle_alpha * 0.8,
+        )
+    )
+
+    if style == "traditional":
+        _draw_transit_aspect_lines(ax, transit, natal_positions, transiting_positions)
+    else:
+        _draw_transit_generative(ax, transit)
+
+    _draw_ring_dots(ax, transit.natal.planets, natal_positions, filled=True, fontsize=8)
+    _draw_ring_dots(ax, transit.transiting_planets, transiting_positions, filled=False, fontsize=7)
 
     ax.set_xlim(-1.35, 1.35)
     ax.set_ylim(-1.35, 1.35)

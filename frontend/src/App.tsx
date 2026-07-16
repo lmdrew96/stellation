@@ -1,6 +1,13 @@
 import { useEffect, useState } from 'react'
 import './App.css'
-import { ApiError, fetchChart, fetchSavedSolo, fetchSavedSynastry, fetchSynastry } from './api'
+import {
+  ApiError,
+  fetchChart,
+  fetchSavedSolo,
+  fetchSavedSynastry,
+  fetchSynastry,
+  fetchTransits,
+} from './api'
 import { AstrolabeRing } from './components/AstrolabeRing'
 import { BirthDataForm } from './components/BirthDataForm'
 import { ChartReveal } from './components/ChartReveal'
@@ -10,6 +17,7 @@ import { SynastryReveal } from './components/SynastryReveal'
 import { useBouncingRing } from './hooks/useBouncingRing'
 import { useChartReveal } from './hooks/useChartReveal'
 import { useSynastryReveal } from './hooks/useSynastryReveal'
+import { useTransitReveal } from './hooks/useTransitReveal'
 import type {
   ChartData,
   ChartRequest,
@@ -17,6 +25,7 @@ import type {
   SynastryData,
   SynastryInterpretation,
   SynastryRequest,
+  TransitData,
 } from './types'
 
 type HealthStatus = 'checking' | 'ok' | 'error'
@@ -65,6 +74,11 @@ function App() {
   const [showManualCoords, setShowManualCoords] = useState(false)
   const [presetInterpretation, setPresetInterpretation] = useState<Interpretation | undefined>(undefined)
   const soloReveal = useChartReveal(chart, presetInterpretation)
+
+  const [transit, setTransit] = useState<TransitData | null>(null)
+  const [transitLoading, setTransitLoading] = useState(false)
+  const [transitError, setTransitError] = useState<string | null>(null)
+  const transitReveal = useTransitReveal(transit)
 
   const [synastry, setSynastry] = useState<SynastryData | null>(null)
   const [showManualCoordsA, setShowManualCoordsA] = useState(false)
@@ -127,6 +141,8 @@ function App() {
       setPresetInterpretation(undefined)
       setViewingSaved(false)
       setShowManualCoords(false)
+      setTransit(null)
+      setTransitError(null)
       resetUrlToHome()
     } catch (err) {
       if (err instanceof ApiError) {
@@ -140,6 +156,27 @@ function App() {
     } finally {
       setSubmitting(false)
     }
+  }
+
+  async function handleViewTransits() {
+    if (!chart) return
+    setTransitLoading(true)
+    setTransitError(null)
+    try {
+      const result = await fetchTransits(chart)
+      setTransit(result)
+    } catch (err) {
+      setTransitError(
+        err instanceof ApiError ? err.detail.message : 'Could not compute transits.'
+      )
+    } finally {
+      setTransitLoading(false)
+    }
+  }
+
+  function closeTransits() {
+    setTransit(null)
+    setTransitError(null)
   }
 
   async function handleSynastrySubmit(payload: SynastryRequest) {
@@ -240,7 +277,19 @@ function App() {
         {savedLoadError && <p className="notice notice-error">{savedLoadError}</p>}
         {errorMessage && <p className="notice notice-error">{errorMessage}</p>}
 
-        {mode === 'solo' && chart && <ChartReveal chart={chart} viewingSaved={viewingSaved} {...soloReveal} />}
+        {mode === 'solo' && chart && (
+          <ChartReveal
+            chart={chart}
+            viewingSaved={viewingSaved}
+            {...soloReveal}
+            transit={transit}
+            transitReveal={transitReveal}
+            transitLoading={transitLoading}
+            transitError={transitError}
+            onViewTransits={handleViewTransits}
+            onCloseTransits={closeTransits}
+          />
+        )}
 
         {mode === 'synastry' && synastry && (
           <SynastryReveal synastry={synastry} viewingSaved={viewingSaved} {...synastryReveal} />

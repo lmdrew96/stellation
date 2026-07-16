@@ -3,7 +3,7 @@ import json
 import anthropic
 
 from app.config import settings
-from app.models.schemas import Aspect, ChartData, SynastryAspect, SynastryData
+from app.models.schemas import Aspect, ChartData, SynastryAspect, SynastryData, TransitData
 
 SYSTEM_PROMPT = (
     "You are an astrologer writing natal chart interpretations. You are given "
@@ -203,6 +203,65 @@ def generate_aspect_insight(chart: ChartData, aspect: Aspect) -> dict:
         tools=[ASPECT_INSIGHT_TOOL],
         tool_choice={"type": "tool", "name": "record_aspect_insight"},
         messages=[{"role": "user", "content": json.dumps(payload)}],
+    )
+
+    tool_use = next(b for b in response.content if b.type == "tool_use")
+    return tool_use.input
+
+
+# Deliberately not a full reading re-run: short, present-tense, and scoped to
+# whatever's tightest-orb right now rather than re-covering the whole chart.
+TRANSIT_SYSTEM_PROMPT = (
+    "You are an astrologer writing a short 'what's active for you today' transit "
+    "reading. You are given a person's natal chart, the sky's current planetary "
+    "positions, and the cross-aspects between the two, as JSON. This is not a "
+    "full natal reading - keep it brief and grounded in the present moment. "
+    "Ground every statement in the specific aspects provided - do not invent "
+    "positions not present in the data. The natal chart may include a "
+    "'pronouns' field - if present, use those pronouns. If missing, use the "
+    "person's name or 'they/them' rather than guessing a gender. From the full "
+    "list of transit aspects, select the 3-5 tightest-orb aspects and write a "
+    "short blurb (2-3 sentences) for each, explaining what's active right now "
+    "and how it might show up today or this week. Then write a short synthesis "
+    "(2-4 sentences) naming the overall theme of the moment."
+)
+
+TRANSIT_INTERPRETATION_TOOL = {
+    "name": "record_transit_interpretation",
+    "description": "Record the transit interpretation as structured data.",
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "aspect_interpretations": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "transiting_planet": {"type": "string"},
+                        "natal_planet": {"type": "string"},
+                        "aspect_type": {"type": "string"},
+                        "blurb": {"type": "string"},
+                    },
+                    "required": ["transiting_planet", "natal_planet", "aspect_type", "blurb"],
+                },
+            },
+            "synthesis": {"type": "string"},
+        },
+        "required": ["aspect_interpretations", "synthesis"],
+    },
+}
+
+
+def generate_transit_interpretation(transit: TransitData) -> dict:
+    client = anthropic.Anthropic(api_key=settings.anthropic_api_key or None)
+
+    response = client.messages.create(
+        model=settings.anthropic_model,
+        max_tokens=2048,
+        system=TRANSIT_SYSTEM_PROMPT,
+        tools=[TRANSIT_INTERPRETATION_TOOL],
+        tool_choice={"type": "tool", "name": "record_transit_interpretation"},
+        messages=[{"role": "user", "content": transit.model_dump_json()}],
     )
 
     tool_use = next(b for b in response.content if b.type == "tool_use")

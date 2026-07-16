@@ -158,3 +158,49 @@ class SynastryAspectInsightRequest(BaseModel):
 
 class AspectInsight(BaseModel):
     blurb: str
+
+
+class TransitAspect(BaseModel):
+    transiting_planet: str
+    natal_planet: str
+    aspect_type: str
+    exact_angle: float
+    orb: float
+    applying: bool
+
+
+class TransitRequest(BaseModel):
+    natal: ChartData
+    transit_datetime: str | None = None  # ISO8601 with UTC offset; defaults to now
+
+    @field_validator("transit_datetime")
+    @classmethod
+    def _validate_transit_datetime(cls, v: str | None) -> str | None:
+        if v is None:
+            return v
+        try:
+            parsed = dt.datetime.fromisoformat(v)
+        except ValueError as exc:
+            raise ValueError("must be a valid ISO8601 datetime") from exc
+        if parsed.tzinfo is None:
+            raise ValueError("must include a UTC offset")
+        return v
+
+
+class TransitData(BaseModel):
+    natal: ChartData
+    transiting_planets: list[Planet]
+    transit_datetime: str
+    aspects: list[TransitAspect]
+
+
+class TransitAspectInterpretation(BaseModel):
+    transiting_planet: str
+    natal_planet: str
+    aspect_type: str
+    blurb: str
+
+
+class TransitInterpretation(BaseModel):
+    aspect_interpretations: list[TransitAspectInterpretation]
+    synthesis: str

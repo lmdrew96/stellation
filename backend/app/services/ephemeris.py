@@ -39,12 +39,7 @@ _HOUSE_SYSTEM_CODE: dict[HouseSystem, bytes] = {
 swe.set_sid_mode(swe.SIDM_LAHIRI)
 
 
-def local_to_jd_ut(birth_date: str, birth_time: str, tz_name: str) -> tuple[float, dt.datetime]:
-    tz = zoneinfo.ZoneInfo(tz_name)
-    naive = dt.datetime.strptime(f"{birth_date} {birth_time}", "%Y-%m-%d %H:%M")
-    local_dt = naive.replace(tzinfo=tz)
-    utc_dt = local_dt.astimezone(dt.timezone.utc)
-
+def _utc_to_jd_ut(utc_dt: dt.datetime) -> float:
     _jd_et, jd_ut = swe.utc_to_jd(
         utc_dt.year,
         utc_dt.month,
@@ -54,7 +49,28 @@ def local_to_jd_ut(birth_date: str, birth_time: str, tz_name: str) -> tuple[floa
         utc_dt.second + utc_dt.microsecond / 1_000_000,
         swe.GREG_CAL,
     )
-    return jd_ut, local_dt
+    return jd_ut
+
+
+def local_to_jd_ut(birth_date: str, birth_time: str, tz_name: str) -> tuple[float, dt.datetime]:
+    tz = zoneinfo.ZoneInfo(tz_name)
+    naive = dt.datetime.strptime(f"{birth_date} {birth_time}", "%Y-%m-%d %H:%M")
+    local_dt = naive.replace(tzinfo=tz)
+    utc_dt = local_dt.astimezone(dt.timezone.utc)
+    return _utc_to_jd_ut(utc_dt), local_dt
+
+
+def iso_to_jd_ut(iso_datetime: str) -> float:
+    """Convert an aware ISO8601 datetime (e.g. ChartData.birth_datetime, or a
+    caller-supplied transit moment) back to a Julian day. The UTC offset
+    embedded in the string is enough to do this correctly - no need to
+    re-resolve the IANA zone name."""
+    parsed = dt.datetime.fromisoformat(iso_datetime)
+    return _utc_to_jd_ut(parsed.astimezone(dt.timezone.utc))
+
+
+def now_jd_ut() -> float:
+    return _utc_to_jd_ut(dt.datetime.now(dt.timezone.utc))
 
 
 def _sign_and_degree(longitude: float) -> tuple[str, float]:

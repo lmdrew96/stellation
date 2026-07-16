@@ -126,3 +126,31 @@ export interface SavedSynastryResponse {
 export interface AspectInsight {
   blurb: string
 }
+
+export interface TransitAspect {
+  transiting_planet: string
+  natal_planet: string
+  aspect_type: string
+  exact_angle: number
+  orb: number
+  applying: boolean
+}
+
+export interface TransitData {
+  natal: ChartData
+  transiting_planets: Planet[]
+  transit_datetime: string
+  aspects: TransitAspect[]
+}
+
+export interface TransitAspectInterpretation {
+  transiting_planet: string
+  natal_planet: string
+  aspect_type: string
+  blurb: string
+}
+
+export interface TransitInterpretation {
+  aspect_interpretations: TransitAspectInterpretation[]
+  synthesis: string
+}

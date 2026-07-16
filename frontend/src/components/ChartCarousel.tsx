@@ -9,6 +9,7 @@ export interface ChartCarouselSlide {
 interface ChartCarouselProps {
   slides: ChartCarouselSlide[]
   name: string
+  artLabel?: string
 }
 
 function downloadFilename(name: string, label: string): string {
@@ -16,7 +17,7 @@ function downloadFilename(name: string, label: string): string {
   return `${safeName} - ${label}.svg`
 }
 
-export function ChartCarousel({ slides, name }: ChartCarouselProps) {
+export function ChartCarousel({ slides, name, artLabel = 'natal chart' }: ChartCarouselProps) {
   const [index, setIndex] = useState(0)
   const slide = slides[index]
 
@@ -28,7 +29,7 @@ export function ChartCarousel({ slides, name }: ChartCarouselProps) {
     <div className="chart-carousel">
       <div className="chart-frame">
         <AstrolabeRing size={480} />
-        <img className="chart-art" src={slide.url} alt={`${name}'s natal chart - ${slide.label}`} />
+        <img className="chart-art" src={slide.url} alt={`${name}'s ${artLabel} - ${slide.label}`} />
         {slides.length > 1 && (
           <>
             <button

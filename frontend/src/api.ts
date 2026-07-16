@@ -13,6 +13,8 @@ import type {
   SynastryData,
   SynastryInterpretation,
   SynastryRequest,
+  TransitData,
+  TransitInterpretation,
 } from './types'
 
 export class ApiError extends Error {
@@ -202,6 +204,51 @@ export async function fetchAspectInsight(chart: ChartData, aspect: Aspect): Prom
   if (!res.ok) {
     const body = await res.json().catch(() => null)
     throw new ApiError(parseErrorDetail(body, 'Something went wrong reading this aspect.'))
+  }
+
+  return res.json()
+}
+
+export async function fetchTransits(natal: ChartData): Promise<TransitData> {
+  const res = await fetch('/api/transits', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ natal }),
+  })
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => null)
+    throw new ApiError(parseErrorDetail(body, 'Something went wrong computing transits.'))
+  }
+
+  return res.json()
+}
+
+export async function fetchTransitRenderUrl(transit: TransitData, style: ArtStyle): Promise<string> {
+  const res = await fetch(`/api/transits/render?style=${style}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(transit),
+  })
+
+  if (!res.ok) {
+    throw new Error('Failed to render transit art')
+  }
+
+  const blob = await res.blob()
+  return URL.createObjectURL(blob)
+}
+
+export async function fetchTransitInterpretation(transit: TransitData): Promise<TransitInterpretation> {
+  const res = await fetch('/api/transits/interpret', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(transit),
+  })
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => null)
+    throw new ApiError(parseErrorDetail(body, 'Something went wrong generating the transit reading.'))
   }
 
   return res.json()
