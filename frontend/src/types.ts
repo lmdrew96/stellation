@@ -98,3 +98,27 @@ export interface SynastryInterpretation {
   aspect_interpretations: SynastryAspectInterpretation[]
   synthesis: string
 }
+
+export interface SaveSoloRequest {
+  chart: ChartData
+  interpretation: Interpretation
+}
+
+export interface SaveSynastryRequest {
+  synastry: SynastryData
+  interpretation: SynastryInterpretation
+}
+
+export interface SavedSlugResponse {
+  slug: string
+}
+
+export interface SavedSoloResponse {
+  chart: ChartData
+  interpretation: Interpretation
+}
+
+export interface SavedSynastryResponse {
+  synastry: SynastryData
+  interpretation: SynastryInterpretation
+}

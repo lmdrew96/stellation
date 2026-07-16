@@ -23,13 +23,16 @@ export interface RevealState<TReading> {
 export function useReveal<TInput, TReading>(
   input: TInput | null,
   fetchRenderUrl: (input: TInput, style: ArtStyle) => Promise<string>,
-  fetchReading: (input: TInput) => Promise<TReading>
+  fetchReading: (input: TInput) => Promise<TReading>,
+  presetReading?: TReading
 ): RevealState<TReading> {
   const [artUrls, setArtUrls] = useState<Partial<Record<ArtStyle, string>>>({})
   const [artStatus, setArtStatus] = useState<'idle' | 'loading' | 'error'>('idle')
   const [artError, setArtError] = useState<string | null>(null)
-  const [reading, setReading] = useState<TReading | null>(null)
-  const [readingStatus, setReadingStatus] = useState<'idle' | 'loading' | 'error'>('idle')
+  const [reading, setReading] = useState<TReading | null>(presetReading ?? null)
+  const [readingStatus, setReadingStatus] = useState<'idle' | 'loading' | 'error'>(
+    presetReading ? 'idle' : 'loading'
+  )
   const [readingError, setReadingError] = useState<string | null>(null)
   const artUrlsRef = useRef<Partial<Record<ArtStyle, string>>>({})
   const prevInputRef = useRef<TInput | null>(null)
@@ -43,8 +46,8 @@ export function useReveal<TInput, TReading>(
       setArtUrls({})
       setArtStatus('loading')
       setArtError(null)
-      setReading(null)
-      setReadingStatus('loading')
+      setReading(presetReading ?? null)
+      setReadingStatus(presetReading ? 'idle' : 'loading')
       setReadingError(null)
     }
   }
@@ -69,6 +72,11 @@ export function useReveal<TInput, TReading>(
         setArtStatus('error')
       })
 
+    // A preset reading (a saved chart's already-generated interpretation)
+    // means there's nothing to fetch - re-fetching would both waste an
+    // Anthropic call and risk a different reading than what was saved.
+    if (presetReading !== undefined) return
+
     fetchReading(input)
       .then((result) => {
         setReading(result)
@@ -78,7 +86,7 @@ export function useReveal<TInput, TReading>(
         setReadingStatus('error')
         setReadingError(err instanceof ApiError ? err.detail.message : 'Could not generate a reading.')
       })
-  }, [input, fetchRenderUrl, fetchReading])
+  }, [input, fetchRenderUrl, fetchReading, presetReading])
 
   const artSettled = ART_STYLES.every(({ style }) => artUrls[style] !== undefined) || artStatus === 'error'
   const readingSettled = reading !== null || readingStatus === 'error'

@@ -4,6 +4,9 @@ import type {
   ChartData,
   ChartRequest,
   Interpretation,
+  SavedSlugResponse,
+  SavedSoloResponse,
+  SavedSynastryResponse,
   SynastryData,
   SynastryInterpretation,
   SynastryRequest,
@@ -124,6 +127,63 @@ export async function fetchSynastryInterpretation(synastry: SynastryData): Promi
   if (!res.ok) {
     const body = await res.json().catch(() => null)
     throw new ApiError(parseErrorDetail(body, 'Something went wrong generating the reading.'))
+  }
+
+  return res.json()
+}
+
+export async function saveSoloChart(chart: ChartData, interpretation: Interpretation): Promise<string> {
+  const res = await fetch('/api/save/solo', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ chart, interpretation }),
+  })
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => null)
+    throw new ApiError(parseErrorDetail(body, 'Something went wrong saving this chart.'))
+  }
+
+  const data: SavedSlugResponse = await res.json()
+  return data.slug
+}
+
+export async function saveSynastryChart(
+  synastry: SynastryData,
+  interpretation: SynastryInterpretation,
+): Promise<string> {
+  const res = await fetch('/api/save/synastry', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ synastry, interpretation }),
+  })
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => null)
+    throw new ApiError(parseErrorDetail(body, 'Something went wrong saving this reading.'))
+  }
+
+  const data: SavedSlugResponse = await res.json()
+  return data.slug
+}
+
+export async function fetchSavedSolo(slug: string): Promise<SavedSoloResponse> {
+  const res = await fetch(`/api/save/solo/${slug}`)
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => null)
+    throw new ApiError(parseErrorDetail(body, 'Could not load that saved chart.'))
+  }
+
+  return res.json()
+}
+
+export async function fetchSavedSynastry(slug: string): Promise<SavedSynastryResponse> {
+  const res = await fetch(`/api/save/synastry/${slug}`)
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => null)
+    throw new ApiError(parseErrorDetail(body, 'Could not load that saved reading.'))
   }
 
   return res.json()

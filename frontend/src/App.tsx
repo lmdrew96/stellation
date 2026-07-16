@@ -1,15 +1,23 @@
 import { useEffect, useState } from 'react'
 import './App.css'
-import { ApiError, fetchChart, fetchSynastry } from './api'
+import { ApiError, fetchChart, fetchSavedSolo, fetchSavedSynastry, fetchSynastry } from './api'
 import { AstrolabeRing } from './components/AstrolabeRing'
 import { BirthDataForm } from './components/BirthDataForm'
 import { ChartReveal } from './components/ChartReveal'
+import { GeneratingScreen } from './components/GeneratingScreen'
 import { SynastryForm } from './components/SynastryForm'
 import { SynastryReveal } from './components/SynastryReveal'
 import { useBouncingRing } from './hooks/useBouncingRing'
 import { useChartReveal } from './hooks/useChartReveal'
 import { useSynastryReveal } from './hooks/useSynastryReveal'
-import type { ChartData, ChartRequest, SynastryData, SynastryRequest } from './types'
+import type {
+  ChartData,
+  ChartRequest,
+  Interpretation,
+  SynastryData,
+  SynastryInterpretation,
+  SynastryRequest,
+} from './types'
 
 type HealthStatus = 'checking' | 'ok' | 'error'
 type Mode = 'solo' | 'synastry'
@@ -22,20 +30,49 @@ function needsManualCoords(error: string): boolean {
   return error === 'geocode_failed' || error === 'missing_location'
 }
 
+interface SavedRoute {
+  kind: 'solo' | 'synastry'
+  slug: string
+}
+
+function matchSavedRoute(pathname: string): SavedRoute | null {
+  const solo = pathname.match(/^\/c\/([^/]+)$/)
+  if (solo) return { kind: 'solo', slug: solo[1] }
+  const synastry = pathname.match(/^\/s\/([^/]+)$/)
+  if (synastry) return { kind: 'synastry', slug: synastry[1] }
+  return null
+}
+
+function resetUrlToHome() {
+  if (window.location.pathname !== '/') {
+    window.history.pushState({}, '', '/')
+  }
+}
+
 function App() {
   const [health, setHealth] = useState<HealthStatus>('checking')
-  const [mode, setMode] = useState<Mode>('solo')
+
+  const [savedRoute] = useState<SavedRoute | null>(() => matchSavedRoute(window.location.pathname))
+  const [loadingSaved, setLoadingSaved] = useState(savedRoute !== null)
+  const [savedLoadError, setSavedLoadError] = useState<string | null>(null)
+  const [viewingSaved, setViewingSaved] = useState(false)
+
+  const [mode, setMode] = useState<Mode>(() => savedRoute?.kind ?? 'solo')
   const [submitting, setSubmitting] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
   const [chart, setChart] = useState<ChartData | null>(null)
   const [showManualCoords, setShowManualCoords] = useState(false)
-  const soloReveal = useChartReveal(chart)
+  const [presetInterpretation, setPresetInterpretation] = useState<Interpretation | undefined>(undefined)
+  const soloReveal = useChartReveal(chart, presetInterpretation)
 
   const [synastry, setSynastry] = useState<SynastryData | null>(null)
   const [showManualCoordsA, setShowManualCoordsA] = useState(false)
   const [showManualCoordsB, setShowManualCoordsB] = useState(false)
-  const synastryReveal = useSynastryReveal(synastry)
+  const [presetSynastryInterpretation, setPresetSynastryInterpretation] = useState<
+    SynastryInterpretation | undefined
+  >(undefined)
+  const synastryReveal = useSynastryReveal(synastry, presetSynastryInterpretation)
 
   useEffect(() => {
     fetch('/api/health')
@@ -43,13 +80,54 @@ function App() {
       .catch(() => setHealth('error'))
   }, [])
 
+  useEffect(() => {
+    if (!savedRoute) return
+    if (savedRoute.kind === 'solo') {
+      fetchSavedSolo(savedRoute.slug)
+        .then((result) => {
+          setChart(result.chart)
+          setPresetInterpretation(result.interpretation)
+          setViewingSaved(true)
+        })
+        .catch((err) => {
+          setSavedLoadError(
+            err instanceof ApiError ? err.detail.message : 'Could not load that saved chart.'
+          )
+        })
+        .finally(() => setLoadingSaved(false))
+    } else {
+      fetchSavedSynastry(savedRoute.slug)
+        .then((result) => {
+          setSynastry(result.synastry)
+          setPresetSynastryInterpretation(result.interpretation)
+          setViewingSaved(true)
+        })
+        .catch((err) => {
+          setSavedLoadError(
+            err instanceof ApiError ? err.detail.message : 'Could not load that saved reading.'
+          )
+        })
+        .finally(() => setLoadingSaved(false))
+    }
+  }, [savedRoute])
+
   async function handleSoloSubmit(payload: ChartRequest) {
     setSubmitting(true)
     setErrorMessage(null)
     try {
       const result = await fetchChart(payload)
+      // A chart generated from the form is never the one behind a saved
+      // link, even if the previous chart on screen was. These must be set
+      // in the same batch as setChart (not any earlier) - clearing the
+      // preset reading while `chart` still pointed at the old saved chart
+      // left a window where useReveal's effect saw "old chart + no preset"
+      // and fired a real, wasted interpretation fetch for the chart that
+      // was about to be replaced anyway.
       setChart(result)
+      setPresetInterpretation(undefined)
+      setViewingSaved(false)
       setShowManualCoords(false)
+      resetUrlToHome()
     } catch (err) {
       if (err instanceof ApiError) {
         setErrorMessage(err.detail.message)
@@ -69,9 +147,14 @@ function App() {
     setErrorMessage(null)
     try {
       const result = await fetchSynastry(payload)
+      // See handleSoloSubmit for why these are batched with setSynastry
+      // rather than cleared any earlier.
       setSynastry(result)
+      setPresetSynastryInterpretation(undefined)
+      setViewingSaved(false)
       setShowManualCoordsA(false)
       setShowManualCoordsB(false)
+      resetUrlToHome()
     } catch (err) {
       if (err instanceof ApiError) {
         setErrorMessage(err.detail.message)
@@ -93,9 +176,10 @@ function App() {
   function switchMode(next: Mode) {
     setMode(next)
     setErrorMessage(null)
+    resetUrlToHome()
   }
 
-  const hasResult = mode === 'solo' ? chart !== null : synastry !== null
+  const hasResult = loadingSaved || (mode === 'solo' ? chart !== null : synastry !== null)
   const ring = useBouncingRing(!hasResult)
 
   return (
@@ -111,43 +195,56 @@ function App() {
           <p className="tagline">A precise map of the sky at the moment you arrived.</p>
         </header>
 
-        <div className="mode-toggle" role="tablist">
-          <button
-            type="button"
-            role="tab"
-            aria-selected={mode === 'solo'}
-            data-active={mode === 'solo'}
-            onClick={() => switchMode('solo')}
-          >
-            Solo Chart
-          </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={mode === 'synastry'}
-            data-active={mode === 'synastry'}
-            onClick={() => switchMode('synastry')}
-          >
-            Synastry
-          </button>
-        </div>
-
-        {mode === 'solo' ? (
-          <BirthDataForm onSubmit={handleSoloSubmit} submitting={submitting} showManualCoords={showManualCoords} />
+        {loadingSaved ? (
+          <GeneratingScreen />
         ) : (
-          <SynastryForm
-            onSubmit={handleSynastrySubmit}
-            submitting={submitting}
-            showManualCoordsA={showManualCoordsA}
-            showManualCoordsB={showManualCoordsB}
-          />
+          <>
+            <div className="mode-toggle" role="tablist">
+              <button
+                type="button"
+                role="tab"
+                aria-selected={mode === 'solo'}
+                data-active={mode === 'solo'}
+                onClick={() => switchMode('solo')}
+              >
+                Solo Chart
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={mode === 'synastry'}
+                data-active={mode === 'synastry'}
+                onClick={() => switchMode('synastry')}
+              >
+                Synastry
+              </button>
+            </div>
+
+            {mode === 'solo' ? (
+              <BirthDataForm
+                onSubmit={handleSoloSubmit}
+                submitting={submitting}
+                showManualCoords={showManualCoords}
+              />
+            ) : (
+              <SynastryForm
+                onSubmit={handleSynastrySubmit}
+                submitting={submitting}
+                showManualCoordsA={showManualCoordsA}
+                showManualCoordsB={showManualCoordsB}
+              />
+            )}
+          </>
         )}
 
+        {savedLoadError && <p className="notice notice-error">{savedLoadError}</p>}
         {errorMessage && <p className="notice notice-error">{errorMessage}</p>}
 
-        {mode === 'solo' && chart && <ChartReveal chart={chart} {...soloReveal} />}
+        {mode === 'solo' && chart && <ChartReveal chart={chart} viewingSaved={viewingSaved} {...soloReveal} />}
 
-        {mode === 'synastry' && synastry && <SynastryReveal synastry={synastry} {...synastryReveal} />}
+        {mode === 'synastry' && synastry && (
+          <SynastryReveal synastry={synastry} viewingSaved={viewingSaved} {...synastryReveal} />
+        )}
       </main>
 
       <div className="backend-status" data-state={health}>

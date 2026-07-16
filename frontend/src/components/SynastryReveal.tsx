@@ -1,14 +1,17 @@
+import { saveSynastryChart } from '../api'
 import { ART_STYLES } from '../hooks/useChartReveal'
 import type { SynastryRevealState } from '../hooks/useSynastryReveal'
 import type { SynastryData } from '../types'
 import { ChartCarousel } from './ChartCarousel'
 import { GeneratingScreen } from './GeneratingScreen'
 import { PlanetList } from './PlanetList'
+import { SaveLink } from './SaveLink'
 import { SynastryAspectList } from './SynastryAspectList'
 import { SynastryReadingDisplay } from './SynastryReadingDisplay'
 
 interface SynastryRevealProps extends SynastryRevealState {
   synastry: SynastryData
+  viewingSaved?: boolean
 }
 
 export function SynastryReveal({
@@ -19,6 +22,7 @@ export function SynastryReveal({
   readingStatus,
   readingError,
   isGenerating,
+  viewingSaved,
 }: SynastryRevealProps) {
   const nameA = synastry.person_a.name
   const nameB = synastry.person_b.name
@@ -43,6 +47,9 @@ export function SynastryReveal({
               nameB={nameB}
               relationshipType={synastry.relationship_type}
             />
+          )}
+          {reading && !viewingSaved && (
+            <SaveLink save={() => saveSynastryChart(synastry, reading)} pathPrefix="/s/" />
           )}
           <div className="synastry-placements">
             <PlanetList planets={synastry.person_a.planets} heading={`${nameA}'s Placements`} />

@@ -5,6 +5,9 @@ import { useReveal } from './useReveal'
 
 export type SynastryRevealState = RevealState<SynastryInterpretation>
 
-export function useSynastryReveal(synastry: SynastryData | null): SynastryRevealState {
-  return useReveal(synastry, fetchSynastryRenderUrl, fetchSynastryInterpretation)
+export function useSynastryReveal(
+  synastry: SynastryData | null,
+  presetReading?: SynastryInterpretation
+): SynastryRevealState {
+  return useReveal(synastry, fetchSynastryRenderUrl, fetchSynastryInterpretation, presetReading)
 }

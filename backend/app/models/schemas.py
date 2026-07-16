@@ -120,3 +120,27 @@ class SynastryAspectInterpretation(BaseModel):
 class SynastryInterpretation(BaseModel):
     aspect_interpretations: list[SynastryAspectInterpretation]
     synthesis: str
+
+
+class SaveSoloRequest(BaseModel):
+    chart: ChartData
+    interpretation: Interpretation
+
+
+class SaveSynastryRequest(BaseModel):
+    synastry: SynastryData
+    interpretation: SynastryInterpretation
+
+
+class SavedSlugResponse(BaseModel):
+    slug: str
+
+
+class SavedSoloResponse(BaseModel):
+    chart: ChartData
+    interpretation: Interpretation
+
+
+class SavedSynastryResponse(BaseModel):
+    synastry: SynastryData
+    interpretation: SynastryInterpretation

@@ -1,3 +1,4 @@
+import { saveSoloChart } from '../api'
 import { ART_STYLES } from '../hooks/useChartReveal'
 import type { ChartRevealState } from '../hooks/useChartReveal'
 import type { ChartData } from '../types'
@@ -6,9 +7,11 @@ import { ChartCarousel } from './ChartCarousel'
 import { GeneratingScreen } from './GeneratingScreen'
 import { PlanetList } from './PlanetList'
 import { ReadingDisplay } from './ReadingDisplay'
+import { SaveLink } from './SaveLink'
 
 interface ChartRevealProps extends ChartRevealState {
   chart: ChartData
+  viewingSaved?: boolean
 }
 
 export function ChartReveal({
@@ -19,6 +22,7 @@ export function ChartReveal({
   readingStatus,
   readingError,
   isGenerating,
+  viewingSaved,
 }: ChartRevealProps) {
   return (
     <section className="reveal">
@@ -34,6 +38,9 @@ export function ChartReveal({
           )}
           {readingStatus === 'error' && <p className="notice notice-error">{readingError}</p>}
           {reading && <ReadingDisplay reading={reading} />}
+          {reading && !viewingSaved && (
+            <SaveLink save={() => saveSoloChart(chart, reading)} pathPrefix="/c/" />
+          )}
           <PlanetList planets={chart.planets} />
           <AspectList aspects={chart.aspects} />
         </>

@@ -6,7 +6,7 @@ from slowapi.errors import RateLimitExceeded
 from app.config import settings
 from app.errors import unhandled_exception_handler, validation_exception_handler
 from app.rate_limit import limiter, rate_limit_exceeded_handler
-from app.routers import chart, health, interpret, render, synastry
+from app.routers import chart, health, interpret, render, save, synastry
 
 app = FastAPI(title="Stellation API")
 
@@ -27,3 +27,4 @@ app.include_router(chart.router)
 app.include_router(render.router)
 app.include_router(interpret.router)
 app.include_router(synastry.router)
+app.include_router(save.router)

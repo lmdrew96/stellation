@@ -58,6 +58,10 @@ Runs on port 5173. The Vite dev server proxies `/api/*` to the backend
 | `/api/chart` | POST | Birth data in → planetary positions + aspects out |
 | `/api/render` | POST | Chart data in → SVG art out |
 | `/api/interpret` | POST | Chart data in → Claude-generated reading out |
+| `/api/save/solo` | POST | Chart + reading in → shareable slug out |
+| `/api/save/synastry` | POST | Synastry + reading in → shareable slug out |
+| `/api/save/solo/{slug}` | GET | Slug in → saved chart + reading out |
+| `/api/save/synastry/{slug}` | GET | Slug in → saved synastry + reading out |
 
 Full data model and phase-by-phase build notes: `docs/stellation-spec.md`.
 
@@ -75,6 +79,17 @@ local dev only, where Vite on :5173 and uvicorn on :8420 are different origins).
 Environment Variables settings — it's never committed (`backend/.env` is
 gitignored) and there's nothing to configure in code.
 
+**Required manual step (persistence):** provision a Neon Postgres project,
+copy its **pooled** connection string (hostname contains `-pooler` — this
+matters for a serverless/connection-per-request backend), and set it as
+`DATABASE_URL` in both `backend/.env` (local dev) and the Vercel project's
+Environment Variables (prod). Then run the one-time schema setup against
+each database:
+
+```sh
+.venv/bin/python -m scripts.init_db
+```
+
 ## Design notes
 
 - **Ephemeris:** Moshier semi-analytic mode (`FLG_MOSEPH`), not full Swiss
@@ -91,9 +106,16 @@ gitignored) and there's nothing to configure in code.
 - **Model:** `claude-haiku-4-5` (switched from `claude-sonnet-4-6` — Sonnet
   readings took ~a minute to render; Haiku is meaningfully faster for this
   structured-extraction task).
+- **Persistence:** opt-in only — nothing saves until the user clicks "Save &
+  get link." A saved record is just the chart/synastry data plus the
+  already-generated reading (art is never stored; it's deterministic from
+  the chart data, so a saved-link visit just re-renders it on demand). No
+  expiry in v1, and no auth — the slug itself is the only access control.
+  On Neon's free tier the database compute suspends after ~5 minutes idle,
+  so the first save/load after a quiet period has an extra 1-3s "wake up"
+  latency — expected, not a bug.
 
 ## Open questions (not yet decided — see spec doc)
 
-Persistence (currently fully ephemeral — generate, view, done) is the one
-item from the spec's original open-questions list still unresolved. Art
-direction (Phase 5) and hosting target have both been decided.
+Art direction (Phase 5), hosting target, and persistence have all been
+decided. No open items remain from the spec's original list.

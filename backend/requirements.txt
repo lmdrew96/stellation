@@ -10,3 +10,4 @@ geopy==2.4.1
 timezonefinder==6.5.7
 anthropic==0.116.0
 slowapi==0.1.10
+psycopg[binary]==3.3.4
