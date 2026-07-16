@@ -82,8 +82,12 @@ class TestComputePlanetsHouseSystems:
         return [{"name": "TestBody", "longitude": longitude, "speed": speed}]
 
     def test_retrograde_flag_follows_speed_sign(self):
-        direct = compute_planets(self.JD_UT_2000_01_01_NOON, self.LAT, self.LNG, self._raw(100.0, 0.5))
-        retrograde = compute_planets(self.JD_UT_2000_01_01_NOON, self.LAT, self.LNG, self._raw(100.0, -0.5))
+        direct = compute_planets(
+            self.JD_UT_2000_01_01_NOON, self.LAT, self.LNG, self._raw(100.0, 0.5)
+        )
+        retrograde = compute_planets(
+            self.JD_UT_2000_01_01_NOON, self.LAT, self.LNG, self._raw(100.0, -0.5)
+        )
         assert direct[0]["retrograde"] is False
         assert retrograde[0]["retrograde"] is True
 
@@ -110,10 +114,18 @@ class TestComputePlanetsHouseSystems:
         # zodiac sign/degree come from the planet's own longitude, not the
         # house system - switching house systems shouldn't change them.
         placidus = compute_planets(
-            self.JD_UT_2000_01_01_NOON, self.LAT, self.LNG, self._raw(200.0, 1.0), house_system="placidus"
+            self.JD_UT_2000_01_01_NOON,
+            self.LAT,
+            self.LNG,
+            self._raw(200.0, 1.0),
+            house_system="placidus",
         )
         whole_sign = compute_planets(
-            self.JD_UT_2000_01_01_NOON, self.LAT, self.LNG, self._raw(200.0, 1.0), house_system="whole_sign"
+            self.JD_UT_2000_01_01_NOON,
+            self.LAT,
+            self.LNG,
+            self._raw(200.0, 1.0),
+            house_system="whole_sign",
         )
         assert placidus[0]["sign"] == whole_sign[0]["sign"]
         assert placidus[0]["degree_in_sign"] == whole_sign[0]["degree_in_sign"]

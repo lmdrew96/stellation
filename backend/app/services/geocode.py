@@ -1,3 +1,5 @@
+from functools import lru_cache
+
 from geopy.exc import GeopyError
 from geopy.geocoders import Nominatim
 
@@ -8,6 +10,7 @@ class GeocodeError(Exception):
     pass
 
 
+@lru_cache(maxsize=512)
 def geocode_place(place_name: str) -> tuple[float, float]:
     try:
         location = _geolocator.geocode(place_name, timeout=10)

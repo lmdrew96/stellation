@@ -207,7 +207,9 @@ def render_chart_svg(chart: ChartData, style: ChartStyle = "generative") -> str:
     # nothing else going on, so it stays the focal structure.
     circle_alpha = 0.7 if style == "traditional" else 0.4
     ax.add_patch(
-        plt.Circle((0, 0), RADIUS, fill=False, color=STRUCTURE_COLOR, linewidth=1.1, alpha=circle_alpha)
+        plt.Circle(
+            (0, 0), RADIUS, fill=False, color=STRUCTURE_COLOR, linewidth=1.1, alpha=circle_alpha
+        )
     )
 
     if style == "traditional":
@@ -250,7 +252,9 @@ def _synastry_positions(chart: ChartData, radius: float) -> dict[str, tuple[floa
     return positions
 
 
-def _draw_synastry_dots(ax, chart: ChartData, positions: dict, filled: bool, fontsize: float) -> None:
+def _draw_synastry_dots(
+    ax, chart: ChartData, positions: dict, filled: bool, fontsize: float
+) -> None:
     label_offsets = _label_offsets(chart.planets)
     for planet in chart.planets:
         x, y = positions[planet.name]
@@ -301,11 +305,15 @@ def _draw_synastry_ribbon(
     ax.add_collection(lc)
 
 
-def _draw_synastry_traditional(ax, synastry: SynastryData, positions_a: dict, positions_b: dict) -> None:
+def _draw_synastry_traditional(
+    ax, synastry: SynastryData, positions_a: dict, positions_b: dict
+) -> None:
     for aspect in synastry.aspects:
         p1 = positions_a[aspect.planet_a]
         p2 = positions_b[aspect.planet_b]
-        _draw_curved_aspect(ax, p1, p2, _orb_to_alpha(aspect.orb), _orb_to_width(aspect.orb), bow=0.2)
+        _draw_curved_aspect(
+            ax, p1, p2, _orb_to_alpha(aspect.orb), _orb_to_width(aspect.orb), bow=0.2
+        )
 
 
 def _synastry_aspect_counts(synastry: SynastryData) -> tuple[dict[str, int], dict[str, int]]:
@@ -321,7 +329,9 @@ def _synastry_aspect_counts(synastry: SynastryData) -> tuple[dict[str, int], dic
     return counts_a, counts_b
 
 
-def _draw_synastry_generative(ax, synastry: SynastryData, positions_a: dict, positions_b: dict) -> None:
+def _draw_synastry_generative(
+    ax, synastry: SynastryData, positions_a: dict, positions_b: dict
+) -> None:
     counts_a, counts_b = _synastry_aspect_counts(synastry)
     _draw_orbit_rings(
         ax, synastry.person_a, counts_a,
@@ -359,7 +369,9 @@ def render_synastry_svg(synastry: SynastryData, style: ChartStyle = "generative"
 
     circle_alpha = 0.6 if style == "traditional" else 0.35
     ax.add_patch(
-        plt.Circle((0, 0), RADIUS, fill=False, color=STRUCTURE_COLOR, linewidth=1.1, alpha=circle_alpha)
+        plt.Circle(
+            (0, 0), RADIUS, fill=False, color=STRUCTURE_COLOR, linewidth=1.1, alpha=circle_alpha
+        )
     )
     ax.add_patch(
         plt.Circle(

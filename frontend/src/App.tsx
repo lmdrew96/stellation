@@ -13,6 +13,14 @@ import type { ChartData, ChartRequest, SynastryData, SynastryRequest } from './t
 type HealthStatus = 'checking' | 'ok' | 'error'
 type Mode = 'solo' | 'synastry'
 
+// Both mean "we couldn't resolve coordinates from the place name" - a
+// missing birth_place hits the same wall as an unresolvable one, so both
+// should reveal the manual lat/lng fields rather than leaving the user with
+// an error telling them to do something the form doesn't show them how to do.
+function needsManualCoords(error: string): boolean {
+  return error === 'geocode_failed' || error === 'missing_location'
+}
+
 function App() {
   const [health, setHealth] = useState<HealthStatus>('checking')
   const [mode, setMode] = useState<Mode>('solo')
@@ -44,7 +52,7 @@ function App() {
     } catch (err) {
       if (err instanceof ApiError) {
         setErrorMessage(err.detail.message)
-        if (err.detail.error === 'geocode_failed') {
+        if (needsManualCoords(err.detail.error)) {
           setShowManualCoords(true)
         }
       } else {
@@ -66,7 +74,7 @@ function App() {
     } catch (err) {
       if (err instanceof ApiError) {
         setErrorMessage(err.detail.message)
-        if (err.detail.error === 'geocode_failed') {
+        if (needsManualCoords(err.detail.error)) {
           if (err.detail.person === 'b') {
             setShowManualCoordsB(true)
           } else {

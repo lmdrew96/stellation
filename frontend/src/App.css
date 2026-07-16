@@ -378,8 +378,8 @@
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
-  width: 2rem;
-  height: 2rem;
+  width: 2.75rem;
+  height: 2.75rem;
   border-radius: 50%;
   border: 1px solid var(--color-surface-line);
   background: rgb(from var(--color-bg) r g b / 0.6);
@@ -430,20 +430,33 @@
 
 .carousel-dots {
   display: flex;
-  gap: 0.4rem;
+  /* No gap: each dot's own hit area (see .carousel-dot) already provides
+     comfortable spacing - adding a gap on top would push the visible marks
+     far apart even though they still look like small, tightly-spaced dots. */
+  gap: 0;
 }
 
 .carousel-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
+  width: 2.75rem;
+  height: 2.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   border: none;
-  background: var(--color-surface-line);
+  background: none;
   cursor: pointer;
   padding: 0;
 }
 
-.carousel-dot[data-active='true'] {
+.carousel-dot::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--color-surface-line);
+}
+
+.carousel-dot[data-active='true']::before {
   background: var(--color-accent-warm);
 }
 

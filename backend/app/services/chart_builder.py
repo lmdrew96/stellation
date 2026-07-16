@@ -18,7 +18,7 @@ def build_chart(payload: ChartRequest) -> tuple[ChartData, list[dict]]:
     elif payload.birth_place:
         try:
             lat, lng = geocode_place(payload.birth_place)
-        except GeocodeError:
+        except GeocodeError as exc:
             raise HTTPException(
                 status_code=422,
                 detail={
@@ -28,7 +28,7 @@ def build_chart(payload: ChartRequest) -> tuple[ChartData, list[dict]]:
                         "Enter latitude/longitude manually."
                     ),
                 },
-            )
+            ) from exc
         place_name = payload.birth_place
     else:
         raise HTTPException(

@@ -1,0 +1,9 @@
+line-length = 100
+
+[lint]
+select = ["E", "F", "I", "B", "UP"]
+
+[lint.per-file-ignores]
+# import order here is load-bearing: MPLCONFIGDIR must be set and
+# matplotlib.use("Agg") must run before matplotlib.pyplot is imported.
+"app/services/render.py" = ["I001"]
