@@ -72,9 +72,9 @@
 
 .chart-frame .astrolabe-ring {
   position: absolute;
-  inset: -14px;
-  width: calc(100% + 28px);
-  height: calc(100% + 28px);
+  inset: 10px;
+  width: calc(100% - 20px);
+  height: calc(100% - 20px);
 }
 
 /* ---------- masthead ---------- */
@@ -418,11 +418,20 @@
 }
 
 .carousel-arrow--prev {
-  left: 0.25rem;
+  left: -3.25rem;
+  @media (max-width: 640px) {
+    /* .app's side padding is a fixed 1.5rem regardless of viewport width -
+       the desktop offset would push the button past the page edge (clipped
+       by .page's overflow-x: clip) on narrow screens. */
+    left: -0.75rem;
+  }
 }
 
 .carousel-arrow--next {
-  right: 0.25rem;
+  right: -3.25rem;
+  @media (max-width: 640px) {
+    right: -0.75rem;
+  }
 }
 
 .carousel-meta {
