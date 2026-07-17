@@ -97,7 +97,6 @@ export function ChartReveal({
               slides={ART_STYLES.map(({ style, label }) => ({ label, url: artUrls[style]! }))}
             />
           )}
-          {ART_STYLES.every(({ style }) => artUrls[style]) && <PatternList chart={chart} />}
           {reading && !viewingSaved && (
             <SaveLink save={(token) => saveSoloChart(chart, reading, token)} pathPrefix="/c/" />
           )}
@@ -166,6 +165,7 @@ export function ChartReveal({
           {reading && <ReadingDisplay reading={reading} />}
           <ChartAngles angles={chart.angles} chart={chart} />
           <PlacementList chart={chart} />
+          <PatternList chart={chart} />
           <AspectList chart={chart} />
           {reading && viewingSaved && !isComposite && (
             <CompareForm
