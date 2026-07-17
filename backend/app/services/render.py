@@ -101,10 +101,13 @@ PLANET_COLOR = {
 # on top of one another.
 LABEL_COLLISION_THRESHOLD_DEG = 6.0
 
-# Pattern-member aspect lines (Grand Trine/T-Square/Grand Cross) get a
-# distinct, uniform treatment instead of the generic orb-based alpha/width -
-# reuses LABEL_COLOR (already validated legible on BG_COLOR, see the palette
-# comment above) rather than introducing an unvalidated new hue.
+# Pattern-member aspect lines get a distinct, uniform treatment instead of
+# the generic orb-based alpha/width - reuses LABEL_COLOR (already validated
+# legible on BG_COLOR, see the palette comment above) rather than
+# introducing an unvalidated new hue. Driven off Pattern.edges rather than
+# pattern_type, so every aspect-derived shape (Grand Trine, T-Square, Grand
+# Cross, Yod, Kite) gets this treatment automatically - only Stellium has no
+# edges, since it's a sign/house clustering, not an aspect shape.
 PATTERN_EDGE_COLOR = LABEL_COLOR
 PATTERN_EDGE_WIDTH = 2.6
 PATTERN_EDGE_ALPHA = 0.85

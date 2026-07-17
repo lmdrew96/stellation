@@ -1,4 +1,4 @@
-from app.services.aspects import compute_aspects, compute_synastry_aspects
+from app.services.aspects import compute_aspects, compute_synastry_aspects, compute_transit_aspects
 
 
 def body(name: str, longitude: float, speed: float = 1.0) -> dict:
@@ -50,6 +50,38 @@ class TestComputeAspects:
         assert find(aspects, "A", "B")["aspect_type"] == "sextile"
         assert find(aspects, "A", "C")["aspect_type"] == "trine"
 
+    def test_exact_quincunx(self):
+        aspects = compute_aspects([body("Sun", 0.0), body("Moon", 150.0)])
+        aspect = find(aspects, "Sun", "Moon")
+        assert aspect is not None
+        assert aspect["aspect_type"] == "quincunx"
+        assert aspect["orb"] == 0.0
+
+    def test_quincunx_orb_at_limit_is_included(self):
+        # Quincunx's orb limit is 3.0 - separation of exactly 153 degrees
+        # (150 + 3) should just barely register.
+        aspects = compute_aspects([body("Sun", 0.0), body("Moon", 153.0)])
+        aspect = find(aspects, "Sun", "Moon")
+        assert aspect is not None
+        assert aspect["aspect_type"] == "quincunx"
+        assert aspect["orb"] == 3.0
+
+    def test_quincunx_orb_just_past_limit_is_excluded(self):
+        aspects = compute_aspects([body("Sun", 0.0), body("Moon", 153.01)])
+        assert find(aspects, "Sun", "Moon") is None
+
+    def test_gap_between_trine_and_quincunx_bands_has_no_aspect(self):
+        # 140 degrees falls between trine's band (112-128) and quincunx's
+        # band (147-153) - no aspect applies.
+        aspects = compute_aspects([body("Sun", 0.0), body("Moon", 140.0)])
+        assert find(aspects, "Sun", "Moon") is None
+
+    def test_gap_between_quincunx_and_opposition_bands_has_no_aspect(self):
+        # 160 degrees falls between quincunx's band (147-153) and
+        # opposition's band (172-188) - no aspect applies.
+        aspects = compute_aspects([body("Sun", 0.0), body("Moon", 160.0)])
+        assert find(aspects, "Sun", "Moon") is None
+
     def test_applying_when_separation_is_shrinking(self):
         # Sun stationary at 0, Moon at 5 moving toward 0 (speed -2/day) -
         # the conjunction orb shrinks over the lookahead window.
@@ -88,6 +120,11 @@ class TestComputeSynastryAspects:
         aspects = compute_synastry_aspects([body("Sun", 0.0)], [body("Venus", 25.0)])
         assert aspects == []
 
+    def test_cross_chart_quincunx(self):
+        aspects = compute_synastry_aspects([body("Sun", 0.0)], [body("Venus", 150.0)])
+        assert len(aspects) == 1
+        assert aspects[0]["aspect_type"] == "quincunx"
+
     def test_every_person_a_planet_checked_against_every_person_b_planet(self):
         # Sun/Venus: 0 vs 0 = conjunction. Sun/Mars: 0 vs 180 = opposition.
         # Moon/Venus: 90 vs 0 = square. Moon/Mars: 90 vs 180 = square.
@@ -102,3 +139,13 @@ class TestComputeSynastryAspects:
             ("Moon", "Venus"): "square",
             ("Moon", "Mars"): "square",
         }
+
+
+class TestComputeTransitAspects:
+    def test_transiting_quincunx_to_natal(self):
+        aspects = compute_transit_aspects([body("Sun", 0.0)], [body("Saturn", 150.0)])
+        assert len(aspects) == 1
+        aspect = aspects[0]
+        assert aspect["transiting_planet"] == "Saturn"
+        assert aspect["natal_planet"] == "Sun"
+        assert aspect["aspect_type"] == "quincunx"

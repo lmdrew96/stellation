@@ -2,12 +2,16 @@ import numpy as np
 
 # Standard preset: tighter orbs for conjunction/opposition/trine, tighter
 # still for square, tightest for sextile — the common convention across
-# astrology software (e.g. astro.com defaults).
+# astrology software (e.g. astro.com defaults). Quincunx's 3° orb is tighter
+# still - it's a minor/subtle aspect by convention, not a major one, and its
+# 150° band (147-153) sits cleanly between trine's (112-128) and
+# opposition's (172-188) with no overlap.
 ASPECTS = [
     ("conjunction", 0.0, 8.0),
     ("sextile", 60.0, 6.0),
     ("square", 90.0, 7.0),
     ("trine", 120.0, 8.0),
+    ("quincunx", 150.0, 3.0),
     ("opposition", 180.0, 8.0),
 ]
 

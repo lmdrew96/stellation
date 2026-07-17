@@ -28,27 +28,37 @@ def _aspect_between(lookup: dict[frozenset, str], a: str, b: str) -> str | None:
     return lookup.get(frozenset((a, b)))
 
 
+def _grand_trine_triples(
+    names: list[str], lookup: dict[frozenset, str]
+) -> list[tuple[str, str, str]]:
+    return [
+        (a, b, c)
+        for a, b, c in itertools.combinations(names, 3)
+        if _aspect_between(lookup, a, b) == "trine"
+        and _aspect_between(lookup, b, c) == "trine"
+        and _aspect_between(lookup, a, c) == "trine"
+    ]
+
+
+def _trine_element_label(triple: tuple[str, str, str], sign_by_name: dict[str, str]) -> str:
+    elements = {_ELEMENT_BY_SIGN[sign_by_name[p]] for p in triple}
+    element = elements.pop() if len(elements) == 1 else None
+    return f"Grand Trine in {element}" if element else "Grand Trine"
+
+
 def _detect_grand_trines(
-    names: list[str], lookup: dict[frozenset, str], sign_by_name: dict[str, str]
+    trine_triples: list[tuple[str, str, str]], sign_by_name: dict[str, str]
 ) -> list[Pattern]:
     patterns = []
-    for a, b, c in itertools.combinations(names, 3):
-        if (
-            _aspect_between(lookup, a, b) == "trine"
-            and _aspect_between(lookup, b, c) == "trine"
-            and _aspect_between(lookup, a, c) == "trine"
-        ):
-            elements = {_ELEMENT_BY_SIGN[sign_by_name[p]] for p in (a, b, c)}
-            element = elements.pop() if len(elements) == 1 else None
-            label = f"Grand Trine in {element}" if element else "Grand Trine"
-            patterns.append(
-                Pattern(
-                    pattern_type="grand_trine",
-                    planets=[a, b, c],
-                    edges=[(a, b), (b, c), (a, c)],
-                    label=label,
-                )
+    for a, b, c in trine_triples:
+        patterns.append(
+            Pattern(
+                pattern_type="grand_trine",
+                planets=[a, b, c],
+                edges=[(a, b), (b, c), (a, c)],
+                label=_trine_element_label((a, b, c), sign_by_name),
             )
+        )
     return patterns
 
 
@@ -103,6 +113,65 @@ def _detect_grand_crosses(names: list[str], lookup: dict[frozenset, str]) -> lis
     return patterns
 
 
+def _detect_yods(names: list[str], lookup: dict[frozenset, str]) -> list[Pattern]:
+    patterns = []
+    sextiles = [
+        (a, b)
+        for a, b in itertools.combinations(names, 2)
+        if _aspect_between(lookup, a, b) == "sextile"
+    ]
+    for a, b in sextiles:
+        for c in names:
+            if c in (a, b):
+                continue
+            if (
+                _aspect_between(lookup, a, c) == "quincunx"
+                and _aspect_between(lookup, b, c) == "quincunx"
+            ):
+                patterns.append(
+                    Pattern(
+                        pattern_type="yod",
+                        planets=[a, b, c],
+                        edges=[(a, b), (a, c), (b, c)],
+                        label=f"Yod apex at {c}",
+                    )
+                )
+    return patterns
+
+
+def _detect_kites(
+    names: list[str],
+    lookup: dict[frozenset, str],
+    sign_by_name: dict[str, str],
+    trine_triples: list[tuple[str, str, str]],
+) -> list[Pattern]:
+    patterns = []
+    for triple in trine_triples:
+        a, b, c = triple
+        for vertex, o1, o2 in ((a, b, c), (b, a, c), (c, a, b)):
+            for d in names:
+                if d in (a, b, c):
+                    continue
+                if (
+                    _aspect_between(lookup, vertex, d) == "opposition"
+                    and _aspect_between(lookup, o1, d) == "sextile"
+                    and _aspect_between(lookup, o2, d) == "sextile"
+                ):
+                    patterns.append(
+                        Pattern(
+                            pattern_type="kite",
+                            planets=[a, b, c, d],
+                            edges=[
+                                (a, b), (b, c), (a, c),
+                                (vertex, d), (o1, d), (o2, d),
+                            ],
+                            label=f"Kite ({_trine_element_label(triple, sign_by_name)}) "
+                            f"anchored at {d}",
+                        )
+                    )
+    return patterns
+
+
 def _detect_stelliums(planets: list[dict]) -> list[Pattern]:
     by_sign: dict[str, list[str]] = {}
     by_house: dict[int, list[str]] = {}
@@ -134,10 +203,13 @@ def detect_patterns(planets: list[dict], aspects: list[dict]) -> list[Pattern]:
     names = [p["name"] for p in planets]
     sign_by_name = {p["name"]: p["sign"] for p in planets}
     lookup = _aspect_lookup(aspects)
+    trine_triples = _grand_trine_triples(names, lookup)
 
     return [
-        *_detect_grand_trines(names, lookup, sign_by_name),
+        *_detect_grand_trines(trine_triples, sign_by_name),
         *_detect_t_squares(names, lookup),
         *_detect_grand_crosses(names, lookup),
         *_detect_stelliums(planets),
+        *_detect_yods(names, lookup),
+        *_detect_kites(names, lookup, sign_by_name, trine_triples),
     ]

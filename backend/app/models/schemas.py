@@ -68,7 +68,7 @@ class Aspect(BaseModel):
     applying: bool
 
 
-PatternType = Literal["grand_trine", "t_square", "grand_cross", "stellium"]
+PatternType = Literal["grand_trine", "t_square", "grand_cross", "stellium", "yod", "kite"]
 
 
 class Pattern(BaseModel):

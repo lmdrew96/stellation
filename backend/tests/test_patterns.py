@@ -167,6 +167,65 @@ class TestStellium:
         assert {s.label for s in stelliums} == {"Stellium in Leo", "Stellium in the 5th house"}
 
 
+class TestYod:
+    def test_two_sextiles_plus_double_quincunx_apex_detected(self):
+        planets = [planet("Sun", "Aries"), planet("Moon", "Gemini"), planet("Saturn", "Virgo")]
+        aspects = [
+            aspect("Sun", "Moon", "sextile"),
+            aspect("Sun", "Saturn", "quincunx"),
+            aspect("Moon", "Saturn", "quincunx"),
+        ]
+        patterns = detect_patterns(planets, aspects)
+        yods = by_type(patterns, "yod")
+        assert len(yods) == 1
+        assert set(yods[0].planets) == {"Sun", "Moon", "Saturn"}
+        assert yods[0].label == "Yod apex at Saturn"
+        assert set(yods[0].edges) == {("Sun", "Moon"), ("Sun", "Saturn"), ("Moon", "Saturn")}
+
+    def test_sextile_without_both_quincunxes_is_not_a_yod(self):
+        planets = [planet("Sun", "Aries"), planet("Moon", "Gemini"), planet("Saturn", "Virgo")]
+        aspects = [aspect("Sun", "Moon", "sextile"), aspect("Sun", "Saturn", "quincunx")]
+        patterns = detect_patterns(planets, aspects)
+        assert by_type(patterns, "yod") == []
+
+
+class TestKite:
+    def test_grand_trine_plus_opposition_and_two_sextiles_detected(self):
+        planets = [
+            planet("Moon", "Cancer"), planet("Neptune", "Scorpio"), planet("Venus", "Pisces"),
+            planet("Mars", "Capricorn"),
+        ]
+        aspects = [
+            aspect("Moon", "Neptune", "trine"),
+            aspect("Neptune", "Venus", "trine"),
+            aspect("Moon", "Venus", "trine"),
+            aspect("Moon", "Mars", "opposition"),
+            aspect("Neptune", "Mars", "sextile"),
+            aspect("Venus", "Mars", "sextile"),
+        ]
+        patterns = detect_patterns(planets, aspects)
+        kites = by_type(patterns, "kite")
+        assert len(kites) == 1
+        assert set(kites[0].planets) == {"Moon", "Neptune", "Venus", "Mars"}
+        assert kites[0].label == "Kite (Grand Trine in Water) anchored at Mars"
+        assert len(kites[0].edges) == 6
+        # The underlying Grand Trine is still reported in its own right -
+        # patterns aren't deduped against larger shapes that contain them.
+        assert len(by_type(patterns, "grand_trine")) == 1
+
+    def test_grand_trine_without_opposing_planet_is_not_a_kite(self):
+        planets = [
+            planet("Moon", "Cancer"), planet("Neptune", "Scorpio"), planet("Venus", "Pisces"),
+        ]
+        aspects = [
+            aspect("Moon", "Neptune", "trine"),
+            aspect("Neptune", "Venus", "trine"),
+            aspect("Moon", "Venus", "trine"),
+        ]
+        patterns = detect_patterns(planets, aspects)
+        assert by_type(patterns, "kite") == []
+
+
 class TestNoPatterns:
     def test_empty_input_produces_no_patterns(self):
         assert detect_patterns([], []) == []
