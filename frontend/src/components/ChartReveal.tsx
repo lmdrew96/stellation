@@ -11,7 +11,7 @@ import { ChartCarousel } from './ChartCarousel'
 import { CompareForm } from './CompareForm'
 import { GeneratingScreen } from './GeneratingScreen'
 import { PatternList } from './PatternList'
-import { PlanetList } from './PlanetList'
+import { PlacementList } from './PlacementList'
 import { ReadingDisplay } from './ReadingDisplay'
 import { SaturnReturnReveal } from './SaturnReturnReveal'
 import { SaveLink } from './SaveLink'
@@ -164,8 +164,8 @@ export function ChartReveal({
           )}
           {readingStatus === 'error' && <p className="notice notice-error">{readingError}</p>}
           {reading && <ReadingDisplay reading={reading} />}
-          <ChartAngles angles={chart.angles} />
-          <PlanetList planets={chart.planets} />
+          <ChartAngles angles={chart.angles} chart={chart} />
+          <PlacementList chart={chart} />
           <AspectList chart={chart} />
           {reading && viewingSaved && !isComposite && (
             <CompareForm

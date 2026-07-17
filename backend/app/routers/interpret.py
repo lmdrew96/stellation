@@ -9,12 +9,15 @@ from app.models.schemas import (
     Interpretation,
     PatternInsight,
     PatternInsightRequest,
+    PlacementInsight,
+    PlacementInsightRequest,
 )
 from app.rate_limit import limiter
 from app.services.interpretation import (
     generate_aspect_insight,
     generate_interpretation,
     generate_pattern_insight,
+    generate_placement_insight,
 )
 
 router = APIRouter()
@@ -75,6 +78,29 @@ def pattern_insight(request: Request, payload: PatternInsightRequest) -> dict:
 
     try:
         return generate_pattern_insight(payload.chart, payload.pattern)
+    except anthropic.AuthenticationError as exc:
+        raise HTTPException(status_code=500, detail=_MISSING_KEY_MESSAGE) from exc
+    except anthropic.APIStatusError as exc:
+        raise HTTPException(
+            status_code=502, detail=f"Anthropic API error: {exc.message}"
+        ) from exc
+    except anthropic.APIConnectionError as exc:
+        raise HTTPException(
+            status_code=502, detail="Could not reach the Anthropic API."
+        ) from exc
+
+
+# Same shape/limits as /api/aspect-insight and /api/pattern-insight above -
+# PlanetList clicks this once per planet within one reading, the same way
+# AspectList/PatternList already do for their own rows.
+@router.post("/api/placement-insight", response_model=PlacementInsight)
+@limiter.limit("60/hour")
+def placement_insight(request: Request, payload: PlacementInsightRequest) -> dict:
+    if not settings.anthropic_api_key:
+        raise HTTPException(status_code=500, detail=_MISSING_KEY_MESSAGE)
+
+    try:
+        return generate_placement_insight(payload.chart, payload.placement_name)
     except anthropic.AuthenticationError as exc:
         raise HTTPException(status_code=500, detail=_MISSING_KEY_MESSAGE) from exc
     except anthropic.APIStatusError as exc:

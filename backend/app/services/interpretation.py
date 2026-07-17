@@ -13,7 +13,7 @@ from app.models.schemas import (
 )
 
 SYSTEM_PROMPT = (
-    "You are an astrologer writing natal chart interpretations. You are given "
+    "You are an astrologer writing a natal chart interpretation. You are given "
     "structured chart data (planet placements and aspects) as JSON, plus an "
     "'angles' list with the Ascendant (rising sign) and Midheaven - real chart "
     "points, but not planets, so they carry no house or retrograde status of "
@@ -27,11 +27,12 @@ SYSTEM_PROMPT = (
     "the data. The chart data may include a 'pronouns' field for the person "
     "the chart belongs to - if present, use those pronouns whenever you refer "
     "to them. If it is missing or null, refer to them by name or with "
-    "'they/them' rather than guessing a gender. Write a short blurb (2-4 "
-    "sentences) for each planet in the chart plus one for the Ascendant and "
-    "one for the Midheaven, and a longer synthesis paragraph (4-6 sentences) "
-    "weaving the placements, angles, aspects, and any named patterns together "
-    "into an overall reading."
+    "'they/them' rather than guessing a gender. Write a synthesis paragraph "
+    "(6-9 sentences) weaving the placements, angles, aspects, and any named "
+    "patterns together into an overall reading of this chart as a whole. "
+    "This is the only text you will produce - the person will look up "
+    "individual planets separately afterward, so write a complete standalone "
+    "overview rather than a lead-in that promises detail to come."
 )
 
 # Forced tool_choice (rather than output_config.format) works across any
@@ -43,20 +44,9 @@ INTERPRETATION_TOOL = {
     "input_schema": {
         "type": "object",
         "properties": {
-            "planet_interpretations": {
-                "type": "array",
-                "items": {
-                    "type": "object",
-                    "properties": {
-                        "planet": {"type": "string"},
-                        "blurb": {"type": "string"},
-                    },
-                    "required": ["planet", "blurb"],
-                },
-            },
             "synthesis": {"type": "string"},
         },
-        "required": ["planet_interpretations", "synthesis"],
+        "required": ["synthesis"],
     },
 }
 
@@ -66,7 +56,7 @@ def generate_interpretation(chart: ChartData) -> dict:
 
     response = client.messages.create(
         model=settings.anthropic_model,
-        max_tokens=4096,
+        max_tokens=1024,
         system=SYSTEM_PROMPT,
         tools=[INTERPRETATION_TOOL],
         tool_choice={"type": "tool", "name": "record_interpretation"},
@@ -95,11 +85,12 @@ def _composite_system_prompt(relationship_type: str) -> str:
         "never describe it as one person's personality or traits. "
         f"{SYNASTRY_RELATIONSHIP_FRAMING[relationship_type]} Ground every "
         "statement in the specific placements and aspects provided - do not "
-        "invent positions not present in the data. Write a short blurb (2-4 "
-        "sentences) for each planet in the chart, framed as what that placement "
-        "means for the relationship. Then write a longer synthesis paragraph "
-        "(4-6 sentences) describing what this relationship is like as its own "
-        "entity - its character, its tendencies, what it draws out."
+        "invent positions not present in the data. Write a synthesis paragraph "
+        "(6-9 sentences) describing what this relationship is like as its own "
+        "entity - its character, its tendencies, what it draws out. This is "
+        "the only text you will produce - the person will look up individual "
+        "placements separately afterward, so write a complete standalone "
+        "overview rather than a lead-in that promises detail to come."
     )
 
 
@@ -108,7 +99,7 @@ def generate_composite_interpretation(chart: ChartData, relationship_type: str) 
 
     response = client.messages.create(
         model=settings.anthropic_model,
-        max_tokens=4096,
+        max_tokens=1024,
         system=_composite_system_prompt(relationship_type),
         tools=[INTERPRETATION_TOOL],
         tool_choice={"type": "tool", "name": "record_interpretation"},
@@ -317,6 +308,59 @@ def generate_pattern_insight(chart: ChartData, pattern: Pattern) -> dict:
     return tool_use.input
 
 
+# Mirrors the aspect/pattern-insight pair above - PlacementList's rows (and
+# ChartAngles' Ascendant/Midheaven pills) load an insight only once clicked,
+# exactly like AspectList and PatternList already do, instead of the full
+# reading generating a blurb for every planet up front (that was the slow
+# part of initial chart generation). Reused as-is across natal, composite,
+# solar-return, and Saturn-return charts, the same way
+# ASPECT_INSIGHT_SYSTEM_PROMPT and PATTERN_INSIGHT_SYSTEM_PROMPT already are -
+# only ChartData's own 'chart_kind' framing differs between them, not how a
+# single placement gets read.
+PLACEMENT_INSIGHT_SYSTEM_PROMPT = (
+    "You are an astrologer. You are given a full natal chart (planet "
+    "placements and aspects) as JSON, plus the name of one specific "
+    "placement from that chart the person wants a closer look at - either a "
+    "planet, or one of the angles (Ascendant/Midheaven). Write a single "
+    "focused blurb (3-5 sentences) about that one placement. For a planet, "
+    "cover its sign, house, and any notable aspects it makes to other "
+    "planets. For the Ascendant or Midheaven, cover its sign and what that "
+    "angle means on its own - angles have no house or aspects of their own, "
+    "so do not invent any. Ground every statement in the chart data "
+    "provided - do not invent positions not present in the data. The chart "
+    "may include a 'pronouns' field for the person the chart belongs to - "
+    "if present, use those pronouns. If missing, refer to them by name or "
+    "with 'they/them' rather than guessing a gender."
+)
+
+PLACEMENT_INSIGHT_TOOL = {
+    "name": "record_placement_insight",
+    "description": "Record the focused placement insight as structured data.",
+    "input_schema": {
+        "type": "object",
+        "properties": {"blurb": {"type": "string"}},
+        "required": ["blurb"],
+    },
+}
+
+
+def generate_placement_insight(chart: ChartData, placement_name: str) -> dict:
+    client = anthropic.Anthropic(api_key=settings.anthropic_api_key or None)
+
+    payload = {"chart": chart.model_dump(mode="json"), "placement_name": placement_name}
+    response = client.messages.create(
+        model=settings.anthropic_model,
+        max_tokens=1024,
+        system=PLACEMENT_INSIGHT_SYSTEM_PROMPT,
+        tools=[PLACEMENT_INSIGHT_TOOL],
+        tool_choice={"type": "tool", "name": "record_placement_insight"},
+        messages=[{"role": "user", "content": json.dumps(payload)}],
+    )
+
+    tool_use = next(b for b in response.content if b.type == "tool_use")
+    return tool_use.input
+
+
 # A solar return chart is shaped exactly like a solo ChartData (cast for the
 # moment the Sun returns to its natal degree, rather than for birth) - reuses
 # INTERPRETATION_TOOL as-is, only the system prompt changes to frame it as
@@ -331,10 +375,12 @@ SOLAR_RETURN_SYSTEM_PROMPT = (
     "'pronouns' field, if present, tells you which pronouns to use; if "
     "missing, use their name or 'they/them' rather than guessing. Ground "
     "every statement in the specific placements and aspects provided - do "
-    "not invent positions not present in the data. Write a short blurb (2-4 "
-    "sentences) for each planet, framed as what it means for this year "
-    "specifically. Then write a longer synthesis paragraph (4-6 sentences) "
-    "naming the overall themes and turning points this year holds."
+    "not invent positions not present in the data. Write a synthesis "
+    "paragraph (6-9 sentences) naming the overall themes and turning points "
+    "this year holds. This is the only text you will produce - the person "
+    "will look up individual placements separately afterward, so write a "
+    "complete standalone overview rather than a lead-in that promises detail "
+    "to come."
 )
 
 
@@ -343,7 +389,7 @@ def generate_solar_return_interpretation(chart: ChartData) -> dict:
 
     response = client.messages.create(
         model=settings.anthropic_model,
-        max_tokens=4096,
+        max_tokens=1024,
         system=SOLAR_RETURN_SYSTEM_PROMPT,
         tools=[INTERPRETATION_TOOL],
         tool_choice={"type": "tool", "name": "record_interpretation"},
@@ -393,11 +439,12 @@ def _saturn_return_system_prompt(cycle: int) -> str:
         "field, if present, tells you which pronouns to use; if missing, use "
         "their name or 'they/them' rather than guessing. Ground every "
         "statement in the specific placements and aspects provided - do not "
-        "invent positions not present in the data. Write a short blurb (2-4 "
-        "sentences) for each planet, framed around what it means for this "
-        "particular return. Then write a longer synthesis paragraph (4-6 "
-        "sentences) naming the overall themes of what's being tested, "
-        "dismantled, or built during this period."
+        "invent positions not present in the data. Write a synthesis "
+        "paragraph (6-9 sentences) naming the overall themes of what's being "
+        "tested, dismantled, or built during this period. This is the only "
+        "text you will produce - the person will look up individual "
+        "placements separately afterward, so write a complete standalone "
+        "overview rather than a lead-in that promises detail to come."
     )
 
 
@@ -406,7 +453,7 @@ def generate_saturn_return_interpretation(chart: ChartData, cycle: int) -> dict:
 
     response = client.messages.create(
         model=settings.anthropic_model,
-        max_tokens=4096,
+        max_tokens=1024,
         system=_saturn_return_system_prompt(cycle),
         tools=[INTERPRETATION_TOOL],
         tool_choice={"type": "tool", "name": "record_interpretation"},

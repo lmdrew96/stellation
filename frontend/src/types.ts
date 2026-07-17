@@ -81,14 +81,12 @@ export interface ApiErrorDetail {
   person?: 'a' | 'b'
 }
 
-export interface PlanetInterpretation {
-  planet: string
-  blurb: string
+export interface Interpretation {
+  synthesis: string
 }
 
-export interface Interpretation {
-  planet_interpretations: PlanetInterpretation[]
-  synthesis: string
+export interface PlacementInsight {
+  blurb: string
 }
 
 export interface SynastryRequest {

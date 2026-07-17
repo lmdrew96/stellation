@@ -122,13 +122,12 @@ class ChartData(BaseModel):
     chart_kind: ChartKind = "natal"
 
 
-class PlanetInterpretation(BaseModel):
-    planet: str
-    blurb: str
-
-
 class Interpretation(BaseModel):
-    planet_interpretations: list[PlanetInterpretation]
+    # Placement-level detail lives behind /api/placement-insight instead (see
+    # PlacementInsightRequest below) - loaded per-planet on click, the same
+    # way AspectInsightRequest/PatternInsightRequest already work, rather
+    # than generated up front for every planet on every chart. Keeps the
+    # eager call that gates initial chart generation to just this synthesis.
     synthesis: str
 
 
@@ -223,6 +222,19 @@ class PatternInsightRequest(BaseModel):
 
 
 class PatternInsight(BaseModel):
+    blurb: str
+
+
+class PlacementInsightRequest(BaseModel):
+    chart: ChartData
+    # Just the placement's name (e.g. "Sun" or "Ascendant") rather than the
+    # full Planet/Angle object - the chart sent alongside it already has
+    # that placement's sign/house/retrograde (or sign/degree, for an angle),
+    # so there's nothing else to pass.
+    placement_name: str
+
+
+class PlacementInsight(BaseModel):
     blurb: str
 
 

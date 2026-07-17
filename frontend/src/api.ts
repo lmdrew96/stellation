@@ -9,6 +9,7 @@ import type {
   MyChartsResponse,
   Pattern,
   PatternInsight,
+  PlacementInsight,
   RelationshipType,
   SavedChartSummary,
   SavedSlugResponse,
@@ -281,6 +282,21 @@ export async function fetchPatternInsight(chart: ChartData, pattern: Pattern): P
   if (!res.ok) {
     const body = await res.json().catch(() => null)
     throw new ApiError(parseErrorDetail(body, 'Something went wrong reading this pattern.'))
+  }
+
+  return res.json()
+}
+
+export async function fetchPlacementInsight(chart: ChartData, placementName: string): Promise<PlacementInsight> {
+  const res = await fetch('/api/placement-insight', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ chart, placement_name: placementName }),
+  })
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => null)
+    throw new ApiError(parseErrorDetail(body, 'Something went wrong reading this placement.'))
   }
 
   return res.json()

@@ -1036,6 +1036,40 @@
   margin-right: 0.4rem;
 }
 
+.chart-angles__item {
+  display: inline-flex;
+  align-items: center;
+  font: inherit;
+  color: inherit;
+}
+
+.chart-angles__item--clickable {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  border-radius: 2px;
+  transition: color 0.15s ease;
+}
+
+.chart-angles__item--clickable:hover {
+  color: var(--color-accent-warm);
+}
+
+.chart-angles__item--clickable:focus-visible {
+  outline: 2px solid var(--color-accent-warm);
+  outline-offset: 2px;
+}
+
+.chart-angles__insight {
+  max-width: 42rem;
+  margin: -0.75rem 0 1.25rem;
+  font-size: 0.92rem;
+  line-height: 1.55;
+  color: var(--color-text-muted);
+  animation: reveal-in 0.3s ease both;
+}
+
 .synastry-placements {
   display: grid;
   grid-template-columns: 1fr 1fr;

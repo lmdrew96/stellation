@@ -6,7 +6,7 @@ import { AspectList } from './AspectList'
 import { ChartAngles } from './ChartAngles'
 import { ChartCarousel } from './ChartCarousel'
 import { GeneratingScreen } from './GeneratingScreen'
-import { PlanetList } from './PlanetList'
+import { PlacementList } from './PlacementList'
 import { ReadingDisplay } from './ReadingDisplay'
 import { SaveLink } from './SaveLink'
 
@@ -51,8 +51,8 @@ export function CompositeReveal({
           )}
           {readingStatus === 'error' && <p className="notice notice-error">{readingError}</p>}
           {reading && <ReadingDisplay reading={reading} heading="The Relationship" />}
-          <ChartAngles angles={composite.angles} />
-          <PlanetList planets={composite.planets} heading="Composite Placements" />
+          <ChartAngles angles={composite.angles} chart={composite} />
+          <PlacementList chart={composite} heading="Composite Placements" />
           <AspectList chart={composite} />
         </>
       )}

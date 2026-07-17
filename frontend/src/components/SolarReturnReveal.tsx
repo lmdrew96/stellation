@@ -5,7 +5,7 @@ import { AspectList } from './AspectList'
 import { ChartAngles } from './ChartAngles'
 import { ChartCarousel } from './ChartCarousel'
 import { GeneratingScreen } from './GeneratingScreen'
-import { PlanetList } from './PlanetList'
+import { PlacementList } from './PlacementList'
 import { ReadingDisplay } from './ReadingDisplay'
 
 interface SolarReturnRevealProps extends SolarReturnRevealState {
@@ -50,8 +50,8 @@ export function SolarReturnReveal({
           )}
           {readingStatus === 'error' && <p className="notice notice-error">{readingError}</p>}
           {reading && <ReadingDisplay reading={reading} heading="This Year's Themes" />}
-          <ChartAngles angles={solarReturn.angles} />
-          <PlanetList planets={solarReturn.planets} heading="This Year's Placements" />
+          <ChartAngles angles={solarReturn.angles} chart={solarReturn} />
+          <PlacementList chart={solarReturn} heading="This Year's Placements" />
           <AspectList chart={solarReturn} />
         </>
       )}
