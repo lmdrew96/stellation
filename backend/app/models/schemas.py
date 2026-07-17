@@ -68,6 +68,20 @@ class Aspect(BaseModel):
     applying: bool
 
 
+PatternType = Literal["grand_trine", "t_square", "grand_cross", "stellium"]
+
+
+class Pattern(BaseModel):
+    pattern_type: PatternType
+    planets: list[str]
+    # Aspect-derived patterns (grand_trine/t_square/grand_cross) list every
+    # pairwise aspect among their members, for render.py to give those
+    # specific aspect lines distinct treatment. Stelliums are a sign/house
+    # clustering, not an aspect shape - always [].
+    edges: list[tuple[str, str]] = []
+    label: str
+
+
 class Angle(BaseModel):
     # Ascendant/Midheaven - real chart points, but not bodies: no retrograde
     # motion, and no independent "house" (the Ascendant IS house 1's cusp
@@ -95,6 +109,11 @@ class ChartData(BaseModel):
     # deserialize cleanly (a required field would 500 on every old saved
     # chart - see saved_charts.py/save.py's ValidationError handling).
     angles: list[Angle] = []
+    # Defaults to [] for the same reason as angles above - only build_chart
+    # populates this today (see chart_builder.py); composite/solar-return/
+    # Saturn-return charts and old saved charts all deserialize with no
+    # detected patterns rather than a required-field error.
+    patterns: list[Pattern] = []
     # Defaults to "natal" so charts saved before this field existed still
     # deserialize cleanly. Only build_composite sets "composite" - a
     # composite's birth_datetime/birth_location are a synthetic midpoint,

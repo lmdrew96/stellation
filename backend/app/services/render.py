@@ -101,6 +101,14 @@ PLANET_COLOR = {
 # on top of one another.
 LABEL_COLLISION_THRESHOLD_DEG = 6.0
 
+# Pattern-member aspect lines (Grand Trine/T-Square/Grand Cross) get a
+# distinct, uniform treatment instead of the generic orb-based alpha/width -
+# reuses LABEL_COLOR (already validated legible on BG_COLOR, see the palette
+# comment above) rather than introducing an unvalidated new hue.
+PATTERN_EDGE_COLOR = LABEL_COLOR
+PATTERN_EDGE_WIDTH = 2.6
+PATTERN_EDGE_ALPHA = 0.85
+
 
 def _absolute_longitude(sign: str, degree_in_sign: float) -> float:
     return SIGNS.index(sign) * 30 + degree_in_sign
@@ -144,22 +152,34 @@ def _orb_to_width(orb: float) -> float:
     return 0.6 + 2.0 * t
 
 
-def _draw_curved_aspect(ax, p1, p2, alpha: float, width: float, bow: float = 0.35) -> None:
+def _draw_curved_aspect(
+    ax, p1, p2, alpha: float, width: float, bow: float = 0.35, color: str = STRUCTURE_COLOR
+) -> None:
     x1, y1 = p1
     x2, y2 = p2
     mx, my = (x1 + x2) / 2, (y1 + y2) / 2
     cx, cy = mx * (1 - bow), my * (1 - bow)  # bow the midpoint toward center
     path = Path([(x1, y1), (cx, cy), (x2, y2)], [Path.MOVETO, Path.CURVE3, Path.CURVE3])
     ax.add_patch(
-        PathPatch(path, facecolor="none", edgecolor=STRUCTURE_COLOR, alpha=alpha, linewidth=width)
+        PathPatch(path, facecolor="none", edgecolor=color, alpha=alpha, linewidth=width)
     )
 
 
+def _pattern_edge_set(chart: ChartData) -> set[frozenset[str]]:
+    return {frozenset(edge) for pattern in chart.patterns for edge in pattern.edges}
+
+
 def _draw_aspect_lines(ax, chart: ChartData, positions: dict) -> None:
+    pattern_edges = _pattern_edge_set(chart)
     for aspect in chart.aspects:
         p1 = positions[aspect.planet_a]
         p2 = positions[aspect.planet_b]
-        _draw_curved_aspect(ax, p1, p2, _orb_to_alpha(aspect.orb), _orb_to_width(aspect.orb))
+        if frozenset((aspect.planet_a, aspect.planet_b)) in pattern_edges:
+            _draw_curved_aspect(
+                ax, p1, p2, PATTERN_EDGE_ALPHA, PATTERN_EDGE_WIDTH, color=PATTERN_EDGE_COLOR
+            )
+        else:
+            _draw_curved_aspect(ax, p1, p2, _orb_to_alpha(aspect.orb), _orb_to_width(aspect.orb))
 
 
 def _orbit_ring(
