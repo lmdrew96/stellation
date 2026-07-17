@@ -28,6 +28,8 @@ export function ChartCarousel({ slides, name, artLabel = 'natal chart' }: ChartC
   return (
     <div className="chart-carousel">
       <div className="chart-frame">
+        <span className="tape tape--tl" aria-hidden="true" />
+        <span className="tape tape--tr" aria-hidden="true" />
         <AstrolabeRing size={480} />
         <img className="chart-art" src={slide.url} alt={`${name}'s ${artLabel} - ${slide.label}`} />
         {slides.length > 1 && (

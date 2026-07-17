@@ -1,28 +1,26 @@
 :root {
-  /* Palette — unchanged. Same hex values as the chart art (render.py) so the
-     UI and the generated chart read as one object, not two apps. */
-  --color-bg: #262423; /* Shadow Grey */
-  --color-surface: #402b47; /* Midnight Violet */
-  --color-text: #c9e0eb; /* Pale Sky */
-  --color-text-muted: #7392b5; /* Dusty Denim */
-  --color-accent: #8350c4; /* Deep Lilac */
-  --color-accent-warm: #d9c27e; /* Air (element color, reused sparingly for UI framing) */
-  --color-error: #c1552c; /* Fire */
+  /* Zine palette - approved 2026-07-17 against stellation-zine-direction.html.
+     Raw hex constants, theme-independent. Paper and Ink are added neutrals
+     (a pure pastel set can't do xerox black/white contrast on its own). The
+     chart art itself (render.py's PLANET_COLOR) is a separate, already-
+     validated system and is untouched by this palette. */
+  --blush: #d8cad5;
+  --mauve: #a46c93;
+  --plum: #554664;
+  --periwinkle: #878bbf;
+  --sky: #a2d2dd;
+  --paper: #f5eee7;
+  --ink: #221b29;
 
-  --color-accent-soft: rgb(from var(--color-accent) r g b / 0.35);
-  --color-accent-wash: rgb(from var(--color-accent) r g b / 0.12);
-  --color-warm-soft: rgb(from var(--color-accent-warm) r g b / 0.45);
-  --color-surface-line: rgb(from var(--color-text-muted) r g b / 0.25);
-
-  --font-display: 'Cormorant Garamond', 'Iowan Old Style', 'Palatino Linotype', Georgia, serif;
   --font-body: 'Space Grotesk', system-ui, 'Segoe UI', Roboto, sans-serif;
   --font-mono: 'IBM Plex Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+  /* Scrawl/stamp are the "used sparingly" display voices - marginalia,
+     captions, the wordmark and headline bursts. Never body copy. */
+  --font-scrawl: 'Caveat', cursive;
+  --font-stamp: 'Permanent Marker', cursive;
 
   font: 400 18px/1.5 var(--font-body);
   letter-spacing: 0.1px;
-  color-scheme: dark;
-  color: var(--color-text);
-  background: var(--color-bg);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -31,6 +29,54 @@
   @media (max-width: 640px) {
     font-size: 16px;
   }
+}
+
+/* Theme mapping. Each theme gets its own safe color rotation rather than one
+   hardcoded set shared across themes - a bug found during mockup review
+   showed plum-on-plum and paper-adjacent-on-paper both going invisible when
+   themes shared assignments. --color-ink-border follows the same rule: a
+   literal near-black "ink" outline reads fine on Paper but disappears into
+   Plum, so dark mode gets a light outline instead (mirrors the mockup's own
+   dark-mode badge/swatch borders). */
+:root[data-theme='light'] {
+  --color-bg: var(--paper);
+  --color-surface: #ffffff;
+  --color-text: var(--ink);
+  --color-text-muted: var(--mauve);
+  --color-accent: var(--mauve);
+  --color-accent-warm: var(--plum);
+  --color-error: #b23a3a;
+  --color-ink-border: var(--ink);
+  color-scheme: light;
+}
+
+:root[data-theme='dark'] {
+  --color-bg: var(--plum);
+  --color-surface: #463756;
+  --color-text: var(--blush);
+  --color-text-muted: var(--periwinkle);
+  --color-accent: var(--sky);
+  --color-accent-warm: var(--blush);
+  --color-error: #f0876b;
+  --color-ink-border: var(--blush);
+  color-scheme: dark;
+}
+
+:root {
+  --color-accent-soft: rgb(from var(--color-accent) r g b / 0.35);
+  --color-accent-wash: rgb(from var(--color-accent) r g b / 0.12);
+  --color-warm-soft: rgb(from var(--color-accent-warm) r g b / 0.45);
+  --color-surface-line: rgb(from var(--color-text-muted) r g b / 0.25);
+
+  color: var(--color-text);
+  /* Subtle halftone dot grain (xerox-punk texture) under the flat theme
+     color - never applied to the chart art itself, which renders in its own
+     <img>, unaffected by this page-level background. */
+  background:
+    radial-gradient(circle, rgb(from var(--color-text) r g b / 0.05) 1px, transparent 1.2px) 0 0 /
+      14px 14px,
+    var(--color-bg);
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 *,
@@ -50,8 +96,8 @@ body {
 h1,
 h2,
 h3 {
-  font-family: var(--font-display);
-  font-weight: 600;
+  font-family: var(--font-body);
+  font-weight: 700;
   color: var(--color-text);
   margin: 0;
 }
@@ -66,9 +112,13 @@ h1 {
 }
 
 h2 {
-  font-size: 1.5rem;
-  font-weight: 500;
+  font-size: 1.4rem;
+  font-weight: 600;
   letter-spacing: 0.01em;
+}
+
+h3 {
+  font-weight: 600;
 }
 
 p {

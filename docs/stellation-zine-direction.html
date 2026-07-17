@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Stellation — zine direction</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Permanent+Marker&family=Caveat:wght@600;700&family=Space+Grotesk:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --blush:#D8CAD5;
+    --mauve:#A46C93;
+    --plum:#554664;
+    --periwinkle:#878BBF;
+    --sky:#A2D2DD;
+    --ink:#221B29;
+    --paper:#F5EEE7;
+  }
+  [data-theme="dark"]{
+    --bg: var(--plum);
+    --surface: #463756;
+    --text: var(--blush);
+    --text-muted: var(--periwinkle);
+    --accent: var(--sky);
+    --accent2: var(--blush);
+  }
+  [data-theme="light"]{
+    --bg: var(--paper);
+    --surface: #ffffff;
+    --text: var(--ink);
+    --text-muted: var(--mauve);
+    --accent: var(--mauve);
+    --accent2: var(--plum);
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; padding:32px 20px 60px;
+    background:
+      radial-gradient(circle, rgba(0,0,0,0.05) 1px, transparent 1.2px) 0 0/14px 14px,
+      var(--bg);
+    color:var(--text);
+    font-family:'Space Grotesk',sans-serif;
+    transition:background .2s,color .2s;
+  }
+  .wrap{max-width:640px;margin:0 auto;}
+  .toggle{
+    display:flex; gap:8px; margin-bottom:28px;
+  }
+  .toggle button{
+    font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:.06em;
+    text-transform:uppercase; padding:6px 12px; border-radius:999px;
+    border:1.5px dashed var(--text-muted); background:transparent; color:var(--text);
+    cursor:pointer;
+  }
+  .toggle button.active{ background:var(--accent); color:var(--bg); border-style:solid; }
+
+  h1.wordmark{
+    margin:0 0 6px; font-size:52px; line-height:1; letter-spacing:0;
+    display:flex; flex-wrap:wrap;
+  }
+  h1.wordmark span{ display:inline-block; }
+  /* letter colors are theme-specific on purpose — a color that reads fine on
+     paper can vanish on plum (e.g. plum-on-plum), so light/dark each get
+     their own safe rotation instead of sharing one hardcoded set */
+  [data-theme="light"] .s1{color:var(--mauve)}
+  [data-theme="light"] .s2{color:var(--plum)}
+  [data-theme="light"] .s3{color:var(--periwinkle)}
+  [data-theme="light"] .s4{color:var(--mauve)}
+  [data-theme="light"] .s5{color:var(--plum)}
+  [data-theme="light"] .s6{color:var(--periwinkle)}
+  [data-theme="light"] .s7{color:var(--mauve)}
+  [data-theme="light"] .s8{color:var(--plum)}
+  [data-theme="light"] .s9{color:var(--periwinkle)}
+  [data-theme="dark"] .s1{color:var(--mauve)}
+  [data-theme="dark"] .s2{color:var(--sky)}
+  [data-theme="dark"] .s3{color:var(--blush)}
+  [data-theme="dark"] .s4{color:var(--periwinkle)}
+  [data-theme="dark"] .s5{color:var(--paper)}
+  [data-theme="dark"] .s6{color:var(--sky)}
+  [data-theme="dark"] .s7{color:var(--blush)}
+  [data-theme="dark"] .s8{color:var(--periwinkle)}
+  [data-theme="dark"] .s9{color:var(--mauve)}
+  .tagline{
+    font-family:'Caveat',cursive; font-size:22px; color:var(--accent);
+    transform:rotate(-2deg); margin:0 0 32px; display:inline-block;
+  }
+
+  .swatches{ display:flex; gap:10px; margin:0 0 40px; flex-wrap:wrap; }
+  .swatch{ text-align:center; }
+  .swatch .chip{
+    width:52px; height:52px; border-radius:50%; border:2px solid var(--ink);
+    margin-bottom:6px;
+  }
+  [data-theme="dark"] .swatch .chip{ border-color:#fff; }
+  .swatch .hex{ font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--text-muted); }
+
+  .section-label{
+    font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:.12em;
+    text-transform:uppercase; color:var(--text-muted); margin:0 0 14px;
+    border-top:1.5px dashed var(--text-muted); padding-top:14px;
+  }
+
+  /* scrapbook chart card */
+  .scrap{
+    position:relative; background:var(--surface); width:280px; padding:14px 14px 10px;
+    margin:20px auto 8px; transform:rotate(-3deg);
+    box-shadow:0 6px 16px rgba(0,0,0,.18);
+    border-radius:2px;
+  }
+  .scrap::before, .scrap::after,
+  .scrap .tape-tl, .scrap .tape-tr{
+    content:''; position:absolute; width:60px; height:24px;
+    background:repeating-linear-gradient(45deg, rgba(255,255,255,.35) 0 4px, rgba(255,255,255,.1) 4px 8px);
+    border:1px solid rgba(0,0,0,.25);
+    box-shadow:0 3px 6px rgba(0,0,0,.25);
+    opacity:1;
+  }
+  .tape-tl{ top:-12px; left:-16px; transform:rotate(-40deg); background-color:var(--sky); }
+  .tape-tr{ top:-12px; right:-20px; transform:rotate(35deg); background-color:var(--mauve); }
+
+  .art-frame{
+    width:100%; aspect-ratio:1; border-radius:2px; overflow:hidden;
+    background:var(--ink); position:relative;
+  }
+  [data-theme="light"] .art-frame{ background:#1c1622; }
+  .art-frame svg{ width:100%; height:100%; }
+  .art-frame::after{
+    content:''; position:absolute; inset:0;
+    background:repeating-linear-gradient(0deg, rgba(255,255,255,.05) 0 1px, transparent 1px 3px);
+    mix-blend-mode:overlay;
+  }
+
+  .scrawl-caption{
+    font-family:'Caveat',cursive; font-weight:700; font-size:20px;
+    text-align:center; margin-top:10px; color:var(--accent2);
+    transform:rotate(1deg);
+  }
+  .doodle-row{ text-align:center; font-size:13px; color:var(--text-muted); letter-spacing:.3em; margin-top:2px;}
+
+  .badges{ display:flex; gap:10px; justify-content:center; flex-wrap:wrap; margin:26px 0; }
+  .badge{
+    width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+    font-family:'IBM Plex Mono',monospace; font-size:9px; font-weight:500; color:#fff;
+    border:2px solid var(--surface); box-shadow:0 0 0 1.5px var(--ink);
+    transform:rotate(var(--r,0deg));
+  }
+  [data-theme="dark"] .badge{ box-shadow:0 0 0 1.5px rgba(255,255,255,.6); }
+
+  .cta-row{ display:flex; gap:14px; justify-content:center; align-items:center; margin:10px 0 30px; }
+  .sticker-btn{
+    font-family:'Permanent Marker',cursive; font-size:16px; letter-spacing:.02em;
+    padding:12px 22px; border-radius:999px; border:2px solid var(--ink);
+    background:var(--accent); color:var(--ink); cursor:pointer;
+    transform:rotate(-2deg);
+  }
+  [data-theme="dark"] .sticker-btn{ border-color:var(--ink); color:var(--ink); }
+  .sticker-btn.ghost{ background:transparent; color:var(--text); border-color:var(--text-muted); transform:rotate(2deg); }
+
+  .margin-note{
+    font-family:'Caveat',cursive; font-size:18px; color:var(--text-muted);
+    border-left:2px dashed var(--text-muted); padding-left:12px; margin:0 0 30px;
+    max-width:420px;
+  }
+</style>
+</head>
+<body data-theme="light">
+<div class="wrap">
+
+  <div class="toggle">
+    <button data-t="light" class="active" onclick="setTheme('light')">paper</button>
+    <button data-t="dark" onclick="setTheme('dark')">plum</button>
+  </div>
+
+  <h1 class="wordmark">
+    <span class="s1" style="font-family:'Permanent Marker';transform:rotate(-6deg);">S</span>
+    <span class="s2" style="font-family:'Space Grotesk';font-weight:600;">t</span>
+    <span class="s3" style="font-family:'Caveat';font-weight:700;transform:rotate(4deg);font-size:.9em;">e</span>
+    <span class="s4" style="font-family:'Permanent Marker';transform:rotate(3deg);">ll</span>
+    <span class="s5" style="font-family:'Space Grotesk';font-weight:600;">a</span>
+    <span class="s6" style="font-family:'Caveat';font-weight:700;transform:rotate(-4deg);font-size:.9em;">t</span>
+    <span class="s7" style="font-family:'Permanent Marker';transform:rotate(-3deg);">i</span>
+    <span class="s8" style="font-family:'Space Grotesk';font-weight:600;">o</span>
+    <span class="s9" style="font-family:'Permanent Marker';transform:rotate(5deg);">n</span>
+  </h1>
+  <span class="tagline">what does the sky say about u ★</span>
+
+  <div class="section-label">palette</div>
+  <div class="swatches">
+    <div class="swatch"><div class="chip" style="background:#D8CAD5"></div><div class="hex">D8CAD5</div></div>
+    <div class="swatch"><div class="chip" style="background:#A46C93"></div><div class="hex">A46C93</div></div>
+    <div class="swatch"><div class="chip" style="background:#554664"></div><div class="hex">554664</div></div>
+    <div class="swatch"><div class="chip" style="background:#878BBF"></div><div class="hex">878BBF</div></div>
+    <div class="swatch"><div class="chip" style="background:#A2D2DD"></div><div class="hex">A2D2DD</div></div>
+    <div class="swatch"><div class="chip" style="background:#F5EEE7;border-color:#ccc"></div><div class="hex">F5EEE7 +</div></div>
+    <div class="swatch"><div class="chip" style="background:#221B29"></div><div class="hex">221B29 +</div></div>
+  </div>
+  <p class="margin-note">the last two (paper + ink) are added — a pure pastel set can't do a xerox black/white contrast on its own</p>
+
+  <div class="section-label">chart card — the signature element</div>
+  <div class="scrap">
+    <div class="tape-tl"></div>
+    <div class="tape-tr"></div>
+    <div class="art-frame">
+      <svg viewBox="0 0 200 200">
+        <circle cx="100" cy="100" r="90" fill="none" stroke="#A46C93" stroke-width="1" opacity="0.4"/>
+        <path d="M100,30 Q140,100 100,170 Q60,100 100,30" fill="none" stroke="#8f6800" stroke-width="1.4" opacity="0.7"/>
+        <path d="M40,60 Q100,90 160,60 Q100,120 40,60" fill="none" stroke="#af74d5" stroke-width="1.4" opacity="0.7"/>
+        <path d="M50,140 Q100,100 150,140 Q100,80 50,140" fill="none" stroke="#00854d" stroke-width="1.4" opacity="0.7"/>
+        <circle cx="100" cy="30" r="5" fill="#8f6800"/>
+        <circle cx="160" cy="60" r="5" fill="#af74d5"/>
+        <circle cx="150" cy="140" r="5" fill="#00854d"/>
+        <circle cx="40" cy="100" r="5" fill="#e90e00"/>
+      </svg>
+    </div>
+    <div class="scrawl-caption">ur venus is doing a lot rn</div>
+    <div class="doodle-row">✩ ⋆ ˖ ✩</div>
+  </div>
+
+  <div class="section-label">planet badges</div>
+  <div class="badges">
+    <div class="badge" style="background:#8f6800;--r:-6deg">SUN</div>
+    <div class="badge" style="background:#007aa9;--r:4deg">MOO</div>
+    <div class="badge" style="background:#00854d;--r:-3deg">VEN</div>
+    <div class="badge" style="background:#e90e00;--r:5deg">MAR</div>
+    <div class="badge" style="background:#af74d5;--r:-4deg">NEP</div>
+  </div>
+
+  <div class="section-label">controls</div>
+  <div class="cta-row">
+    <button class="sticker-btn">get ur chart ★</button>
+    <button class="sticker-btn ghost">compare w/ a friend</button>
+  </div>
+
+</div>
+<script>
+function setTheme(t){
+  document.body.setAttribute('data-theme', t);
+  document.querySelectorAll('.toggle button').forEach(b=>b.classList.toggle('active', b.dataset.t===t));
+}
+</script>
+</body>
+</html>

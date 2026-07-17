@@ -23,6 +23,8 @@ import { GeneratingScreen } from './components/GeneratingScreen'
 import { MyChartsList } from './components/MyChartsList'
 import { SynastryForm } from './components/SynastryForm'
 import { SynastryReveal } from './components/SynastryReveal'
+import { ThemeToggle } from './components/ThemeToggle'
+import { Wordmark } from './components/Wordmark'
 import { useBouncingRing } from './hooks/useBouncingRing'
 import { useChartReveal } from './hooks/useChartReveal'
 import { useCompositeReveal } from './hooks/useCompositeReveal'
@@ -46,6 +48,18 @@ import type {
 
 type HealthStatus = 'checking' | 'ok' | 'error'
 type Mode = 'solo' | 'synastry' | 'mine'
+type Theme = 'light' | 'dark'
+
+const THEME_STORAGE_KEY = 'stellation-theme'
+
+// The inline bootstrap script in index.html already set data-theme on
+// <html> before first paint (avoids a flash of the wrong theme) - read that
+// back rather than re-deriving it, so React's initial state always agrees
+// with what's already on screen.
+function initialTheme(): Theme {
+  const attr = document.documentElement.getAttribute('data-theme')
+  return attr === 'light' ? 'light' : 'dark'
+}
 
 // Both mean "we couldn't resolve coordinates from the place name" - a
 // missing birth_place hits the same wall as an unresolvable one, so both
@@ -75,6 +89,7 @@ function resetUrlToHome() {
 }
 
 function App() {
+  const [theme, setTheme] = useState<Theme>(initialTheme)
   const [health, setHealth] = useState<HealthStatus>('checking')
 
   const [savedRoute] = useState<SavedRoute | null>(() => matchSavedRoute(window.location.pathname))
@@ -136,6 +151,15 @@ function App() {
   const [compareLoading, setCompareLoading] = useState(false)
   const [compareError, setCompareError] = useState<string | null>(null)
   const [showManualCoordsCompare, setShowManualCoordsCompare] = useState(false)
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme)
+    try {
+      localStorage.setItem(THEME_STORAGE_KEY, theme)
+    } catch {
+      // Private browsing / storage disabled - theme just won't persist.
+    }
+  }, [theme])
 
   useEffect(() => {
     fetch('/api/health')
@@ -402,10 +426,13 @@ function App() {
           <AstrolabeRing size={ring.size} spin />
         </div>
       )}
+      <div className="masthead__bar">
+        <ThemeToggle theme={theme} onChange={setTheme} />
+        {clerkEnabled && <AccountControls />}
+      </div>
       <main className="app">
         <header className="masthead">
-          {clerkEnabled && <AccountControls />}
-          <h1>Stellation</h1>
+          <Wordmark />
           <p className="tagline">A precise map of the sky at the moment you arrived.</p>
         </header>
 

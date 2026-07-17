@@ -11,7 +11,11 @@ export function AccountControls() {
         <UserButton />
       </Show>
       <Show when="signed-out">
-        <SignInButton mode="modal" />
+        <SignInButton mode="modal">
+          <button type="button" className="sign-in-button">
+            Sign in
+          </button>
+        </SignInButton>
       </Show>
     </div>
   )
