@@ -1,6 +1,13 @@
 import { useState } from 'react'
-import { PATTERN_COLOR, PATTERN_DASHED, PATTERN_EXPLANATION, PATTERN_GLYPH } from '../glyphs'
+import { fetchPatternInsight } from '../api'
+import { PATTERN_COLOR, PATTERN_DASHED, PATTERN_GLYPH } from '../glyphs'
 import type { ChartData, Pattern } from '../types'
+
+interface InsightState {
+  status: 'loading' | 'loaded' | 'error'
+  blurb?: string
+  error?: string
+}
 
 function patternKey(p: Pattern, index: number): string {
   return `${p.pattern_type}-${p.planets.join('-')}-${index}`
@@ -8,6 +15,26 @@ function patternKey(p: Pattern, index: number): string {
 
 export function PatternList({ chart }: { chart: ChartData }) {
   const [expandedKey, setExpandedKey] = useState<string | null>(null)
+  const [insights, setInsights] = useState<Record<string, InsightState>>({})
+
+  async function handleSelect(pattern: Pattern, key: string) {
+    setExpandedKey((prev) => (prev === key ? null : key))
+    if (insights[key]) return
+
+    setInsights((prev) => ({ ...prev, [key]: { status: 'loading' } }))
+    try {
+      const { blurb } = await fetchPatternInsight(chart, pattern)
+      setInsights((prev) => ({ ...prev, [key]: { status: 'loaded', blurb } }))
+    } catch (err) {
+      setInsights((prev) => ({
+        ...prev,
+        [key]: {
+          status: 'error',
+          error: err instanceof Error ? err.message : 'Could not load this reading.',
+        },
+      }))
+    }
+  }
 
   return (
     <section className="data-section">
@@ -19,13 +46,14 @@ export function PatternList({ chart }: { chart: ChartData }) {
           {chart.patterns.map((p, index) => {
             const key = patternKey(p, index)
             const isExpanded = expandedKey === key
+            const insight = insights[key]
             return (
               <div className="data-table__item" key={key}>
                 <button
                   type="button"
                   className="data-table__row data-table__row--clickable"
                   aria-expanded={isExpanded}
-                  onClick={() => setExpandedKey((prev) => (prev === key ? null : key))}
+                  onClick={() => handleSelect(p, key)}
                 >
                   <span
                     className={
@@ -42,7 +70,13 @@ export function PatternList({ chart }: { chart: ChartData }) {
                 </button>
                 {isExpanded && (
                   <div className="data-table__insight">
-                    <p>{PATTERN_EXPLANATION[p.pattern_type]}</p>
+                    {insight?.status === 'loading' && (
+                      <p className="data-table__insight-loading">Reading this pattern…</p>
+                    )}
+                    {insight?.status === 'loaded' && <p>{insight.blurb}</p>}
+                    {insight?.status === 'error' && (
+                      <p className="notice notice-error">{insight.error}</p>
+                    )}
                   </div>
                 )}
               </div>

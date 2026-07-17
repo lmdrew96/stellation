@@ -31,6 +31,12 @@
 
 .astrolabe-ring {
   overflow: visible;
+  /* Purely decorative (aria-hidden, focusable="false") - without this, the
+     ring's default pointer-events:auto silently swallows every hover/click
+     meant for whatever sits underneath it (e.g. the chart-art <object> in
+     ChartCarousel - its pattern-edge tooltips never fired because the ring
+     absolutely positioned on top of it was eating the hover first). */
+  pointer-events: none;
 }
 
 .astrolabe-ring__outer {

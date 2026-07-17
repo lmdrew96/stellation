@@ -3,7 +3,14 @@ import json
 import anthropic
 
 from app.config import settings
-from app.models.schemas import Aspect, ChartData, SynastryAspect, SynastryData, TransitData
+from app.models.schemas import (
+    Aspect,
+    ChartData,
+    Pattern,
+    SynastryAspect,
+    SynastryData,
+    TransitData,
+)
 
 SYSTEM_PROMPT = (
     "You are an astrologer writing natal chart interpretations. You are given "
@@ -253,6 +260,56 @@ def generate_aspect_insight(chart: ChartData, aspect: Aspect) -> dict:
         system=ASPECT_INSIGHT_SYSTEM_PROMPT,
         tools=[ASPECT_INSIGHT_TOOL],
         tool_choice={"type": "tool", "name": "record_aspect_insight"},
+        messages=[{"role": "user", "content": json.dumps(payload)}],
+    )
+
+    tool_use = next(b for b in response.content if b.type == "tool_use")
+    return tool_use.input
+
+
+# Mirrors the aspect-insight pair above - same "full chart plus one focused
+# thing" shape, just with a detected Pattern (Grand Trine/T-Square/Grand
+# Cross/Stellium/Yod/Kite) standing in for a single Aspect. PatternList's
+# static per-type explanation (what a Grand Trine IS, generically) already
+# covers the definition; this is deliberately about what THIS instance means
+# for THIS chart's specific planets/signs/houses, not a restatement of that
+# definition.
+PATTERN_INSIGHT_SYSTEM_PROMPT = (
+    "You are an astrologer. You are given a full natal chart (planet placements "
+    "and aspects) as JSON, plus one specific named aspect pattern detected in "
+    "that chart - a Grand Trine, T-Square, Grand Cross, Stellium, Yod, or Kite - "
+    "given as its type, its label, and the planets that form it. The person "
+    "reading this already knows what that pattern type means in general, so do "
+    "not define or explain the shape itself - write a single focused blurb (3-5 "
+    "sentences) interpreting what THIS specific instance means for THIS person, "
+    "given exactly which planets, signs, and houses are involved. Ground every "
+    "statement in the chart data provided - do not invent positions not present "
+    "in the data. The chart may include a 'pronouns' field for the person the "
+    "chart belongs to - if present, use those pronouns. If missing, refer to "
+    "them by name or with 'they/them' rather than guessing a gender."
+)
+
+PATTERN_INSIGHT_TOOL = {
+    "name": "record_pattern_insight",
+    "description": "Record the focused pattern insight as structured data.",
+    "input_schema": {
+        "type": "object",
+        "properties": {"blurb": {"type": "string"}},
+        "required": ["blurb"],
+    },
+}
+
+
+def generate_pattern_insight(chart: ChartData, pattern: Pattern) -> dict:
+    client = anthropic.Anthropic(api_key=settings.anthropic_api_key or None)
+
+    payload = {"chart": chart.model_dump(mode="json"), "pattern": pattern.model_dump(mode="json")}
+    response = client.messages.create(
+        model=settings.anthropic_model,
+        max_tokens=1024,
+        system=PATTERN_INSIGHT_SYSTEM_PROMPT,
+        tools=[PATTERN_INSIGHT_TOOL],
+        tool_choice={"type": "tool", "name": "record_pattern_insight"},
         messages=[{"role": "user", "content": json.dumps(payload)}],
     )
 

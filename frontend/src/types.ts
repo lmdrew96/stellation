@@ -57,6 +57,10 @@ export interface Pattern {
   label: string
 }
 
+export interface PatternInsight {
+  blurb: string
+}
+
 export interface ChartData {
   name: string
   pronouns?: string

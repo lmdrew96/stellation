@@ -63,24 +63,6 @@ export const PATTERN_DASHED: Record<string, boolean> = {
   kite: true,
 }
 
-// Plain-language explanation of what each named shape means, independent of
-// any specific chart - shown in PatternList so a detected pattern is never
-// just a highlighted line with no context.
-export const PATTERN_EXPLANATION: Record<string, string> = {
-  grand_trine:
-    'Three placements in a triangle, each trine the other two - a closed loop of ease and flow, sometimes so effortless it goes untapped.',
-  t_square:
-    'Two placements in opposition, both square to a third - that third placement (the apex) carries the tension and the drive to resolve it.',
-  grand_cross:
-    'Two oppositions locked into a full square on every axis - four placements pulling against each other, high tension paired with high capability once the parts learn to work together.',
-  stellium:
-    'Three or more placements clustered in the same sign or house - a concentration of energy and focus in that one area of life.',
-  yod:
-    '"Finger of God" - two placements sextile each other, both quincunx to a third apex, building a slow, specific pressure toward that one placement.',
-  kite:
-    'A Grand Trine with a fourth placement opposing one point and sextile to the other two - the flowing trine gets a rudder, turning ease into direction.',
-}
-
 // Categorical palette computed via the dataviz skill's OKLCH/CVD method -
 // see backend/app/services/render.py's PLANET_COLOR for the validation
 // notes. Same hex values, kept in sync so the chart art and this list read

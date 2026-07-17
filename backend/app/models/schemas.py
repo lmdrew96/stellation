@@ -217,6 +217,15 @@ class AspectInsight(BaseModel):
     blurb: str
 
 
+class PatternInsightRequest(BaseModel):
+    chart: ChartData
+    pattern: Pattern
+
+
+class PatternInsight(BaseModel):
+    blurb: str
+
+
 class TransitAspect(BaseModel):
     transiting_planet: str
     natal_planet: str
