@@ -948,10 +948,12 @@
 
 .reading-synthesis::before {
   content: '\201C';
+  margin-right: 0.1em;
 }
 
 .reading-synthesis::after {
   content: '\201D';
+  margin-left: 0.1em;
 }
 
 .reading-rows {
