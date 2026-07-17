@@ -10,6 +10,7 @@ import { ChartAngles } from './ChartAngles'
 import { ChartCarousel } from './ChartCarousel'
 import { CompareForm } from './CompareForm'
 import { GeneratingScreen } from './GeneratingScreen'
+import { PatternList } from './PatternList'
 import { PlanetList } from './PlanetList'
 import { ReadingDisplay } from './ReadingDisplay'
 import { SaturnReturnReveal } from './SaturnReturnReveal'
@@ -96,6 +97,7 @@ export function ChartReveal({
               slides={ART_STYLES.map(({ style, label }) => ({ label, url: artUrls[style]! }))}
             />
           )}
+          {ART_STYLES.every(({ style }) => artUrls[style]) && <PatternList chart={chart} />}
           {reading && !viewingSaved && (
             <SaveLink save={(token) => saveSoloChart(chart, reading, token)} pathPrefix="/c/" />
           )}

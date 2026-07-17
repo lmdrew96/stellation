@@ -1,6 +1,8 @@
+import html
 import io
 import math
 import os
+import re
 from typing import Literal
 
 # Serverless filesystems are read-only outside /tmp - matplotlib needs
@@ -16,7 +18,7 @@ import numpy as np
 from matplotlib.path import Path
 from matplotlib.patches import PathPatch
 
-from app.models.schemas import ChartData, Planet, SynastryData, TransitData
+from app.models.schemas import ChartData, Pattern, Planet, SynastryData, TransitData
 from app.services.ephemeris import SIGNS
 
 ChartStyle = Literal["generative", "traditional"]
@@ -101,16 +103,39 @@ PLANET_COLOR = {
 # on top of one another.
 LABEL_COLLISION_THRESHOLD_DEG = 6.0
 
-# Pattern-member aspect lines get a distinct, uniform treatment instead of
-# the generic orb-based alpha/width - reuses LABEL_COLOR (already validated
-# legible on BG_COLOR, see the palette comment above) rather than
-# introducing an unvalidated new hue. Driven off Pattern.edges rather than
-# pattern_type, so every aspect-derived shape (Grand Trine, T-Square, Grand
-# Cross, Yod, Kite) gets this treatment automatically - only Stellium has no
-# edges, since it's a sign/house clustering, not an aspect shape.
-PATTERN_EDGE_COLOR = LABEL_COLOR
+# Pattern-member aspect lines get a distinct, uniform width/alpha instead of
+# the generic orb-based scaling, plus a per-type color/linestyle (below) and
+# an SVG <title> tooltip (see _inject_svg_titles) - driven off Pattern.edges
+# rather than pattern_type, so every aspect-derived shape (Grand Trine,
+# T-Square, Grand Cross, Yod, Kite) gets this treatment automatically - only
+# Stellium has no edges, since it's a sign/house clustering, not an aspect
+# shape.
 PATTERN_EDGE_WIDTH = 2.6
 PATTERN_EDGE_ALPHA = 0.85
+
+# Six pattern types, but only 4 mutually-distinct hues: validated via the
+# dataviz skill (node scripts/validate_palette.js "<hexes>" --mode dark
+# --surface "#262423" --pairs all -> ALL CHECKS PASS, CVD separation in the
+# legal 6-8 WARN band). The skill's own documented 8-hue default only clears
+# --pairs all with its first 4 slots even on its own reference surface - 6+
+# mutually-distinct-under-CVD hues isn't achievable, so color is never the
+# sole channel here: every pattern edge also carries the SVG <title> tooltip
+# below. Yod and Kite are "derived" shapes (a Yod's apex tension echoes a
+# T-Square's; a Kite is a Grand Trine plus one more vertex) - rather than
+# reach for a 5th/6th hue that can't clear the same bar, they reuse their
+# parent shape's color with a dashed linestyle, which stays distinguishable
+# even in grayscale or full colorblindness where hue alone would collapse.
+# Kept in sync with frontend/src/glyphs.ts's PATTERN_COLOR (same hex values)
+# so the chart art and the pattern list read as one object, same convention
+# as PLANET_COLOR/PLANET_GLYPH above.
+PATTERN_TYPE_STYLE: dict[str, tuple[str, str]] = {
+    "grand_trine": ("#008300", "solid"),
+    "t_square": ("#c98500", "solid"),
+    "grand_cross": ("#d55181", "solid"),
+    "stellium": ("#3987e5", "solid"),  # no edges of its own - used by the frontend legend only
+    "yod": ("#c98500", "dashed"),
+    "kite": ("#008300", "dashed"),
+}
 
 
 def _absolute_longitude(sign: str, degree_in_sign: float) -> float:
@@ -156,33 +181,77 @@ def _orb_to_width(orb: float) -> float:
 
 
 def _draw_curved_aspect(
-    ax, p1, p2, alpha: float, width: float, bow: float = 0.35, color: str = STRUCTURE_COLOR
+    ax,
+    p1,
+    p2,
+    alpha: float,
+    width: float,
+    bow: float = 0.35,
+    color: str = STRUCTURE_COLOR,
+    linestyle: str = "solid",
+    gid: str | None = None,
 ) -> None:
     x1, y1 = p1
     x2, y2 = p2
     mx, my = (x1 + x2) / 2, (y1 + y2) / 2
     cx, cy = mx * (1 - bow), my * (1 - bow)  # bow the midpoint toward center
     path = Path([(x1, y1), (cx, cy), (x2, y2)], [Path.MOVETO, Path.CURVE3, Path.CURVE3])
-    ax.add_patch(
-        PathPatch(path, facecolor="none", edgecolor=color, alpha=alpha, linewidth=width)
+    patch = PathPatch(
+        path, facecolor="none", edgecolor=color, alpha=alpha, linewidth=width, linestyle=linestyle
     )
+    if gid:
+        patch.set_gid(gid)
+    ax.add_patch(patch)
 
 
-def _pattern_edge_set(chart: ChartData) -> set[frozenset[str]]:
-    return {frozenset(edge) for pattern in chart.patterns for edge in pattern.edges}
+def _pattern_edge_index(chart: ChartData) -> dict[frozenset[str], list[Pattern]]:
+    """Maps each aspect pair to every Pattern it belongs to - usually one,
+    but a Grand Cross's 4 planets also form 4 independent T-Squares (see
+    patterns.py), so a single edge can legitimately belong to more than
+    one detected shape at once. All of them show up in that edge's tooltip
+    even though only the first determines its line color."""
+    index: dict[frozenset[str], list[Pattern]] = {}
+    for pattern in chart.patterns:
+        for edge in pattern.edges:
+            index.setdefault(frozenset(edge), []).append(pattern)
+    return index
 
 
-def _draw_aspect_lines(ax, chart: ChartData, positions: dict) -> None:
-    pattern_edges = _pattern_edge_set(chart)
-    for aspect in chart.aspects:
+def _draw_aspect_lines(ax, chart: ChartData, positions: dict) -> dict[str, str]:
+    edge_index = _pattern_edge_index(chart)
+    gid_titles: dict[str, str] = {}
+    for i, aspect in enumerate(chart.aspects):
         p1 = positions[aspect.planet_a]
         p2 = positions[aspect.planet_b]
-        if frozenset((aspect.planet_a, aspect.planet_b)) in pattern_edges:
+        matches = edge_index.get(frozenset((aspect.planet_a, aspect.planet_b)))
+        if matches:
+            color, linestyle = PATTERN_TYPE_STYLE[matches[0].pattern_type]
+            gid = f"pattern-edge-{i}"
+            # dict.fromkeys dedupes while keeping first-seen order, in case the
+            # same label somehow shows up twice among the matches.
+            gid_titles[gid] = " · ".join(dict.fromkeys(m.label for m in matches))
             _draw_curved_aspect(
-                ax, p1, p2, PATTERN_EDGE_ALPHA, PATTERN_EDGE_WIDTH, color=PATTERN_EDGE_COLOR
+                ax, p1, p2, PATTERN_EDGE_ALPHA, PATTERN_EDGE_WIDTH,
+                color=color, linestyle=linestyle, gid=gid,
             )
         else:
             _draw_curved_aspect(ax, p1, p2, _orb_to_alpha(aspect.orb), _orb_to_width(aspect.orb))
+    return gid_titles
+
+
+def _inject_svg_titles(svg: str, gid_titles: dict[str, str]) -> str:
+    """matplotlib's SVG backend wraps any artist with .set_gid(x) set in
+    <g id="x">...</g> - injecting a <title> as that group's first child
+    gives the pattern-edge lines a native browser hover tooltip (and an
+    accessible name for screen readers) with no JS needed."""
+    for gid, title in gid_titles.items():
+        svg = re.sub(
+            f'(<g id="{re.escape(gid)}">)',
+            rf"\1<title>{html.escape(title)}</title>",
+            svg,
+            count=1,
+        )
+    return svg
 
 
 def _orbit_ring(
@@ -247,8 +316,9 @@ def render_chart_svg(chart: ChartData, style: ChartStyle = "generative") -> str:
         )
     )
 
+    gid_titles: dict[str, str] = {}
     if style == "traditional":
-        _draw_aspect_lines(ax, chart, positions)
+        gid_titles = _draw_aspect_lines(ax, chart, positions)
     else:
         _draw_orbit_rings(ax, chart.planets, _aspect_counts(chart))
 
@@ -275,7 +345,8 @@ def render_chart_svg(chart: ChartData, style: ChartStyle = "generative") -> str:
     buf = io.StringIO()
     fig.savefig(buf, format="svg", bbox_inches="tight", facecolor=BG_COLOR)
     plt.close(fig)
-    return buf.getvalue()
+    svg = buf.getvalue()
+    return _inject_svg_titles(svg, gid_titles) if gid_titles else svg
 
 
 def _ring_positions(planets: list[Planet], radius: float) -> dict[str, tuple[float, float]]:

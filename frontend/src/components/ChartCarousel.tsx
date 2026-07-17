@@ -31,7 +31,20 @@ export function ChartCarousel({ slides, name, artLabel = 'natal chart' }: ChartC
         <span className="tape tape--tl" aria-hidden="true" />
         <span className="tape tape--tr" aria-hidden="true" />
         <AstrolabeRing size={480} />
-        <img className="chart-art" src={slide.url} alt={`${name}'s ${artLabel} - ${slide.label}`} />
+        {/* <object>, not <img>: the rendered SVG carries per-pattern <title>
+            tooltips (see backend/app/services/render.py's _inject_svg_titles) -
+            those only produce native hover tooltips when the SVG is a live
+            nested document, which <img> never provides no matter what the
+            SVG itself contains. The nested <img> is the fallback for the
+            rare case the object embed itself fails to load. */}
+        <object
+          className="chart-art"
+          type="image/svg+xml"
+          data={slide.url}
+          aria-label={`${name}'s ${artLabel} - ${slide.label}`}
+        >
+          <img className="chart-art" src={slide.url} alt={`${name}'s ${artLabel} - ${slide.label}`} />
+        </object>
         {slides.length > 1 && (
           <>
             <button

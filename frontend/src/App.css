@@ -577,6 +577,10 @@
 .chart-art {
   display: block;
   width: 100%;
+  /* <object> (unlike <img>) doesn't reliably infer intrinsic aspect ratio
+     across browsers - the chart art is always a square render, so this
+     keeps sizing identical to the old <img>-only version. */
+  aspect-ratio: 1 / 1;
   border-radius: 50%;
 }
 
@@ -1093,6 +1097,13 @@
   color: var(--color-accent-warm);
   flex-shrink: 0;
   transform: rotate(-4deg);
+}
+
+/* PatternList: Yod/Kite reuse their parent shape's color (see glyphs.ts's
+   PATTERN_COLOR comment) - dashed border echoes the chart's dashed
+   linestyle so the two still read as distinct at a glance. */
+.data-table__glyph--dashed {
+  border-style: dashed;
 }
 
 .data-table > .data-table__row:nth-child(even) .data-table__glyph,

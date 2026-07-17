@@ -48,6 +48,15 @@ export interface Angle {
   degree_in_sign: number
 }
 
+export type PatternType = 'grand_trine' | 't_square' | 'grand_cross' | 'stellium' | 'yod' | 'kite'
+
+export interface Pattern {
+  pattern_type: PatternType
+  planets: string[]
+  edges: [string, string][]
+  label: string
+}
+
 export interface ChartData {
   name: string
   pronouns?: string
@@ -58,6 +67,7 @@ export interface ChartData {
   planets: Planet[]
   aspects: Aspect[]
   angles: Angle[]
+  patterns: Pattern[]
   chart_kind: ChartKind
 }
 
