@@ -13,9 +13,51 @@ interface ChartCarouselProps {
   artLabel?: string
 }
 
-function downloadFilename(name: string, label: string): string {
+const DOWNLOAD_PNG_SIZE = 1200
+
+function downloadFilename(name: string, label: string, extension: string): string {
   const safeName = name.replace(/[^a-z0-9 &-]/gi, '').trim() || 'chart'
-  return `${safeName} - ${label}.svg`
+  return `${safeName} - ${label}.${extension}`
+}
+
+// The on-screen art is an SVG (see the <object> below), but a shared,
+// fixed-size PNG is what's actually useful once it leaves the app - social
+// posts, printing, anywhere a vector file isn't a safe assumption. Rendering
+// this in the browser (rather than adding a second backend endpoint) means
+// one implementation covers every reveal type that uses this carousel, and
+// costs no extra network round-trip: `url` is already a same-origin blob
+// URL for the SVG that's on screen, so decoding it into an <img> and
+// drawing that onto a canvas never taints the canvas.
+function svgUrlToPngBlob(url: string, size: number): Promise<Blob> {
+  return new Promise((resolve, reject) => {
+    const img = new Image()
+    img.onload = () => {
+      const canvas = document.createElement('canvas')
+      canvas.width = size
+      canvas.height = size
+      const ctx = canvas.getContext('2d')
+      if (!ctx) {
+        reject(new Error('Canvas 2D context unavailable'))
+        return
+      }
+      ctx.drawImage(img, 0, 0, size, size)
+      canvas.toBlob((blob) => {
+        if (blob) resolve(blob)
+        else reject(new Error('Canvas toBlob produced no data'))
+      }, 'image/png')
+    }
+    img.onerror = () => reject(new Error('Failed to load chart art for PNG conversion'))
+    img.src = url
+  })
+}
+
+function triggerDownload(href: string, filename: string) {
+  const link = document.createElement('a')
+  link.href = href
+  link.download = filename
+  document.body.appendChild(link)
+  link.click()
+  link.remove()
 }
 
 export function ChartCarousel({ slides, name, artLabel = 'natal chart' }: ChartCarouselProps) {
@@ -25,6 +67,20 @@ export function ChartCarousel({ slides, name, artLabel = 'natal chart' }: ChartC
 
   function go(delta: number) {
     setIndex((i) => (i + delta + slides.length) % slides.length)
+  }
+
+  async function handleDownload() {
+    try {
+      const pngBlob = await svgUrlToPngBlob(slide.url, DOWNLOAD_PNG_SIZE)
+      const pngUrl = URL.createObjectURL(pngBlob)
+      triggerDownload(pngUrl, downloadFilename(name, slide.label, 'png'))
+      URL.revokeObjectURL(pngUrl)
+    } catch {
+      // PNG conversion is a browser-side extra step on top of art that's
+      // already loaded and on screen - if it fails for some reason, falling
+      // back to the original SVG beats leaving the download button dead.
+      triggerDownload(slide.url, downloadFilename(name, slide.label, 'svg'))
+    }
   }
 
   // .chart-frame carries `transform: rotate(-2.5deg)` for the scrapbook
@@ -148,9 +204,9 @@ export function ChartCarousel({ slides, name, artLabel = 'natal chart' }: ChartC
             </div>
           </>
         )}
-        <a className="carousel-download" href={slide.url} download={downloadFilename(name, slide.label)}>
+        <button type="button" className="carousel-download" onClick={handleDownload}>
           Download art
-        </a>
+        </button>
       </div>
     </div>
   )

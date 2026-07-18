@@ -948,8 +948,10 @@
   letter-spacing: 0.04em;
   color: var(--color-text-muted);
   text-decoration: none;
+  background: none;
   border: 1.5px dashed var(--color-surface-line);
   border-radius: 999px;
+  cursor: pointer;
   transition: color 0.15s ease, border-color 0.15s ease;
 }
 
