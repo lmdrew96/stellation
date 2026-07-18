@@ -1066,9 +1066,13 @@
   outline-offset: 2px;
 }
 
+/* width alone (not a separate max-height) keeps this square: .chart-art's
+   aspect-ratio: 1/1 solves height from width since height stays auto, so
+   folding the viewport-height cap into the same min() keeps both edges
+   equal instead of letting max-height clamp height below width and turn
+   the circle into a letterboxed oval. */
 .chart-art--magnified {
-  width: min(85vw, 720px);
-  max-height: 85vh;
+  width: min(85vw, 720px, 85vh);
   cursor: default;
   box-shadow: 0 20px 60px rgb(from var(--ink) r g b / 0.4);
 }
