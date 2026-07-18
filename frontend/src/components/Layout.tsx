@@ -1,6 +1,6 @@
 import { Show } from '@clerk/react'
 import { useEffect, useState } from 'react'
-import { NavLink, Outlet } from 'react-router-dom'
+import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { clerkEnabled } from '../clerkConfig'
 import { AccountControls } from './AccountControls'
 import { ThemeToggle } from './ThemeToggle'
@@ -25,29 +25,11 @@ function initialTheme(): Theme {
 // live here rather than in ChartSessionContext - if that context's value
 // were ever read from here, this always-mounted wrapper would re-render on
 // every keystroke/fetch across both the Solo and Synastry flows.
-export function Layout() {
-  const [theme, setTheme] = useState<Theme>(initialTheme)
-  const [health, setHealth] = useState<HealthStatus>('checking')
-
-  useEffect(() => {
-    document.documentElement.setAttribute('data-theme', theme)
-    try {
-      localStorage.setItem(THEME_STORAGE_KEY, theme)
-    } catch {
-      // Private browsing / storage disabled - theme just won't persist.
-    }
-  }, [theme])
-
-  useEffect(() => {
-    fetch('/api/health')
-      .then((res) => (res.ok ? setHealth('ok') : setHealth('error')))
-      .catch(() => setHealth('error'))
-  }, [])
-
+function MastheadAndNav({ theme, onThemeChange }: { theme: Theme; onThemeChange: (t: Theme) => void }) {
   return (
-    <div className="page">
+    <>
       <div className="masthead__bar">
-        <ThemeToggle theme={theme} onChange={setTheme} />
+        <ThemeToggle theme={theme} onChange={onThemeChange} />
         <Wordmark />
         {clerkEnabled && <AccountControls />}
       </div>
@@ -72,6 +54,49 @@ export function Layout() {
           </Show>
         )}
       </nav>
+    </>
+  )
+}
+
+export function Layout() {
+  const [theme, setTheme] = useState<Theme>(initialTheme)
+  const [health, setHealth] = useState<HealthStatus>('checking')
+  const location = useLocation()
+  const isHome = location.pathname === '/'
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme)
+    try {
+      localStorage.setItem(THEME_STORAGE_KEY, theme)
+    } catch {
+      // Private browsing / storage disabled - theme just won't persist.
+    }
+  }, [theme])
+
+  useEffect(() => {
+    fetch('/api/health')
+      .then((res) => (res.ok ? setHealth('ok') : setHealth('error')))
+      .catch(() => setHealth('error'))
+  }, [])
+
+  return (
+    <div className="page">
+      {/* "/" renders LandingPage when signed out (or Clerk isn't
+          configured at all) and YourDayPage when signed in - see
+          HomeRoute.tsx. The masthead/nav is redundant chrome on the
+          landing page (it has its own hero wordmark and sign-in CTA), but
+          must stay for Your Day. Mirrors HomeRoute's own Show-based
+          gating rather than calling useAuth() directly here, so the two
+          conditions can't drift out of sync silently. */}
+      {isHome ? (
+        clerkEnabled && (
+          <Show when="signed-in">
+            <MastheadAndNav theme={theme} onThemeChange={setTheme} />
+          </Show>
+        )
+      ) : (
+        <MastheadAndNav theme={theme} onThemeChange={setTheme} />
+      )}
       <main className="app">
         <Outlet />
       </main>

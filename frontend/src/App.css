@@ -543,46 +543,26 @@
   text-decoration: none;
 }
 
+/* AccountControls is normally a flex child of .masthead__bar (no layout
+   rules of its own beyond that) - centered here since the hero has no
+   surrounding bar to anchor it against. */
+.landing-hero__signin {
+  display: flex;
+  justify-content: center;
+}
+
 .landing-examples {
   text-align: center;
 }
 
-.landing-examples__grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: 1.5rem;
-  margin-top: 1.5rem;
-}
-
-.landing-chart-preview {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.landing-chart-preview__label {
-  font-family: var(--font-stamp);
-  font-size: 1.1rem;
-  color: var(--color-accent-warm);
-}
-
-.landing-chart-preview__frame {
-  width: 100%;
-  aspect-ratio: 1;
-  max-width: 340px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--color-surface);
-  border: 1.5px dashed var(--color-surface-line);
-  border-radius: 10px;
-  overflow: hidden;
-}
-
-.landing-chart-preview__frame .chart-art {
-  width: 100%;
-  height: 100%;
+/* Same tape-clearance reasoning as .mixtape-card above - .chart-frame's
+   corner tape swings ~30px above its nominal position when rotated, which
+   would otherwise clip into the field-note text this section already has
+   directly above the carousel (chart-frame is normally the first thing in
+   a reveal, with nothing but page padding above it, so this collision is
+   specific to this section's layout). */
+.landing-examples .chart-carousel {
+  margin: 2.75rem auto 0;
 }
 
 .landing-mixtape {
@@ -1950,7 +1930,14 @@
    scrapbook system rather than a second parallel one. */
 .mixtape-card {
   position: relative;
-  padding: 1.1rem 1rem 0.9rem;
+  /* Top padding is deliberately much taller than the other three sides -
+     .tape is a 62x26px rectangle rotated ~35-40deg, and rotating around its
+     own center swings its rendered bottom edge ~37px below its
+     nominal top:-14px position (measured via getBoundingClientRect, not
+     the geometry alone - box-shadow adds a few more px on top of that) -
+     without this clearance the caption's first line sits under the tape
+     instead of below it. */
+  padding: 3.75rem 1rem 0.9rem;
   background: var(--color-surface);
   border: 1px solid var(--color-surface-line);
   border-radius: 4px;

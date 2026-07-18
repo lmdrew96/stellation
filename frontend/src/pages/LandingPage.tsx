@@ -1,31 +1,70 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ApiError, fetchSampleMixtape } from '../api'
+import { ApiError, fetchChart, fetchRenderUrl, fetchSampleMixtape } from '../api'
+import { AccountControls } from '../components/AccountControls'
 import { AstrolabeRing } from '../components/AstrolabeRing'
-import { LandingChartPreview } from '../components/LandingChartPreview'
+import { ChartCarousel } from '../components/ChartCarousel'
 import { Wordmark } from '../components/Wordmark'
-import type { ChartRequest, MixtapeResponse } from '../types'
+import { clerkEnabled } from '../clerkConfig'
+import { ART_STYLES } from '../hooks/useChartReveal'
+import type { ArtStyle, ChartData, ChartRequest, MixtapeResponse } from '../types'
 
-// Fixed per the patch spec - same person, two chart-setting philosophies,
-// so the example genuinely shows off the app's tropical/sidereal +
-// placidus/whole-sign range rather than just casting the same chart twice.
-const EXAMPLE_BIRTH = {
+// Fixed per the patch spec - not shown as copy on the page (birth details
+// stay backstage), just used to cast one real chart so the Generative vs
+// Traditional art styles below are showing off the actual renderer, not a
+// mockup.
+const EXAMPLE_REQUEST: ChartRequest = {
   name: 'A Scorpio Season Baby',
   birth_date: '2025-10-29',
   birth_time: '08:00',
   birth_place: 'Milton, DE',
 }
 
-const GENERATIVE_EXAMPLE: ChartRequest = {
-  ...EXAMPLE_BIRTH,
-  zodiac: 'tropical',
-  house_system: 'placidus',
-}
+// One chart, both art styles - the same ChartCarousel every other reveal
+// in the app uses, not a bespoke landing-page-only preview. Generative and
+// Traditional are rendering styles (see ART_STYLES), not different zodiac/
+// house settings - both slides come from the identical ChartData.
+function ExampleChart() {
+  const [chart, setChart] = useState<ChartData | null>(null)
+  const [artUrls, setArtUrls] = useState<Partial<Record<ArtStyle, string>>>({})
+  const [error, setError] = useState<string | null>(null)
 
-const TRADITIONAL_EXAMPLE: ChartRequest = {
-  ...EXAMPLE_BIRTH,
-  zodiac: 'sidereal',
-  house_system: 'whole_sign',
+  useEffect(() => {
+    let cancelled = false
+    fetchChart(EXAMPLE_REQUEST)
+      .then((result) => {
+        if (cancelled) return null
+        setChart(result)
+        return Promise.all(
+          ART_STYLES.map(({ style }) => fetchRenderUrl(result, style).then((url) => [style, url] as const))
+        )
+      })
+      .then((pairs) => {
+        if (cancelled || !pairs) return
+        setArtUrls(Object.fromEntries(pairs))
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          setError(err instanceof ApiError ? err.detail.message : 'Could not load the example chart.')
+        }
+      })
+    return () => {
+      cancelled = true
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  if (error) return <p className="notice notice-error">{error}</p>
+  if (!chart || ART_STYLES.some(({ style }) => !artUrls[style])) {
+    return <p className="notice">Casting…</p>
+  }
+
+  return (
+    <ChartCarousel
+      name={chart.name}
+      slides={ART_STYLES.map(({ style, label }) => ({ label, url: artUrls[style]! }))}
+    />
+  )
 }
 
 function SampleMixtape() {
@@ -53,7 +92,7 @@ function SampleMixtape() {
   return (
     <section className="landing-mixtape">
       <div className="landing-mixtape__header">
-        <h2>A Sample Mixtape</h2>
+        <h2>Six Songs, No Skips (Allegedly)</h2>
         <button type="button" className="saved-people__action" onClick={() => setLoadKey((k) => k + 1)}>
           Shuffle
         </button>
@@ -94,8 +133,8 @@ export function LandingPage() {
         <AstrolabeRing size={220} spin className="landing-hero__ring" />
         <Wordmark />
         <p className="landing-hero__tagline">
-          Your chart, your way — the shape of your sky, cast tropical or sidereal, read like the
-          zine you wish you'd found in your locker.
+          Not a horoscope column. A whole diagnostic — cast tropical or sidereal, no gatekeeping,
+          no paywall on the good part.
         </p>
         <div className="landing-hero__ctas">
           <Link to="/solo" className="submit-button">
@@ -105,18 +144,20 @@ export function LandingPage() {
             Compare Charts
           </Link>
         </div>
+        {clerkEnabled && (
+          <div className="landing-hero__signin">
+            <AccountControls />
+          </div>
+        )}
       </section>
 
       <section className="landing-examples">
-        <h2>Same Sky, Two Lenses</h2>
+        <h2>Pick Your Poison: Generative or Traditional</h2>
         <p className="field-note">
-          One birth moment — 10/29/2025, 8:00 AM, Milton, DE — cast two ways. Generative uses the
-          tropical zodiac and Placidus houses; Traditional uses sidereal and whole-sign.
+          Generative reads the sky the way it moves through you right now. Traditional reads it
+          the way astrologers have for centuries. Same chart, different lens.
         </p>
-        <div className="landing-examples__grid">
-          <LandingChartPreview label="Generative" request={GENERATIVE_EXAMPLE} />
-          <LandingChartPreview label="Traditional" request={TRADITIONAL_EXAMPLE} />
-        </div>
+        <ExampleChart />
       </section>
 
       <SampleMixtape />

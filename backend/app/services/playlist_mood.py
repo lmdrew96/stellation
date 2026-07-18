@@ -253,7 +253,7 @@ def _run_backfill(
     return backfilled
 
 
-SAMPLE_TRACK_COUNT = 4
+SAMPLE_TRACK_COUNT = 6
 
 
 # A chart-free, Claude-free "sample" mixtape for the public landing page -
