@@ -2,21 +2,31 @@ import { BufferGeometry, Color, Float32BufferAttribute, IcosahedronGeometry, Vec
 import { patternKey } from '../components/PatternList'
 import { PATTERN_COLOR } from '../glyphs'
 import type { ChartData, Pattern } from '../types'
+import { aspectColor, orbToBumpHeight } from './aspectStyle'
 import { leanDirection, outwardDirection, planetPosition, SPHERE_RADIUS } from './geometry'
 
 // "point" pulls the surface into an actual peak (angular pattern - Grand
 // Trine/T-square/Grand Cross/Yod/Kite); "dome" pushes a rounded, flat-ish
 // mound instead (Stellium is a clustering phenomenon, not an angular one -
-// see phase-3 ChaosPatch acceptance criteria). Both falloffs are zero-slope
-// at the rim so they blend seamlessly into the undisturbed sphere - no
-// glued-on-primitive seam - but only "point"'s curve keeps steepening all
-// the way to its center, which is what actually reads as a pinched point
-// instead of a smooth hill.
-export type BulgeProfile = 'point' | 'dome'
+// see phase-3 ChaosPatch acceptance criteria). Both height falloffs are
+// zero-slope at the rim so they blend seamlessly into the undisturbed
+// sphere - no glued-on-primitive seam - but only "point"'s curve keeps
+// steepening all the way to its center, which is what actually reads as a
+// pinched point instead of a smooth hill. "stud" (every plain aspect - see
+// buildAspectBulgeSpecs) uses that same pinched-point height shape, but
+// its color reaches full saturation much faster (see colorWeight) - at a
+// stud's small size there usually isn't enough mesh resolution for the
+// height falloff alone to read as faceted, so a hard-edged color patch is
+// what actually sells "a small gem chip" instead of "a soft glow."
+export type BulgeProfile = 'point' | 'dome' | 'stud'
 
 export interface BulgeSpec {
-  pattern: Pattern
-  key: string
+  // Only set for pattern-driven bulges - these are the clickable,
+  // dramatic features. Plain-aspect bulges (buildAspectBulgeSpecs) are
+  // decorative surface texture only, so they omit these and
+  // findBulgeAtPoint skips them for hit-testing.
+  pattern?: Pattern
+  key?: string
   center: Vector3
   angularRadius: number
   height: number
@@ -36,6 +46,11 @@ const BULGE_ANGULAR_RADIUS = 0.4
 const STELLIUM_MIN_MEMBERS = 3
 const LEAN_MILD = 0.3
 const LEAN_STRONG = 0.65
+// Bigger than an earlier pass at this - at this mesh's triangle density
+// (see buildStellatedGeometry), a smaller stud simply doesn't span enough
+// triangles to show a defined facet no matter how the falloff curve is
+// shaped; the softness was a resolution limit, not a curve-shape problem.
+const ASPECT_BUMP_ANGULAR_RADIUS = 0.17
 
 export const BASE_COLOR = new Color('#1b1730')
 
@@ -121,8 +136,43 @@ export function buildBulgeSpecs(chart: ChartData): BulgeSpec[] {
   return specs
 }
 
-function falloff(t: number, profile: BulgeProfile): number {
-  return profile === 'point' ? t * t : t * t * (3 - 2 * t)
+// A small dome for every real aspect in the chart, centered on the great-
+// circle midpoint of the two involved planets (the same point the aspect's
+// arc line - see AspectEdges.tsx - passes through), sized by orb tightness
+// and colored by the same harmonious/tense language as the lines. Ensures
+// a chart with few or no named patterns still gets a surface uniquely
+// textured by its own aspect graph rather than staying mostly plain.
+export function buildAspectBulgeSpecs(chart: ChartData): BulgeSpec[] {
+  const positionByName = new Map(chart.planets.map((p) => [p.name, planetPosition(p)]))
+  const specs: BulgeSpec[] = []
+
+  for (const aspect of chart.aspects) {
+    const a = positionByName.get(aspect.planet_a)
+    const b = positionByName.get(aspect.planet_b)
+    if (!a || !b) continue
+    specs.push({
+      center: outwardDirection([a, b]),
+      angularRadius: ASPECT_BUMP_ANGULAR_RADIUS,
+      height: orbToBumpHeight(aspect.orb),
+      color: aspectColor(aspect.aspect_type),
+      profile: 'stud',
+    })
+  }
+
+  return specs
+}
+
+function heightFalloff(t: number, profile: BulgeProfile): number {
+  return profile === 'dome' ? t * t * (3 - 2 * t) : t * t
+}
+
+// Studs reuse "point"'s pinched-tip height shape but saturate their color
+// almost immediately (t^0.3 rises to ~0.9 well before the rim) instead of
+// following the same slow curve as height - a hard-edged color patch is
+// what reads as "a small gem chip" at this size, where there's rarely
+// enough mesh resolution for the height shape alone to look faceted.
+function colorWeight(t: number, profile: BulgeProfile): number {
+  return profile === 'stud' ? Math.pow(t, 0.3) : heightFalloff(t, profile)
 }
 
 export function bulgeHeightAt(direction: Vector3, bulges: BulgeSpec[]): number {
@@ -131,7 +181,7 @@ export function bulgeHeightAt(direction: Vector3, bulges: BulgeSpec[]): number {
     const angle = direction.angleTo(bulge.center)
     if (angle < bulge.angularRadius) {
       const t = 1 - angle / bulge.angularRadius
-      extra = Math.max(extra, bulge.height * falloff(t, bulge.profile))
+      extra = Math.max(extra, bulge.height * heightFalloff(t, bulge.profile))
     }
   }
   return extra
@@ -143,7 +193,7 @@ function bulgeColorAt(direction: Vector3, bulges: BulgeSpec[]): Color {
   for (const bulge of bulges) {
     const angle = direction.angleTo(bulge.center)
     if (angle < bulge.angularRadius) {
-      const weight = falloff(1 - angle / bulge.angularRadius, bulge.profile)
+      const weight = colorWeight(1 - angle / bulge.angularRadius, bulge.profile)
       if (weight > winningWeight) {
         winningWeight = weight
         winningColor = bulge.color
@@ -194,6 +244,7 @@ export function findBulgeAtPoint(point: Vector3, bulges: BulgeSpec[]): BulgeSpec
   let closest: BulgeSpec | null = null
   let closestAngle = Infinity
   for (const bulge of bulges) {
+    if (!bulge.pattern || !bulge.key) continue
     const angle = dir.angleTo(bulge.center)
     if (angle < bulge.angularRadius && angle < closestAngle) {
       closest = bulge

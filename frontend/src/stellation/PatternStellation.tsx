@@ -3,7 +3,7 @@ import { useMemo, useRef } from 'react'
 import type { RefObject } from 'react'
 import type { Mesh } from 'three'
 import type { ChartData, Pattern } from '../types'
-import { buildBulgeSpecs, buildStellatedGeometry, findBulgeAtPoint } from './stellatedSphere'
+import { buildAspectBulgeSpecs, buildBulgeSpecs, buildStellatedGeometry, findBulgeAtPoint } from './stellatedSphere'
 
 // The whole globe is a single clickable mesh now (see below), so an
 // OrbitControls drag-to-rotate that starts and ends over the sphere fires
@@ -26,7 +26,11 @@ interface PatternStellationProps {
 // on the fly, so it works on this same geometry with no extra vertex
 // duplication needed.
 export function PatternStellation({ chart, onSelectPattern, meshRef }: PatternStellationProps) {
-  const bulges = useMemo(() => buildBulgeSpecs(chart), [chart])
+  // Pattern bulges are the dramatic, clickable spikes; aspect bulges (see
+  // stellatedSphere.ts) are a subtler decorative texture from the chart's
+  // full aspect graph, so even a chart with only one or two named
+  // patterns still gets a uniquely textured surface.
+  const bulges = useMemo(() => [...buildBulgeSpecs(chart), ...buildAspectBulgeSpecs(chart)], [chart])
   const geometry = useMemo(() => buildStellatedGeometry(bulges), [bulges])
   const pointerDownAt = useRef<{ x: number; y: number } | null>(null)
 
@@ -41,7 +45,7 @@ export function PatternStellation({ chart, onSelectPattern, meshRef }: PatternSt
       return
     }
     const bulge = findBulgeAtPoint(event.point, bulges)
-    if (bulge) onSelectPattern(bulge.pattern, bulge.key)
+    if (bulge?.pattern && bulge.key) onSelectPattern(bulge.pattern, bulge.key)
   }
 
   function handlePointerMove(event: ThreeEvent<PointerEvent>) {

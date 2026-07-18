@@ -14,6 +14,20 @@ export function orbToWidth(orb: number): number {
   return 0.6 + 2.0 * t
 }
 
+const ASPECT_BUMP_HEIGHT_MIN = 0.1
+const ASPECT_BUMP_HEIGHT_MAX = 0.32
+
+// Same "tighter orb = more prominent" law as orbToAlpha/orbToWidth, mapped
+// to a small surface-bump height instead of a line's alpha/width - every
+// real aspect gets a subtle bump (see stellatedSphere.ts), not just the
+// ones that happen to form a named pattern. A chart with only one or two
+// named patterns still ends up with a uniquely textured surface instead
+// of a mostly-plain sphere.
+export function orbToBumpHeight(orb: number): number {
+  const t = 1 - Math.min(orb, MAX_ORB) / MAX_ORB
+  return ASPECT_BUMP_HEIGHT_MIN + (ASPECT_BUMP_HEIGHT_MAX - ASPECT_BUMP_HEIGHT_MIN) * t
+}
+
 // render.py has no per-aspect-type palette to reuse here - plain aspects
 // there are all one structural color, only pattern-member edges get
 // distinct hues (PATTERN_TYPE_STYLE). Rather than invent a third color

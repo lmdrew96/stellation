@@ -6,7 +6,7 @@ import { AspectEdges } from './AspectEdges'
 import { planetPosition, SPHERE_RADIUS } from './geometry'
 import { PatternStellation } from './PatternStellation'
 import { PlanetMarker } from './PlanetMarker'
-import { buildBulgeSpecs, bulgeHeightAt } from './stellatedSphere'
+import { buildAspectBulgeSpecs, buildBulgeSpecs, bulgeHeightAt } from './stellatedSphere'
 
 interface StellationSceneProps {
   chart: ChartData
@@ -19,7 +19,7 @@ export function StellationScene({ chart, onSelectPattern }: StellationSceneProps
   // surface deformation PatternStellation applies to the mesh geometry -
   // otherwise a marker sitting on a pattern would visually sink into the
   // now-raised clay around it.
-  const bulges = useMemo(() => buildBulgeSpecs(chart), [chart])
+  const bulges = useMemo(() => [...buildBulgeSpecs(chart), ...buildAspectBulgeSpecs(chart)], [chart])
 
   return (
     <>
