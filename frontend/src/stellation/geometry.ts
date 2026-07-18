@@ -77,3 +77,26 @@ export function outwardDirection(positions: Vector3[]): Vector3 {
 export function leanDirection(outward: Vector3, towardVertex: Vector3, leanFactor: number): Vector3 {
   return outward.clone().lerp(towardVertex.clone().normalize(), leanFactor).normalize()
 }
+
+// Points tracing the shorter great-circle path between two directions,
+// scaled to `radius`. Used instead of a straight chord for aspect edges:
+// a straight line between two points on a sphere dips inside it for the
+// whole span except the endpoints, so once the globe is opaque a chord
+// renders invisible (hidden behind its own surface). An arc stays outside
+// the sphere by construction.
+export function greatCircleArc(a: Vector3, b: Vector3, radius = SPHERE_RADIUS, segments = 24): Vector3[] {
+  const start = a.clone().normalize()
+  const end = b.clone().normalize()
+  const theta = start.angleTo(end)
+  if (theta < 1e-5) {
+    return [start.clone().multiplyScalar(radius), end.clone().multiplyScalar(radius)]
+  }
+  const points: Vector3[] = []
+  for (let i = 0; i <= segments; i++) {
+    const t = i / segments
+    const s1 = Math.sin((1 - t) * theta) / Math.sin(theta)
+    const s2 = Math.sin(t * theta) / Math.sin(theta)
+    points.push(start.clone().multiplyScalar(s1).add(end.clone().multiplyScalar(s2)).multiplyScalar(radius))
+  }
+  return points
+}
