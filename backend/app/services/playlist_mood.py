@@ -58,8 +58,8 @@ DECADE_RANGES: dict[str, tuple[int, int]] = {
 # candidates to ask Claude for up front - request more than needed since
 # not every candidate will verify (misremembered title, no confident
 # Spotify match, wrong decade).
-TARGET_TRACK_COUNT = 6
-CANDIDATE_REQUEST_COUNT = 10
+TARGET_TRACK_COUNT = 12
+CANDIDATE_REQUEST_COUNT = 20
 
 
 def _dominant(counts: dict[str, int]) -> str | None:

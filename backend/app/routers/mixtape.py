@@ -14,7 +14,7 @@ _MISSING_ANTHROPIC_KEY_MESSAGE = "Anthropic API key is missing or invalid. Check
 _MISSING_SPOTIFY_KEY_MESSAGE = "Spotify client ID/secret is missing or invalid. Check backend/.env."
 
 
-# Same cost class as /api/interpret (one Claude call, plus up to ~15 Spotify
+# Same cost class as /api/interpret (one Claude call, plus up to ~30 Spotify
 # Search calls for verification/backfill) - shares its 20/hour ceiling
 # rather than the 60/hour given to the small single-blurb insight endpoints.
 @router.post("/api/mixtape", response_model=MixtapeResponse)
