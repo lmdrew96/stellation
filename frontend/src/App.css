@@ -1640,11 +1640,21 @@
   opacity: 0.45;
 }
 
+/* Explicit column counts (not auto-fill) so a 12-track mixtape reliably
+   lands on whole rows at each tier: 4 rows of 3 wide, 6 rows of 2 medium,
+   then a single column narrow - rather than auto-fill's width-driven count
+   landing wherever 260px increments happen to fit. */
 .mixtape-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  grid-template-columns: repeat(3, 1fr);
   gap: 1.75rem 1.25rem;
   margin-top: 1rem;
+}
+
+@media (max-width: 960px) {
+  .mixtape-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
 @media (max-width: 640px) {
