@@ -574,7 +574,7 @@
   align-items: center;
   justify-content: center;
   gap: 0.75rem;
-  margin-bottom: 1rem;
+  margin-bottom: 2.5rem;
 }
 
 /* ---------- backend status badge ---------- */
@@ -1909,7 +1909,7 @@
 .mixtape-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 1.75rem 1.25rem;
+  gap: 2rem 2rem;
   margin-top: 1rem;
 }
 
@@ -1930,14 +1930,7 @@
    scrapbook system rather than a second parallel one. */
 .mixtape-card {
   position: relative;
-  /* Top padding is deliberately much taller than the other three sides -
-     .tape is a 62x26px rectangle rotated ~35-40deg, and rotating around its
-     own center swings its rendered bottom edge ~37px below its
-     nominal top:-14px position (measured via getBoundingClientRect, not
-     the geometry alone - box-shadow adds a few more px on top of that) -
-     without this clearance the caption's first line sits under the tape
-     instead of below it. */
-  padding: 3.75rem 1rem 0.9rem;
+  padding: 1.1rem 1rem 0.9rem;
   background: var(--color-surface);
   border: 1px solid var(--color-surface-line);
   border-radius: 4px;
@@ -1949,12 +1942,24 @@
   transform: rotate(1.2deg);
 }
 
+/* .tape is a rotated rectangle - rotating a 62x26px shape ~35-40deg around
+   its own center swings its rendered bottom edge well past its nominal
+   top:-14px position, overlapping this caption's first line by 7-16px at
+   the shared card padding (confirmed via getBoundingClientRect on the live
+   page, not the rotation geometry alone - the box-shadow adds a few more px
+   past that). Fixed here (margin-top, not the card's own padding-top or the
+   tape's position) so the tape stays exactly where it's always been - moving
+   the tape instead either overlaps the row above it in the grid (pushing it
+   further up) or barely changes anything (pulling it toward the card only
+   worsens the reach into the caption, since the two trade off directly).
+   24px converged on empirically as the smallest value that clears every
+   card with a real (not razor-thin) margin to spare, rather than guessed. */
 .mixtape-card__caption {
   font-family: var(--font-scrawl);
   font-size: 1.1rem;
-  line-height: 1.3;
+  line-height: 1.4;
   color: var(--color-text);
-  margin: 0 0 0.5rem;
+  margin: 0 0.5rem;
 }
 
 .mixtape-card__embed {
