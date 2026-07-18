@@ -19,9 +19,11 @@ import { AccountControls } from './components/AccountControls'
 import { AstrolabeRing } from './components/AstrolabeRing'
 import { BirthDataForm } from './components/BirthDataForm'
 import { ChartReveal } from './components/ChartReveal'
+import { chartSettingsFromChart } from './components/ChartSettingsFields'
 import { CompositeReveal } from './components/CompositeReveal'
 import { GeneratingScreen } from './components/GeneratingScreen'
 import { MyChartsList } from './components/MyChartsList'
+import { personFieldsFromChart } from './components/PersonFields'
 import { SynastryForm } from './components/SynastryForm'
 import { SynastryReveal } from './components/SynastryReveal'
 import { ThemeToggle } from './components/ThemeToggle'
@@ -508,6 +510,12 @@ function App() {
                 onSubmit={handleSoloSubmit}
                 submitting={submitting}
                 showManualCoords={showManualCoords}
+                initialPerson={
+                  savedRoute?.kind === 'solo' && chart ? personFieldsFromChart(chart) : undefined
+                }
+                initialSettings={
+                  savedRoute?.kind === 'solo' && chart ? chartSettingsFromChart(chart) : undefined
+                }
               />
             ) : mode === 'synastry' ? (
               <SynastryForm
@@ -515,6 +523,24 @@ function App() {
                 submitting={submitting}
                 showManualCoordsA={showManualCoordsA}
                 showManualCoordsB={showManualCoordsB}
+                initialPersonA={
+                  savedRoute?.kind === 'synastry' && synastry
+                    ? personFieldsFromChart(synastry.person_a)
+                    : undefined
+                }
+                initialPersonB={
+                  savedRoute?.kind === 'synastry' && synastry
+                    ? personFieldsFromChart(synastry.person_b)
+                    : undefined
+                }
+                initialSettings={
+                  savedRoute?.kind === 'synastry' && synastry
+                    ? chartSettingsFromChart(synastry.person_a)
+                    : undefined
+                }
+                initialRelationshipType={
+                  savedRoute?.kind === 'synastry' && synastry ? synastry.relationship_type : undefined
+                }
               />
             ) : null}
           </>

@@ -2,17 +2,27 @@ import { useState } from 'react'
 import type { FormEvent } from 'react'
 import type { ChartRequest } from '../types'
 import { ChartSettingsFields, defaultChartSettings } from './ChartSettingsFields'
+import type { ChartSettingsValue } from './ChartSettingsFields'
 import { PersonFields, emptyPersonFields, personFieldsToRequest } from './PersonFields'
+import type { PersonFieldsValue } from './PersonFields'
 
 interface BirthDataFormProps {
   onSubmit: (payload: ChartRequest) => void
   submitting: boolean
   showManualCoords: boolean
+  initialPerson?: PersonFieldsValue
+  initialSettings?: ChartSettingsValue
 }
 
-export function BirthDataForm({ onSubmit, submitting, showManualCoords }: BirthDataFormProps) {
-  const [person, setPerson] = useState(emptyPersonFields())
-  const [settings, setSettings] = useState(defaultChartSettings())
+export function BirthDataForm({
+  onSubmit,
+  submitting,
+  showManualCoords,
+  initialPerson,
+  initialSettings,
+}: BirthDataFormProps) {
+  const [person, setPerson] = useState(initialPerson ?? emptyPersonFields())
+  const [settings, setSettings] = useState(initialSettings ?? defaultChartSettings())
 
   function handleSubmit(e: FormEvent) {
     e.preventDefault()

@@ -2,13 +2,19 @@ import { useState } from 'react'
 import type { FormEvent } from 'react'
 import type { RelationshipType, SynastryReadingType, SynastryRequest } from '../types'
 import { ChartSettingsFields, defaultChartSettings } from './ChartSettingsFields'
+import type { ChartSettingsValue } from './ChartSettingsFields'
 import { PersonFields, emptyPersonFields, personFieldsToRequest } from './PersonFields'
+import type { PersonFieldsValue } from './PersonFields'
 
 interface SynastryFormProps {
   onSubmit: (payload: SynastryRequest, readingType: SynastryReadingType) => void
   submitting: boolean
   showManualCoordsA: boolean
   showManualCoordsB: boolean
+  initialPersonA?: PersonFieldsValue
+  initialPersonB?: PersonFieldsValue
+  initialSettings?: ChartSettingsValue
+  initialRelationshipType?: RelationshipType
 }
 
 export function SynastryForm({
@@ -16,11 +22,17 @@ export function SynastryForm({
   submitting,
   showManualCoordsA,
   showManualCoordsB,
+  initialPersonA,
+  initialPersonB,
+  initialSettings,
+  initialRelationshipType,
 }: SynastryFormProps) {
-  const [personA, setPersonA] = useState(emptyPersonFields())
-  const [personB, setPersonB] = useState(emptyPersonFields())
-  const [settings, setSettings] = useState(defaultChartSettings())
-  const [relationshipType, setRelationshipType] = useState<RelationshipType>('romantic')
+  const [personA, setPersonA] = useState(initialPersonA ?? emptyPersonFields())
+  const [personB, setPersonB] = useState(initialPersonB ?? emptyPersonFields())
+  const [settings, setSettings] = useState(initialSettings ?? defaultChartSettings())
+  const [relationshipType, setRelationshipType] = useState<RelationshipType>(
+    initialRelationshipType ?? 'romantic'
+  )
   const [readingType, setReadingType] = useState<SynastryReadingType>('comparative')
 
   function handleSubmit(e: FormEvent) {

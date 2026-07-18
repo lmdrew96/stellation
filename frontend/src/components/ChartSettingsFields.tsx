@@ -1,4 +1,4 @@
-import type { HouseSystem, ZodiacMode } from '../types'
+import type { ChartData, HouseSystem, ZodiacMode } from '../types'
 
 export interface ChartSettingsValue {
   zodiac: ZodiacMode
@@ -7,6 +7,10 @@ export interface ChartSettingsValue {
 
 export function defaultChartSettings(): ChartSettingsValue {
   return { zodiac: 'tropical', house_system: 'placidus' }
+}
+
+export function chartSettingsFromChart(chart: ChartData): ChartSettingsValue {
+  return { zodiac: chart.zodiac, house_system: chart.house_system }
 }
 
 interface ChartSettingsFieldsProps {

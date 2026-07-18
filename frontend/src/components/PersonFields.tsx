@@ -1,4 +1,4 @@
-import type { ChartRequest } from '../types'
+import type { ChartData, ChartRequest } from '../types'
 
 export interface PersonFieldsValue {
   name: string
@@ -17,6 +17,24 @@ export function emptyPersonFields(): PersonFieldsValue {
     birthTime: '',
     birthPlace: '',
     pronouns: '',
+    manualLat: '',
+    manualLng: '',
+  }
+}
+
+// chart.birth_datetime is always `local_dt.isoformat()` of a datetime built
+// from a plain "%Y-%m-%d %H:%M" strptime (see ephemeris.local_to_jd_ut) - no
+// seconds/microseconds were ever set, so the ISO string is always exactly
+// "YYYY-MM-DDTHH:MM:SS±HH:MM" and slicing out date/time is safe. Manual
+// lat/lng are intentionally left blank - the saved chart already resolved
+// geocoding, and birth_location gives a display-ready place string instead.
+export function personFieldsFromChart(chart: ChartData): PersonFieldsValue {
+  return {
+    name: chart.name,
+    birthDate: chart.birth_datetime.slice(0, 10),
+    birthTime: chart.birth_datetime.slice(11, 16),
+    birthPlace: chart.birth_location.place_name,
+    pronouns: chart.pronouns ?? '',
     manualLat: '',
     manualLng: '',
   }
