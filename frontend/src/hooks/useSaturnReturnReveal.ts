@@ -1,5 +1,6 @@
 import { useCallback } from 'react'
 import { fetchRenderUrl, fetchSaturnReturnInterpretation } from '../api'
+import { clearChartInsightCache } from '../insightCache'
 import type { ArtStyle, ChartData, Interpretation, SaturnReturnCycle } from '../types'
 import type { RevealState } from './useReveal'
 import { useReveal } from './useReveal'
@@ -36,5 +37,9 @@ export function useSaturnReturnReveal(input: SaturnReturnInput | null): SaturnRe
     (i: SaturnReturnInput) => fetchSaturnReturnInterpretation(i.chart, i.cycle),
     []
   )
-  return useReveal(input, fetchArt, fetchReading)
+  // Not memoized like the two above - onFreshGeneration isn't a dependency
+  // of useReveal's fetch effect (it's only read from the synchronous
+  // input-change reset block), so a fresh closure each render can't
+  // retrigger anything.
+  return useReveal(input, fetchArt, fetchReading, undefined, (i) => clearChartInsightCache(i.chart))
 }

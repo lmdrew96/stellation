@@ -29,7 +29,13 @@ export function useReveal<TInput, TReading>(
   input: TInput | null,
   fetchRenderUrl: (input: TInput, style: ArtStyle) => Promise<string>,
   fetchReading: (input: TInput) => Promise<TReading>,
-  presetReading?: TReading
+  presetReading?: TReading,
+  // Called synchronously (see the reset block below) whenever `input`
+  // changes and this is a genuinely fresh generation, not a preset reading
+  // restored from a saved chart - lets a caller invalidate anything keyed
+  // off the old input (see useChartReveal/useSynastryReveal clearing their
+  // localStorage insight cache) before any child component can read it.
+  onFreshGeneration?: (input: TInput) => void
 ): RevealState<TReading> {
   const [artUrls, setArtUrls] = useState<Partial<Record<ArtStyle, string>>>({})
   const [artStatus, setArtStatus] = useState<'idle' | 'loading' | 'error'>('idle')
@@ -54,6 +60,9 @@ export function useReveal<TInput, TReading>(
       setReading(presetReading ?? null)
       setReadingStatus(presetReading ? 'idle' : 'loading')
       setReadingError(null)
+      if (presetReading === undefined) {
+        onFreshGeneration?.(input)
+      }
     }
   }
 

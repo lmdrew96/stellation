@@ -1,5 +1,6 @@
 import { useCallback } from 'react'
 import { fetchCompositeInterpretation, fetchRenderUrl } from '../api'
+import { clearChartInsightCache } from '../insightCache'
 import type { ArtStyle, ChartData, Interpretation, RelationshipType } from '../types'
 import type { RevealState } from './useReveal'
 import { useReveal } from './useReveal'
@@ -21,5 +22,9 @@ export function useCompositeReveal(input: CompositeInput | null): CompositeRevea
     (i: CompositeInput) => fetchCompositeInterpretation(i.chart, i.relationshipType),
     []
   )
-  return useReveal(input, fetchArt, fetchReading)
+  // Not memoized like the two above - onFreshGeneration isn't a dependency
+  // of useReveal's fetch effect (it's only read from the synchronous
+  // input-change reset block), so a fresh closure each render can't
+  // retrigger anything.
+  return useReveal(input, fetchArt, fetchReading, undefined, (i) => clearChartInsightCache(i.chart))
 }

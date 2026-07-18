@@ -41,6 +41,33 @@ export function loadInsightCache(scope: string, cacheId: string): Record<string,
   }
 }
 
+// A fresh reading for this exact chart (same birth data, so same
+// chartCacheId) supersedes any per-item insights fetched under a previous
+// reading - they were grounded in that prior interpretation, which the
+// backend already discards on regeneration (chart_sessions.py resets its
+// insight maps on every save_solo_session/save_synastry_session). Without
+// this, a stale (or since-fixed) insight keeps getting served from
+// localStorage indefinitely, since chartCacheId is derived from birth data
+// alone and has no notion of "which generation" it belongs to - deleting
+// and regenerating an identical chart reuses the same cache key.
+export function clearInsightCache(scope: string, cacheId: string): void {
+  try {
+    localStorage.removeItem(storageKey(scope, cacheId))
+  } catch {
+    // Private browsing / storage disabled - nothing to clear.
+  }
+}
+
+// Covers every scope a bare ChartData-shaped reveal can have insights under
+// (natal, solar return, Saturn return, composite - only natal charts ever
+// have a 'pattern' scope, but clearing an already-empty key is a no-op).
+export function clearChartInsightCache(chart: ChartIdentity): void {
+  const id = chartCacheId(chart)
+  clearInsightCache('aspect', id)
+  clearInsightCache('pattern', id)
+  clearInsightCache('placement', id)
+}
+
 export function saveInsight(scope: string, cacheId: string, key: string, blurb: string): void {
   try {
     const existing = loadInsightCache(scope, cacheId)
