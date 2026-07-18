@@ -2,6 +2,7 @@ import { OrbitControls } from '@react-three/drei'
 import { useRef } from 'react'
 import type { Mesh } from 'three'
 import type { ChartData } from '../types'
+import { AspectEdges } from './AspectEdges'
 import { planetPosition, SPHERE_RADIUS } from './geometry'
 import { PlanetMarker } from './PlanetMarker'
 
@@ -28,6 +29,7 @@ export function StellationScene({ chart }: StellationSceneProps) {
         <sphereGeometry args={[SPHERE_RADIUS, 24, 16]} />
         <meshBasicMaterial color="#8cbdb9" wireframe transparent opacity={0.18} />
       </mesh>
+      <AspectEdges planets={chart.planets} aspects={chart.aspects} />
       {chart.planets.map((planet) => (
         <PlanetMarker
           key={planet.name}
