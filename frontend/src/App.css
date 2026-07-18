@@ -110,12 +110,12 @@
   width: 100vw;
   margin-left: calc(50% - 50vw);
   margin-right: calc(50% - 50vw);
-  padding: 0.3rem 1.5rem;
+  padding: 0.3rem 2rem;
   box-sizing: border-box;
   background: var(--color-bg);
   border-bottom: 1.5px dashed var(--color-surface-line);
   @media (max-width: 640px) {
-    padding: 0.3rem 1.25rem;
+    padding: 0.3rem 1.5rem;
   }
 }
 
