@@ -231,10 +231,10 @@
   flex-wrap: wrap;
   justify-content: center;
   margin: 0;
-  font-size: 1.4rem;
+  font-size: 1.9rem;
   line-height: 1;
   @media (max-width: 640px) {
-    font-size: 1.05rem;
+    font-size: 1.4rem;
   }
 }
 
