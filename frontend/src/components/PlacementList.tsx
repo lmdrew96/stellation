@@ -1,7 +1,11 @@
-import { useState } from 'react'
-import { fetchPlacementInsight } from '../api'
+import { useContext, useState } from 'react'
+import { fetchPlacementInsight, saveSoloInsightRemote } from '../api'
+import { AuthTokenContext } from '../authTokenContext'
 import { ANGLE_GLYPH, PLANET_COLOR, PLANET_GLYPH } from '../glyphs'
+import { chartCacheId, loadInsightCache, saveInsight } from '../insightCache'
 import type { Angle, ChartData, Planet } from '../types'
+
+const SCOPE = 'placement'
 
 interface InsightState {
   status: 'loading' | 'loaded' | 'error'
@@ -16,6 +20,13 @@ interface PlacementListProps {
 
 type PlacementRow = { kind: 'angle'; data: Angle } | { kind: 'planet'; data: Planet }
 
+function initialInsights(chart: ChartData): Record<string, InsightState> {
+  const cached = loadInsightCache(SCOPE, chartCacheId(chart))
+  return Object.fromEntries(
+    Object.entries(cached).map(([key, blurb]) => [key, { status: 'loaded' as const, blurb }])
+  )
+}
+
 // Mirrors AspectList/PatternList: each row's blurb loads only once clicked
 // (via /api/placement-insight), instead of the whole reading generating one
 // for every placement up front - see ReadingDisplay, which now renders only
@@ -26,9 +37,11 @@ type PlacementRow = { kind: 'angle'; data: Angle } | { kind: 'planet'; data: Pla
 // reads the rest of the chart for context. Angles (ASC/MC) are folded in
 // alongside the planets, rather than living only in the separate ChartAngles
 // strip, so they're not the one placement easy to miss.
+// Pass `key={chartCacheId(chart)}` where this is rendered - see AspectList.
 export function PlacementList({ chart, heading = 'Placements' }: PlacementListProps) {
   const [expandedKey, setExpandedKey] = useState<string | null>(null)
-  const [insights, setInsights] = useState<Record<string, InsightState>>({})
+  const [insights, setInsights] = useState<Record<string, InsightState>>(() => initialInsights(chart))
+  const getToken = useContext(AuthTokenContext)
 
   async function handleSelect(name: string) {
     const key = name
@@ -39,6 +52,10 @@ export function PlacementList({ chart, heading = 'Placements' }: PlacementListPr
     try {
       const { blurb } = await fetchPlacementInsight(chart, name)
       setInsights((prev) => ({ ...prev, [key]: { status: 'loaded', blurb } }))
+      saveInsight(SCOPE, chartCacheId(chart), key, blurb)
+      getToken().then((token) => {
+        if (token) saveSoloInsightRemote(SCOPE, key, blurb, token).catch(() => {})
+      })
     } catch (err) {
       setInsights((prev) => ({
         ...prev,

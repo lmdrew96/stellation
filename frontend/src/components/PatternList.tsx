@@ -1,7 +1,11 @@
-import { useState } from 'react'
-import { fetchPatternInsight } from '../api'
+import { useContext, useState } from 'react'
+import { fetchPatternInsight, saveSoloInsightRemote } from '../api'
+import { AuthTokenContext } from '../authTokenContext'
 import { PATTERN_COLOR, PATTERN_DASHED, PATTERN_GLYPH } from '../glyphs'
+import { chartCacheId, loadInsightCache, saveInsight } from '../insightCache'
 import type { ChartData, Pattern } from '../types'
+
+const SCOPE = 'pattern'
 
 interface InsightState {
   status: 'loading' | 'loaded' | 'error'
@@ -13,9 +17,18 @@ function patternKey(p: Pattern, index: number): string {
   return `${p.pattern_type}-${p.planets.join('-')}-${index}`
 }
 
+function initialInsights(chart: ChartData): Record<string, InsightState> {
+  const cached = loadInsightCache(SCOPE, chartCacheId(chart))
+  return Object.fromEntries(
+    Object.entries(cached).map(([key, blurb]) => [key, { status: 'loaded' as const, blurb }])
+  )
+}
+
+// Pass `key={chartCacheId(chart)}` where this is rendered - see AspectList.
 export function PatternList({ chart }: { chart: ChartData }) {
   const [expandedKey, setExpandedKey] = useState<string | null>(null)
-  const [insights, setInsights] = useState<Record<string, InsightState>>({})
+  const [insights, setInsights] = useState<Record<string, InsightState>>(() => initialInsights(chart))
+  const getToken = useContext(AuthTokenContext)
 
   async function handleSelect(pattern: Pattern, key: string) {
     setExpandedKey((prev) => (prev === key ? null : key))
@@ -25,6 +38,10 @@ export function PatternList({ chart }: { chart: ChartData }) {
     try {
       const { blurb } = await fetchPatternInsight(chart, pattern)
       setInsights((prev) => ({ ...prev, [key]: { status: 'loaded', blurb } }))
+      saveInsight(SCOPE, chartCacheId(chart), key, blurb)
+      getToken().then((token) => {
+        if (token) saveSoloInsightRemote(SCOPE, key, blurb, token).catch(() => {})
+      })
     } catch (err) {
       setInsights((prev) => ({
         ...prev,

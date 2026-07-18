@@ -408,3 +408,33 @@ class MixtapeTrack(BaseModel):
 
 class MixtapeResponse(BaseModel):
     tracks: list[MixtapeTrack]
+
+
+# A signed-in user's own current working chart/reading - see
+# app/services/chart_sessions.py and routers/session.py. Distinct from
+# SaveSoloRequest/SavedSoloResponse above: those back the explicit, permanent,
+# shareable "Save & get link" flow; this is an implicit, single, overwritten-
+# in-place cache that exists purely so a reload or a different device doesn't
+# force a wasted (and possibly differently-worded) re-generation.
+class SoloSessionData(BaseModel):
+    chart: ChartData
+    interpretation: Interpretation
+    aspect_insights: dict[str, str] = {}
+    pattern_insights: dict[str, str] = {}
+    placement_insights: dict[str, str] = {}
+
+
+class SynastrySessionData(BaseModel):
+    synastry: SynastryData
+    interpretation: SynastryInterpretation
+    aspect_insights: dict[str, str] = {}
+
+
+class SessionResponse(BaseModel):
+    solo: SoloSessionData | None = None
+    synastry: SynastrySessionData | None = None
+
+
+class SessionInsightRequest(BaseModel):
+    key: str
+    blurb: str

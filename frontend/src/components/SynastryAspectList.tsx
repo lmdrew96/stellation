@@ -1,7 +1,11 @@
-import { useState } from 'react'
-import { fetchSynastryAspectInsight } from '../api'
+import { useContext, useState } from 'react'
+import { fetchSynastryAspectInsight, saveSynastryInsightRemote } from '../api'
+import { AuthTokenContext } from '../authTokenContext'
 import { ASPECT_GLYPH } from '../glyphs'
+import { loadInsightCache, saveInsight, synastryCacheId } from '../insightCache'
 import type { SynastryAspect, SynastryData } from '../types'
+
+const SCOPE = 'synastry-aspect'
 
 interface InsightState {
   status: 'loading' | 'loaded' | 'error'
@@ -19,9 +23,19 @@ function aspectKey(a: SynastryAspect): string {
   return `${a.planet_a}-${a.planet_b}-${a.aspect_type}`
 }
 
+function initialInsights(synastry: SynastryData): Record<string, InsightState> {
+  const cached = loadInsightCache(SCOPE, synastryCacheId(synastry))
+  return Object.fromEntries(
+    Object.entries(cached).map(([key, blurb]) => [key, { status: 'loaded' as const, blurb }])
+  )
+}
+
+// Pass `key={synastryCacheId(synastry)}` where this is rendered - see
+// AspectList's equivalent note for the solo chart lists.
 export function SynastryAspectList({ synastry, nameA, nameB }: SynastryAspectListProps) {
   const [expandedKey, setExpandedKey] = useState<string | null>(null)
-  const [insights, setInsights] = useState<Record<string, InsightState>>({})
+  const [insights, setInsights] = useState<Record<string, InsightState>>(() => initialInsights(synastry))
+  const getToken = useContext(AuthTokenContext)
 
   async function handleSelect(aspect: SynastryAspect) {
     const key = aspectKey(aspect)
@@ -32,6 +46,10 @@ export function SynastryAspectList({ synastry, nameA, nameB }: SynastryAspectLis
     try {
       const { blurb } = await fetchSynastryAspectInsight(synastry, aspect)
       setInsights((prev) => ({ ...prev, [key]: { status: 'loaded', blurb } }))
+      saveInsight(SCOPE, synastryCacheId(synastry), key, blurb)
+      getToken().then((token) => {
+        if (token) saveSynastryInsightRemote(key, blurb, token).catch(() => {})
+      })
     } catch (err) {
       setInsights((prev) => ({
         ...prev,

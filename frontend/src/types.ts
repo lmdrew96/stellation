@@ -218,3 +218,24 @@ export interface MixtapeTrack {
 export interface MixtapeResponse {
   tracks: MixtapeTrack[]
 }
+
+export interface SoloSessionData {
+  chart: ChartData
+  interpretation: Interpretation
+  aspect_insights: Record<string, string>
+  pattern_insights: Record<string, string>
+  placement_insights: Record<string, string>
+}
+
+export interface SynastrySessionData {
+  synastry: SynastryData
+  interpretation: SynastryInterpretation
+  aspect_insights: Record<string, string>
+}
+
+export interface SessionResponse {
+  solo: SoloSessionData | null
+  synastry: SynastrySessionData | null
+}
+
+export type SoloInsightScope = 'aspect' | 'pattern' | 'placement'

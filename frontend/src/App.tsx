@@ -1,5 +1,5 @@
 import { Show } from '@clerk/react'
-import { useEffect, useState } from 'react'
+import { useContext, useEffect, useState } from 'react'
 import './App.css'
 import {
   ApiError,
@@ -9,11 +9,15 @@ import {
   fetchSavedSolo,
   fetchSavedSynastry,
   fetchSaturnReturn,
+  fetchSession,
   fetchSolarReturn,
   fetchSynastry,
   fetchSynastryFromSaved,
   fetchTransits,
+  saveSoloSessionRemote,
+  saveSynastrySessionRemote,
 } from './api'
+import { AuthTokenContext } from './authTokenContext'
 import {
   loadSoloSession,
   loadStoredMode,
@@ -44,6 +48,7 @@ import { defaultSaturnCycle, useSaturnReturnReveal } from './hooks/useSaturnRetu
 import { useSolarReturnReveal } from './hooks/useSolarReturnReveal'
 import { useSynastryReveal } from './hooks/useSynastryReveal'
 import { useTransitReveal } from './hooks/useTransitReveal'
+import { chartCacheId, saveInsights, synastryCacheId } from './insightCache'
 import type {
   ChartData,
   ChartRequest,
@@ -103,6 +108,7 @@ function resetUrlToHome() {
 }
 
 function App() {
+  const getToken = useContext(AuthTokenContext)
   const [theme, setTheme] = useState<Theme>(initialTheme)
   const [health, setHealth] = useState<HealthStatus>('checking')
 
@@ -196,18 +202,72 @@ function App() {
   }, [])
 
   // Cache the reading as soon as it settles, so a reload restores it via the
-  // lazy state initializers above instead of regenerating it.
+  // lazy state initializers above instead of regenerating it. Also mirrored
+  // to the backend (best-effort, fire-and-forget) when signed in, so it
+  // survives a cleared cache or a different device - see chart_sessions.py.
+  // getToken is deliberately left out of both dependency arrays below -
+  // ClerkAuthTokenBridge hands out a new function identity on every one of
+  // its own renders (not memoized), so including it here would re-fire
+  // these effects - and re-PUT the same reading - on unrelated re-renders
+  // instead of just the one time the reading actually settles.
   useEffect(() => {
     if (chart && soloReveal.reading) {
       saveSoloSession({ chart, interpretation: soloReveal.reading })
+      getToken().then((token) => {
+        if (token) saveSoloSessionRemote(chart, soloReveal.reading!, token).catch(() => {})
+      })
     }
   }, [chart, soloReveal.reading])
 
   useEffect(() => {
     if (synastry && synastryReveal.reading && synastryReadingType === 'comparative') {
       saveSynastrySession({ synastry, interpretation: synastryReveal.reading })
+      getToken().then((token) => {
+        if (token) saveSynastrySessionRemote(synastry, synastryReveal.reading!, token).catch(() => {})
+      })
     }
   }, [synastry, synastryReveal.reading, synastryReadingType])
+
+  // Signed-in-only: a DB-backed session (chart/synastry + insights, possibly
+  // saved from a different device) takes priority over whatever the
+  // localStorage-seeded state above already restored. Skipped entirely for a
+  // saved-link visit (savedRoute) - that's an intentional view of a specific
+  // shared chart, not "restore my last session". Each restored insight map
+  // is written into localStorage *before* the corresponding setChart/
+  // setSynastry call, so AspectList/PatternList/PlacementList/
+  // SynastryAspectList - freshly remounted by the chart/synastry identity
+  // change - seed their own state from it on that same render pass.
+  useEffect(() => {
+    if (savedRoute) return
+    getToken().then((token) => {
+      if (!token) return
+      fetchSession(token)
+        .then((session) => {
+          if (session.solo) {
+            const { chart: soloChart, interpretation, aspect_insights, pattern_insights, placement_insights } =
+              session.solo
+            const cacheId = chartCacheId(soloChart)
+            saveInsights('aspect', cacheId, aspect_insights)
+            saveInsights('pattern', cacheId, pattern_insights)
+            saveInsights('placement', cacheId, placement_insights)
+            saveSoloSession({ chart: soloChart, interpretation })
+            setChart(soloChart)
+            setPresetInterpretation(interpretation)
+          }
+          if (session.synastry) {
+            const { synastry: remoteSynastry, interpretation, aspect_insights } = session.synastry
+            saveInsights('synastry-aspect', synastryCacheId(remoteSynastry), aspect_insights)
+            saveSynastrySession({ synastry: remoteSynastry, interpretation })
+            setSynastry(remoteSynastry)
+            setPresetSynastryInterpretation(interpretation)
+          }
+        })
+        .catch(() => {})
+    })
+    // getToken deliberately omitted from deps - see the note above the solo/
+    // synastry persistence effects. savedRoute never changes after mount, so
+    // this still only ever runs once.
+  }, [savedRoute])
 
   useEffect(() => {
     if (!savedRoute) return

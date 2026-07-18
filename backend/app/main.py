@@ -14,8 +14,9 @@ from app.routers import (
     interpret,
     mixtape,
     render,
-    save,
     saturn_return,
+    save,
+    session,
     solar_return,
     synastry,
     transit,
@@ -47,3 +48,4 @@ app.include_router(composite.router)
 app.include_router(solar_return.router)
 app.include_router(saturn_return.router)
 app.include_router(mixtape.router)
+app.include_router(session.router)

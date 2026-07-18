@@ -1,6 +1,7 @@
 import { saveSoloChart } from '../api'
 import { ART_STYLES } from '../hooks/useChartReveal'
 import type { CompositeRevealState } from '../hooks/useCompositeReveal'
+import { chartCacheId } from '../insightCache'
 import type { ChartData } from '../types'
 import { AspectList } from './AspectList'
 import { ChartAngles } from './ChartAngles'
@@ -52,8 +53,8 @@ export function CompositeReveal({
           {readingStatus === 'error' && <p className="notice notice-error">{readingError}</p>}
           {reading && <ReadingDisplay reading={reading} heading="The Relationship" />}
           <ChartAngles angles={composite.angles} chart={composite} />
-          <PlacementList chart={composite} heading="Composite Placements" />
-          <AspectList chart={composite} />
+          <PlacementList chart={composite} heading="Composite Placements" key={chartCacheId(composite)} />
+          <AspectList chart={composite} key={chartCacheId(composite)} />
         </>
       )}
     </section>

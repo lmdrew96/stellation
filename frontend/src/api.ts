@@ -19,6 +19,8 @@ import type {
   SavedSoloResponse,
   SavedSynastryResponse,
   SaturnReturnCycle,
+  SessionResponse,
+  SoloInsightScope,
   SynastryAspect,
   SynastryData,
   SynastryInterpretation,
@@ -485,4 +487,86 @@ export async function fetchSynastryAspectInsight(
   }
 
   return res.json()
+}
+
+// Signed-in-only mirror of the localStorage cache in chartSession.ts /
+// insightCache.ts (see app/routers/session.py) - every call below requires
+// a real token (unlike the optional-auth authHeaders() helper above), since
+// callers only ever make them after confirming the visitor is signed in.
+export async function fetchSession(token: string): Promise<SessionResponse> {
+  const res = await fetch('/api/session', {
+    headers: { Authorization: `Bearer ${token}` },
+  })
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => null)
+    throw new ApiError(parseErrorDetail(body, 'Could not load your saved session.'))
+  }
+
+  return res.json()
+}
+
+export async function saveSoloSessionRemote(
+  chart: ChartData,
+  interpretation: Interpretation,
+  token: string,
+): Promise<void> {
+  const res = await fetch('/api/session/solo', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ chart, interpretation }),
+  })
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => null)
+    throw new ApiError(parseErrorDetail(body, 'Could not save your session.'))
+  }
+}
+
+export async function saveSoloInsightRemote(
+  scope: SoloInsightScope,
+  key: string,
+  blurb: string,
+  token: string,
+): Promise<void> {
+  const res = await fetch(`/api/session/solo/${scope}-insight`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ key, blurb }),
+  })
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => null)
+    throw new ApiError(parseErrorDetail(body, 'Could not save this insight.'))
+  }
+}
+
+export async function saveSynastrySessionRemote(
+  synastry: SynastryData,
+  interpretation: SynastryInterpretation,
+  token: string,
+): Promise<void> {
+  const res = await fetch('/api/session/synastry', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ synastry, interpretation }),
+  })
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => null)
+    throw new ApiError(parseErrorDetail(body, 'Could not save your session.'))
+  }
+}
+
+export async function saveSynastryInsightRemote(key: string, blurb: string, token: string): Promise<void> {
+  const res = await fetch('/api/session/synastry/aspect-insight', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ key, blurb }),
+  })
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => null)
+    throw new ApiError(parseErrorDetail(body, 'Could not save this insight.'))
+  }
 }

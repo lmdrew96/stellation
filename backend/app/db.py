@@ -14,6 +14,22 @@ SCHEMA_STATEMENTS = [
     # Nullable - anonymous saves (no signed-in user) keep working exactly as
     # before, this only gets populated when a Clerk-authenticated save happens.
     "ALTER TABLE saved_charts ADD COLUMN IF NOT EXISTS user_id TEXT;",
+    # A signed-in user's own current working chart/synastry reading, kept in
+    # sync automatically (no explicit "save" click) so it survives a cleared
+    # cache or a different browser/device - unlike saved_charts, which is
+    # opt-in and permanent. `solo`/`synastry` are nullable and independent
+    # (a user can have one, both, or neither in flight); each is one JSONB
+    # blob (chart/synastry + interpretation + per-item insight maps) rather
+    # than normalized columns, mirroring the localStorage cache it mirrors
+    # for signed-out visitors (see frontend/src/chartSession.ts).
+    """
+    CREATE TABLE IF NOT EXISTS chart_sessions (
+        user_id TEXT PRIMARY KEY,
+        solo JSONB,
+        synastry JSONB,
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+    """,
 ]
 
 

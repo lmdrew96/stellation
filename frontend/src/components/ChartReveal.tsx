@@ -1,5 +1,6 @@
 import { saveSoloChart } from '../api'
 import { ART_STYLES } from '../hooks/useChartReveal'
+import { chartCacheId } from '../insightCache'
 import type { ChartRevealState } from '../hooks/useChartReveal'
 import type { SaturnReturnRevealState } from '../hooks/useSaturnReturnReveal'
 import type { SolarReturnRevealState } from '../hooks/useSolarReturnReveal'
@@ -196,10 +197,10 @@ export function ChartReveal({
           )}
           {mixtape && <MixtapeReveal mixtape={mixtape} onClose={onCloseMixtape} />}
           <div className="data-columns">
-            <PlacementList chart={chart} />
-            <AspectList chart={chart} />
+            <PlacementList chart={chart} key={chartCacheId(chart)} />
+            <AspectList chart={chart} key={chartCacheId(chart)} />
           </div>
-          <PatternList chart={chart} />
+          <PatternList chart={chart} key={chartCacheId(chart)} />
           {reading && viewingSaved && !isComposite && (
             <CompareForm
               ownerName={chart.name}

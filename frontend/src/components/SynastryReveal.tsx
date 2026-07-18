@@ -2,6 +2,7 @@ import { saveSynastryChart } from '../api'
 import { ART_STYLES } from '../hooks/useChartReveal'
 import type { CompositeRevealState } from '../hooks/useCompositeReveal'
 import type { SynastryRevealState } from '../hooks/useSynastryReveal'
+import { synastryCacheId } from '../insightCache'
 import type { ChartData, SynastryData } from '../types'
 import { ChartAngles } from './ChartAngles'
 import { ChartCarousel } from './ChartCarousel'
@@ -98,7 +99,12 @@ export function SynastryReveal({
               <PlanetList planets={synastry.person_b.planets} heading={`${nameB}'s Placements`} />
             </div>
           </div>
-          <SynastryAspectList synastry={synastry} nameA={nameA} nameB={nameB} />
+          <SynastryAspectList
+            synastry={synastry}
+            nameA={nameA}
+            nameB={nameB}
+            key={synastryCacheId(synastry)}
+          />
         </>
       )}
     </section>

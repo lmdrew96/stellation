@@ -1,7 +1,11 @@
-import { useState } from 'react'
-import { fetchAspectInsight } from '../api'
+import { useContext, useState } from 'react'
+import { fetchAspectInsight, saveSoloInsightRemote } from '../api'
+import { AuthTokenContext } from '../authTokenContext'
 import { ASPECT_GLYPH } from '../glyphs'
+import { chartCacheId, loadInsightCache, saveInsight } from '../insightCache'
 import type { Aspect, ChartData } from '../types'
+
+const SCOPE = 'aspect'
 
 interface InsightState {
   status: 'loading' | 'loaded' | 'error'
@@ -13,9 +17,20 @@ function aspectKey(a: Aspect): string {
   return `${a.planet_a}-${a.planet_b}-${a.aspect_type}`
 }
 
+function initialInsights(chart: ChartData): Record<string, InsightState> {
+  const cached = loadInsightCache(SCOPE, chartCacheId(chart))
+  return Object.fromEntries(
+    Object.entries(cached).map(([key, blurb]) => [key, { status: 'loaded' as const, blurb }])
+  )
+}
+
+// Pass `key={chartCacheId(chart)}` where this is rendered - remounts this
+// component (and re-seeds `insights` from the new chart's own cache) instead
+// of carrying a previous chart's blurbs over when the chart prop changes.
 export function AspectList({ chart }: { chart: ChartData }) {
   const [expandedKey, setExpandedKey] = useState<string | null>(null)
-  const [insights, setInsights] = useState<Record<string, InsightState>>({})
+  const [insights, setInsights] = useState<Record<string, InsightState>>(() => initialInsights(chart))
+  const getToken = useContext(AuthTokenContext)
 
   async function handleSelect(aspect: Aspect) {
     const key = aspectKey(aspect)
@@ -26,6 +41,10 @@ export function AspectList({ chart }: { chart: ChartData }) {
     try {
       const { blurb } = await fetchAspectInsight(chart, aspect)
       setInsights((prev) => ({ ...prev, [key]: { status: 'loaded', blurb } }))
+      saveInsight(SCOPE, chartCacheId(chart), key, blurb)
+      getToken().then((token) => {
+        if (token) saveSoloInsightRemote(SCOPE, key, blurb, token).catch(() => {})
+      })
     } catch (err) {
       setInsights((prev) => ({
         ...prev,
