@@ -459,14 +459,10 @@ function App() {
       )}
       <div className="masthead__bar">
         <ThemeToggle theme={theme} onChange={setTheme} />
+        <Wordmark />
         {clerkEnabled && <AccountControls />}
       </div>
       <main className="app">
-        <header className="masthead">
-          <Wordmark />
-          <p className="tagline">A precise map of the sky at the moment you arrived.</p>
-        </header>
-
         {loadingSaved ? (
           <GeneratingScreen />
         ) : (

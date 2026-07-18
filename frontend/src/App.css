@@ -85,13 +85,6 @@
 
 /* ---------- masthead ---------- */
 
-.masthead {
-  position: relative;
-  z-index: 1;
-  text-align: center;
-  margin-bottom: 2.5rem;
-}
-
 /* Breaks out of .app's 640px content column so the toggle and sign-in
    button sit at the actual page corners rather than the narrow form
    column's corners. Width/margin trick (not left/right:0, which would need
@@ -225,15 +218,23 @@
    inline by Wordmark.tsx), theme-aware color assignment here. Two separate
    rotations rather than one shared set - a color that reads fine on Paper
    can vanish on Plum (e.g. plum-on-plum), see the contrast rule in index.css. */
+/* Sits centered in .masthead__bar regardless of which side buttons are
+   present (ThemeToggle always renders, AccountControls only when
+   clerkEnabled) - absolute + translate keeps it dead-center rather than
+   drifting with the flex layout on either side. */
 .wordmark {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  margin: 0 0 0.3rem;
-  font-size: 3rem;
+  margin: 0;
+  font-size: 1.4rem;
   line-height: 1;
   @media (max-width: 640px) {
-    font-size: 2.25rem;
+    font-size: 1.05rem;
   }
 }
 
@@ -271,16 +272,6 @@
 :root[data-theme='dark'] .wordmark__letter:nth-child(6),
 :root[data-theme='dark'] .wordmark__letter:nth-child(9) {
   color: var(--periwinkle);
-}
-
-.masthead .tagline {
-  display: inline-block;
-  margin-top: 0.6rem;
-  font-family: var(--font-scrawl);
-  font-weight: 700;
-  font-size: 1.35rem;
-  color: var(--color-accent);
-  transform: rotate(-2deg);
 }
 
 /* ---------- mode toggle ---------- */
