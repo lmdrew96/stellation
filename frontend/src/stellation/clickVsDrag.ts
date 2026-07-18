@@ -7,7 +7,10 @@ import type { RefObject } from 'react'
 // click too. A drag can start over one mesh and release over a
 // completely different one, so this must be a single ref shared by every
 // clickable mesh in the scene, not a separate one per mesh/cluster.
-const CLICK_DRAG_THRESHOLD_PX = 6
+// 10px (not 6) to give touch input room - a finger tap naturally drifts
+// more than a mouse click, and a threshold tuned for mouse precision
+// misclassifies most taps as drags on a touchscreen.
+const CLICK_DRAG_THRESHOLD_PX = 10
 
 export type PointerDownRef = RefObject<{ x: number; y: number } | null>
 
