@@ -413,6 +413,72 @@
   color: var(--color-accent-warm);
 }
 
+/* ---------- saved page sections (My Charts / Friend Diary) ---------- */
+
+.saved-section {
+  margin-bottom: 2.5rem;
+}
+
+.saved-section h2 {
+  margin-bottom: 0.75rem;
+}
+
+/* ---------- friend diary (saved people) ---------- */
+
+.saved-people {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.saved-people__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+.saved-people__action {
+  padding: 0.5rem 0.75rem;
+  border: 1.5px dashed var(--color-surface-line);
+  border-radius: 0.75rem;
+  background: transparent;
+  color: var(--color-text-muted);
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.saved-people__action:hover {
+  color: var(--color-accent-warm);
+  border-color: var(--color-accent-warm);
+}
+
+.saved-people__action:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.saved-people__compare {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.saved-people__compare select {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  padding: 0.4rem 0.5rem;
+  border-radius: 0.6rem;
+  border: 1px solid var(--color-surface-line);
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+
 /* ---------- backend status badge ---------- */
 
 .backend-status {

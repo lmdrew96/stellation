@@ -453,3 +453,45 @@ class TodayResponse(BaseModel):
     transit: TransitData
     transit_interpretation: TransitInterpretation
     daily_focus: DailyFocus
+
+
+# A "friend diary" entry - another person's birth details, saved so a chart
+# or synastry reading can be generated for them again later. Same raw-field
+# shape and validators as ChartRequest, minus zodiac/house_system (a
+# chart-viewing preference chosen at generation time, not an intrinsic
+# property of the person being saved) - see app/services/saved_people.py.
+class SavedPersonRequest(BaseModel):
+    name: str
+    birth_date: str  # YYYY-MM-DD
+    birth_time: str  # HH:MM, 24-hour
+    birth_place: str | None = None
+    pronouns: str | None = None
+    manual_lat: float | None = None
+    manual_lng: float | None = None
+
+    @field_validator("birth_date")
+    @classmethod
+    def _validate_birth_date(cls, v: str) -> str:
+        try:
+            dt.datetime.strptime(v, "%Y-%m-%d")
+        except ValueError as exc:
+            raise ValueError("must be a valid date in YYYY-MM-DD format") from exc
+        return v
+
+    @field_validator("birth_time")
+    @classmethod
+    def _validate_birth_time(cls, v: str) -> str:
+        try:
+            dt.datetime.strptime(v, "%H:%M")
+        except ValueError as exc:
+            raise ValueError("must be a valid 24-hour time in HH:MM format") from exc
+        return v
+
+
+class SavedPerson(SavedPersonRequest):
+    id: str
+    created_at: dt.datetime
+
+
+class SavedPeopleResponse(BaseModel):
+    people: list[SavedPerson]

@@ -253,3 +253,26 @@ export interface TodayResponse {
   transit_interpretation: TransitInterpretation
   daily_focus: DailyFocus
 }
+
+// A "friend diary" entry - another person's birth details, saved so a chart
+// or synastry reading can be generated for them again later. Same shape as
+// ChartRequest minus zodiac/house_system (a chart-viewing preference chosen
+// at generation time, not an intrinsic property of the person).
+export interface SavedPersonRequest {
+  name: string
+  birth_date: string
+  birth_time: string
+  birth_place?: string
+  pronouns?: string
+  manual_lat?: number
+  manual_lng?: number
+}
+
+export interface SavedPerson extends SavedPersonRequest {
+  id: string
+  created_at: string
+}
+
+export interface SavedPeopleResponse {
+  people: SavedPerson[]
+}

@@ -62,6 +62,28 @@ SCHEMA_STATEMENTS = [
     # clobber a profile edit.
     "ALTER TABLE profiles ADD COLUMN IF NOT EXISTS daily_content JSONB;",
     "ALTER TABLE profiles ADD COLUMN IF NOT EXISTS daily_content_date DATE;",
+    # A "friend diary" - other people's birth details, saved so a chart or
+    # synastry reading can be generated for them again later without
+    # re-entering their data. Always user-owned (no anonymous rows, unlike
+    # saved_charts) - a multi-row-per-user list, like saved_charts, not a
+    # single upserted row like profiles/chart_sessions. No zodiac/house_system
+    # columns - those are a chart-viewing preference chosen at generation
+    # time, not an intrinsic property of the person being saved.
+    """
+    CREATE TABLE IF NOT EXISTS saved_people (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        name TEXT NOT NULL,
+        birth_date TEXT NOT NULL,
+        birth_time TEXT NOT NULL,
+        birth_place TEXT,
+        pronouns TEXT,
+        manual_lat DOUBLE PRECISION,
+        manual_lng DOUBLE PRECISION,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+    """,
+    "CREATE INDEX IF NOT EXISTS saved_people_user_id_idx ON saved_people(user_id);",
 ]
 
 

@@ -15,6 +15,9 @@ import type {
   PlacementInsight,
   RelationshipType,
   SavedChartSummary,
+  SavedPeopleResponse,
+  SavedPerson,
+  SavedPersonRequest,
   SavedSlugResponse,
   SavedSoloResponse,
   SavedSynastryResponse,
@@ -607,6 +610,48 @@ export async function fetchToday(date: string, token: string): Promise<TodayResp
   }
 
   return res.json()
+}
+
+// Friend diary - see backend/app/routers/people.py.
+export async function createSavedPerson(payload: SavedPersonRequest, token: string): Promise<SavedPerson> {
+  const res = await fetch('/api/people', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify(payload),
+  })
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => null)
+    throw new ApiError(parseErrorDetail(body, 'Could not save this person.'))
+  }
+
+  return res.json()
+}
+
+export async function fetchSavedPeople(token: string): Promise<SavedPerson[]> {
+  const res = await fetch('/api/people/mine', {
+    headers: { Authorization: `Bearer ${token}` },
+  })
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => null)
+    throw new ApiError(parseErrorDetail(body, 'Could not load your saved people.'))
+  }
+
+  const data: SavedPeopleResponse = await res.json()
+  return data.people
+}
+
+export async function deleteSavedPerson(id: string, token: string): Promise<void> {
+  const res = await fetch(`/api/people/${id}`, {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${token}` },
+  })
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => null)
+    throw new ApiError(parseErrorDetail(body, 'Could not delete this person.'))
+  }
 }
 
 export async function saveSynastryInsightRemote(key: string, blurb: string, token: string): Promise<void> {

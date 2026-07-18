@@ -13,6 +13,7 @@ from app.routers import (
     health,
     interpret,
     mixtape,
+    people,
     profile,
     render,
     saturn_return,
@@ -53,3 +54,4 @@ app.include_router(mixtape.router)
 app.include_router(session.router)
 app.include_router(profile.router)
 app.include_router(today.router)
+app.include_router(people.router)
