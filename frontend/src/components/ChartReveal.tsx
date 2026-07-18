@@ -199,8 +199,8 @@ export function ChartReveal({
           )}
           {mixtape && <MixtapeReveal mixtape={mixtape} onClose={onCloseMixtape} />}
           <div className="data-columns">
-            <PlacementList chart={chart} key={chartCacheId(chart)} />
-            <AspectList chart={chart} key={chartCacheId(chart)} />
+            <PlacementList chart={chart} key={`placements-${chartCacheId(chart)}`} />
+            <AspectList chart={chart} key={`aspects-${chartCacheId(chart)}`} />
           </div>
           <PatternList chart={chart} key={chartCacheId(chart)} />
           {reading && viewingSaved && !isComposite && (
