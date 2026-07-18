@@ -558,6 +558,37 @@ export async function saveSynastrySessionRemote(
   }
 }
 
+// A signed-in user's own birth details - see app/services/profiles.py.
+// Reuses ChartRequest directly (same shape, same validation) rather than a
+// dedicated Profile type.
+export async function fetchProfile(token: string): Promise<ChartRequest | null> {
+  const res = await fetch('/api/profile', {
+    headers: { Authorization: `Bearer ${token}` },
+  })
+
+  if (res.status === 404) return null
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => null)
+    throw new ApiError(parseErrorDetail(body, 'Could not load your profile.'))
+  }
+
+  return res.json()
+}
+
+export async function saveProfile(payload: ChartRequest, token: string): Promise<void> {
+  const res = await fetch('/api/profile', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify(payload),
+  })
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => null)
+    throw new ApiError(parseErrorDetail(body, 'Could not save your profile.'))
+  }
+}
+
 export async function saveSynastryInsightRemote(key: string, blurb: string, token: string): Promise<void> {
   const res = await fetch('/api/session/synastry/aspect-insight', {
     method: 'POST',

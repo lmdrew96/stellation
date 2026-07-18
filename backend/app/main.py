@@ -13,6 +13,7 @@ from app.routers import (
     health,
     interpret,
     mixtape,
+    profile,
     render,
     saturn_return,
     save,
@@ -49,3 +50,4 @@ app.include_router(solar_return.router)
 app.include_router(saturn_return.router)
 app.include_router(mixtape.router)
 app.include_router(session.router)
+app.include_router(profile.router)

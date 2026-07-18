@@ -12,6 +12,11 @@ interface BirthDataFormProps {
   showManualCoords: boolean
   initialPerson?: PersonFieldsValue
   initialSettings?: ChartSettingsValue
+  // Solo chart generation is the default (and only) use of this form today -
+  // ProfilePage reuses it for a "Save profile" action instead, which needs
+  // different button copy for the same submit/submitting states.
+  submitLabel?: string
+  submittingLabel?: string
 }
 
 export function BirthDataForm({
@@ -20,6 +25,8 @@ export function BirthDataForm({
   showManualCoords,
   initialPerson,
   initialSettings,
+  submitLabel = 'Generate chart',
+  submittingLabel = 'Calculating…',
 }: BirthDataFormProps) {
   const [person, setPerson] = useState(initialPerson ?? emptyPersonFields())
   const [settings, setSettings] = useState(initialSettings ?? defaultChartSettings())
@@ -54,7 +61,7 @@ export function BirthDataForm({
         </div>
         <ChartSettingsFields idPrefix="solo-settings" value={settings} onChange={setSettings} />
         <button className="submit-button" type="submit" disabled={submitting}>
-          {submitting ? 'Calculating…' : 'Generate chart'}
+          {submitting ? submittingLabel : submitLabel}
         </button>
       </div>
     </form>

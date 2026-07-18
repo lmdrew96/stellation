@@ -30,6 +30,27 @@ SCHEMA_STATEMENTS = [
         updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
     );
     """,
+    # A signed-in user's own birth details, entered once and reused across
+    # features (Your Day, prefilling the Solo form, etc.) instead of
+    # re-entering them per chart. Normalized columns (not JSONB) mirroring
+    # ChartRequest's shape exactly, rather than a computed ChartData -
+    # coordinates are still resolved at build time, same as every other
+    # birth-data entry point in this app.
+    """
+    CREATE TABLE IF NOT EXISTS profiles (
+        user_id TEXT PRIMARY KEY,
+        name TEXT NOT NULL,
+        birth_date TEXT NOT NULL,
+        birth_time TEXT NOT NULL,
+        birth_place TEXT,
+        pronouns TEXT,
+        zodiac TEXT NOT NULL DEFAULT 'tropical',
+        house_system TEXT NOT NULL DEFAULT 'placidus',
+        manual_lat DOUBLE PRECISION,
+        manual_lng DOUBLE PRECISION,
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+    """,
 ]
 
 
