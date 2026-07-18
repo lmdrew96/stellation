@@ -49,18 +49,47 @@ export function SynastryReveal({
       {!isGenerating && (
         <>
           {artError && <p className="notice notice-error">{artError}</p>}
-          {ART_STYLES.every(({ style }) => artUrls[style]) && (
-            <ChartCarousel
-              name={`${nameA} & ${nameB}`}
-              slides={ART_STYLES.map(({ style, label }) => ({ label, url: artUrls[style]! }))}
-            />
-          )}
+          <div className="chart-reading-split">
+            {ART_STYLES.every(({ style }) => artUrls[style]) && (
+              <ChartCarousel
+                name={`${nameA} & ${nameB}`}
+                slides={ART_STYLES.map(({ style, label }) => ({ label, url: artUrls[style]! }))}
+              />
+            )}
+            <div className="chart-reading-split__reading">
+              {readingStatus === 'error' && <p className="notice notice-error">{readingError}</p>}
+              {reading && (
+                <SynastryReadingDisplay
+                  reading={reading}
+                  nameA={nameA}
+                  nameB={nameB}
+                  relationshipType={synastry.relationship_type}
+                />
+              )}
+            </div>
+          </div>
           {reading && !viewingSaved && (
             <SaveLink save={(token) => saveSynastryChart(synastry, reading, token)} pathPrefix="/s/" />
           )}
+          <div className="data-columns">
+            <div>
+              <ChartAngles angles={synastry.person_a.angles} />
+              <PlanetList planets={synastry.person_a.planets} heading={`${nameA}'s Placements`} />
+            </div>
+            <div>
+              <ChartAngles angles={synastry.person_b.angles} />
+              <PlanetList planets={synastry.person_b.planets} heading={`${nameB}'s Placements`} />
+            </div>
+          </div>
+          <SynastryAspectList
+            synastry={synastry}
+            nameA={nameA}
+            nameB={nameB}
+            key={synastryCacheId(synastry)}
+          />
           {reading && !composite && (
             <div className="chart-actions">
-              <p className="chart-actions__label">More views of this reading</p>
+              <p className="chart-actions__label">More Views</p>
               <div className="chart-actions__row">
                 <div className="reveal-trigger">
                   <button
@@ -80,31 +109,6 @@ export function SynastryReveal({
           {composite && (
             <CompositeReveal composite={composite} onClose={onCloseComposite} {...compositeReveal} />
           )}
-          {readingStatus === 'error' && <p className="notice notice-error">{readingError}</p>}
-          {reading && (
-            <SynastryReadingDisplay
-              reading={reading}
-              nameA={nameA}
-              nameB={nameB}
-              relationshipType={synastry.relationship_type}
-            />
-          )}
-          <div className="data-columns">
-            <div>
-              <ChartAngles angles={synastry.person_a.angles} />
-              <PlanetList planets={synastry.person_a.planets} heading={`${nameA}'s Placements`} />
-            </div>
-            <div>
-              <ChartAngles angles={synastry.person_b.angles} />
-              <PlanetList planets={synastry.person_b.planets} heading={`${nameB}'s Placements`} />
-            </div>
-          </div>
-          <SynastryAspectList
-            synastry={synastry}
-            nameA={nameA}
-            nameB={nameB}
-            key={synastryCacheId(synastry)}
-          />
         </>
       )}
     </section>

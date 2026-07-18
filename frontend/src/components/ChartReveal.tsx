@@ -125,21 +125,34 @@ export function ChartReveal({
               {reading && <ReadingDisplay reading={reading} />}
             </div>
           </div>
-          <StellationView chart={chart} />
           {reading && !viewingSaved && (
             <SaveLink save={(token) => saveSoloChart(chart, reading, token)} pathPrefix="/c/" />
           )}
-          {reading && !isComposite && (!transit || !solarReturn || !saturnReturn || !mixtape) && (
+          <div className="chart-actions">
+            <p className="chart-actions__label">Cool Tricks</p>
+            <div className="chart-actions__row">
+              {reading && !isComposite && !mixtape && (
+                <MixtapeTrigger
+                  loading={mixtapeLoading}
+                  error={mixtapeError}
+                  onSubmit={onViewMixtape}
+                />
+              )}
+              <StellationView chart={chart} />
+            </div>
+          </div>
+          {mixtape && <MixtapeReveal mixtape={mixtape} onClose={onCloseMixtape} />}
+          <div className="data-columns">
+            <div className="data-columns__stack">
+              <PlacementList chart={chart} key={`placements-${chartCacheId(chart)}`} />
+              <PatternList chart={chart} key={chartCacheId(chart)} />
+            </div>
+            <AspectList chart={chart} key={`aspects-${chartCacheId(chart)}`} />
+          </div>
+          {reading && !isComposite && (!transit || !solarReturn || !saturnReturn) && (
             <div className="chart-actions">
-              <p className="chart-actions__label">More views of this chart</p>
+              <p className="chart-actions__label">More Views</p>
               <div className="chart-actions__row">
-                {!mixtape && (
-                  <MixtapeTrigger
-                    loading={mixtapeLoading}
-                    error={mixtapeError}
-                    onSubmit={onViewMixtape}
-                  />
-                )}
                 {!transit && (
                   <div className="reveal-trigger">
                     <button
@@ -197,12 +210,6 @@ export function ChartReveal({
               {...saturnReturnReveal}
             />
           )}
-          {mixtape && <MixtapeReveal mixtape={mixtape} onClose={onCloseMixtape} />}
-          <div className="data-columns">
-            <PlacementList chart={chart} key={`placements-${chartCacheId(chart)}`} />
-            <AspectList chart={chart} key={`aspects-${chartCacheId(chart)}`} />
-          </div>
-          <PatternList chart={chart} key={chartCacheId(chart)} />
           {reading && viewingSaved && !isComposite && (
             <CompareForm
               ownerName={chart.name}

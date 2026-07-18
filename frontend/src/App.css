@@ -1784,6 +1784,17 @@
   opacity: 0.6;
 }
 
+/* Now a sibling of MixtapeTrigger inside .chart-actions__row (a flex row) -
+   collapsed, it should share the row like any other trigger button, but
+   once opened its canvas-frame's `width: min(100%, 640px)` needs a real
+   container width to resolve against. A flex item with no explicit width
+   sizes to its content, which is circular for a percentage-width child, so
+   Chrome collapses it to near-nothing. Force the item to claim the full
+   row width only once the canvas has actually mounted. */
+.chart-actions__row .stellation-view:has(.stellation-view__canvas-frame) {
+  flex-basis: 100%;
+}
+
 /* 3D stellated-polyhedron view (react-three-fiber) - deliberately its own
    chrome, dark/planetarium-like, separate from the zine card's paper/tape
    treatment (see the 3D-stellation epic's framing decision in ChaosPatch).
