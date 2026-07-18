@@ -14,6 +14,11 @@ export interface RevealState<TReading> {
   readingStatus: 'idle' | 'loading' | 'error'
   readingError: string | null
   isGenerating: boolean
+  // Art (chart data) is typically much faster than the Claude-generated
+  // reading, since it involves no LLM call - callers that want to render
+  // the chart as soon as it's ready, rather than waiting on the reading
+  // too, should gate on this instead of `isGenerating`.
+  artSettled: boolean
 }
 
 // Shared by useChartReveal and useSynastryReveal - solo and synastry charts
@@ -92,5 +97,5 @@ export function useReveal<TInput, TReading>(
   const readingSettled = reading !== null || readingStatus === 'error'
   const isGenerating = input !== null && !(artSettled && readingSettled)
 
-  return { artUrls, artError, reading, readingStatus, readingError, isGenerating }
+  return { artUrls, artError, reading, readingStatus, readingError, isGenerating, artSettled }
 }

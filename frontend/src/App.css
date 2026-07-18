@@ -885,6 +885,29 @@
   min-height: 1.5em;
 }
 
+/* Compact companion to .generating - sits in the reading's place once the
+   chart art/placements/aspects are already showing, so it reads as "this
+   one part is still loading" rather than reusing the full-page spinner. */
+.reading-loading {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin: 1rem 0 2rem;
+  animation: reveal-in 0.4s ease both;
+}
+
+.reading-loading .astrolabe-ring--spin {
+  animation-duration: 14s;
+}
+
+.reading-loading__message {
+  font-family: var(--font-scrawl);
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: var(--color-text-muted);
+  min-height: 1.5em;
+}
+
 /* ---------- chart reveal ---------- */
 
 .reveal {

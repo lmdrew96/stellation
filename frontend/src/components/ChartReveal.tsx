@@ -25,6 +25,7 @@ import { MixtapeTrigger } from './MixtapeTrigger'
 import { PatternList } from './PatternList'
 import { PlacementList } from './PlacementList'
 import { ReadingDisplay } from './ReadingDisplay'
+import { ReadingLoading } from './ReadingLoading'
 import { SaturnReturnReveal } from './SaturnReturnReveal'
 import { SaveLink } from './SaveLink'
 import { SolarReturnReveal } from './SolarReturnReveal'
@@ -71,7 +72,7 @@ export function ChartReveal({
   reading,
   readingStatus,
   readingError,
-  isGenerating,
+  artSettled,
   viewingSaved,
   transit,
   transitReveal,
@@ -109,8 +110,8 @@ export function ChartReveal({
   const isComposite = chart.chart_kind === 'composite'
   return (
     <section className="reveal">
-      {isGenerating && <GeneratingScreen />}
-      {!isGenerating && (
+      {!artSettled && <GeneratingScreen />}
+      {artSettled && (
         <>
           {artError && <p className="notice notice-error">{artError}</p>}
           <div className="chart-reading-split">
@@ -122,6 +123,7 @@ export function ChartReveal({
             )}
             <div className="chart-reading-split__reading">
               {readingStatus === 'error' && <p className="notice notice-error">{readingError}</p>}
+              {readingStatus === 'loading' && <ReadingLoading />}
               {reading && <ReadingDisplay reading={reading} />}
             </div>
           </div>

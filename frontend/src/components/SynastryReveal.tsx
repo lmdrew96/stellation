@@ -9,6 +9,7 @@ import { ChartCarousel } from './ChartCarousel'
 import { CompositeReveal } from './CompositeReveal'
 import { GeneratingScreen } from './GeneratingScreen'
 import { PlanetList } from './PlanetList'
+import { ReadingLoading } from './ReadingLoading'
 import { SaveLink } from './SaveLink'
 import { SynastryAspectList } from './SynastryAspectList'
 import { SynastryReadingDisplay } from './SynastryReadingDisplay'
@@ -31,7 +32,7 @@ export function SynastryReveal({
   reading,
   readingStatus,
   readingError,
-  isGenerating,
+  artSettled,
   viewingSaved,
   composite,
   compositeReveal,
@@ -45,8 +46,8 @@ export function SynastryReveal({
 
   return (
     <section className="reveal">
-      {isGenerating && <GeneratingScreen />}
-      {!isGenerating && (
+      {!artSettled && <GeneratingScreen />}
+      {artSettled && (
         <>
           {artError && <p className="notice notice-error">{artError}</p>}
           <div className="chart-reading-split">
@@ -58,6 +59,7 @@ export function SynastryReveal({
             )}
             <div className="chart-reading-split__reading">
               {readingStatus === 'error' && <p className="notice notice-error">{readingError}</p>}
+              {readingStatus === 'loading' && <ReadingLoading />}
               {reading && (
                 <SynastryReadingDisplay
                   reading={reading}
