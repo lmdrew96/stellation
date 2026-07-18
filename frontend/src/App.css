@@ -940,17 +940,19 @@
   margin-bottom: 0;
 }
 
-/* Centered text wrapping around a float reads as ragged (each line centers
-   in whatever width the float leaves that line) - left-align and drop the
-   34rem cap so the synthesis actually fills the full width once it clears
-   the art, as requested. Desktop-only: mobile drops the float entirely and
-   keeps the original centered treatment. */
+/* Centered text reads as ragged at container width (each line centers in
+   whatever width it has, rather than wrapping like a normal paragraph) -
+   left-align and drop the 34rem cap everywhere a reading appears (Solo,
+   Synastry, and every sub-reveal: Transits, This Year's Chart, Saturn
+   Return, Composite) so readings consistently fill the same width as the
+   rest of the page instead of sitting narrower. Desktop-only: mobile keeps
+   the original centered treatment, which reads fine at narrow widths. */
 @media (min-width: 641px) {
-  .chart-reading-split__reading .reading h2 {
+  .reading h2 {
     text-align: left;
   }
 
-  .chart-reading-split__reading .reading-synthesis {
+  .reading-synthesis {
     max-width: none;
     text-align: left;
     margin: 0 0 1.5rem;
