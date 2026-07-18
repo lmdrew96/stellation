@@ -1788,6 +1788,7 @@
    Fixed colors regardless of light/dark site theme, same convention as the
    chart art's own untouched render.py palette. */
 .stellation-view__canvas-frame {
+  position: relative;
   width: min(100%, 640px);
   aspect-ratio: 4 / 3;
   margin: 1rem auto 0;
@@ -1797,6 +1798,61 @@
   border: 1px solid rgb(from var(--periwinkle) r g b / 0.35);
   box-shadow: 0 12px 28px rgb(from var(--ink) r g b / 0.3);
   animation: reveal-in 0.3s ease both;
+}
+
+/* Pattern-insight panel (phase 3) - floats over the canvas rather than
+   pushing it, so clicking around the sphere doesn't jump the layout. */
+.stellation-view__insight {
+  position: absolute;
+  left: 1rem;
+  right: 1rem;
+  bottom: 1rem;
+  max-height: 55%;
+  overflow-y: auto;
+  padding: 0.85rem 2.25rem 0.85rem 1rem;
+  border-radius: 8px;
+  background: rgb(20 16 30 / 0.88);
+  border: 1px solid rgb(from var(--periwinkle) r g b / 0.35);
+  color: var(--blush);
+  font-size: 0.85rem;
+  line-height: 1.55;
+  animation: reveal-in 0.25s ease both;
+}
+
+.stellation-view__insight-label {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--sky);
+  margin: 0 0 0.4rem;
+}
+
+.stellation-view__insight-loading {
+  color: var(--periwinkle);
+  font-style: italic;
+}
+
+.stellation-view__insight-close {
+  position: absolute;
+  top: 0.4rem;
+  right: 0.5rem;
+  padding: 0.2rem 0.4rem;
+  border: none;
+  background: none;
+  color: var(--periwinkle);
+  cursor: pointer;
+  font-size: 0.9rem;
+  line-height: 1;
+}
+
+.stellation-view__insight-close:hover {
+  color: var(--blush);
+}
+
+.stellation-view__insight-close:focus-visible {
+  outline: 2px solid var(--sky);
+  outline-offset: 2px;
 }
 
 .stellation-marker-glyph {

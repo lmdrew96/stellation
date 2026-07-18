@@ -13,7 +13,7 @@ interface InsightState {
   error?: string
 }
 
-function patternKey(p: Pattern, index: number): string {
+export function patternKey(p: Pattern, index: number): string {
   return `${p.pattern_type}-${p.planets.join('-')}-${index}`
 }
 

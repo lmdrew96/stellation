@@ -1,16 +1,18 @@
 import { OrbitControls } from '@react-three/drei'
 import { useRef } from 'react'
 import type { Mesh } from 'three'
-import type { ChartData } from '../types'
+import type { ChartData, Pattern } from '../types'
 import { AspectEdges } from './AspectEdges'
 import { planetPosition, SPHERE_RADIUS } from './geometry'
+import { PatternStellation } from './PatternStellation'
 import { PlanetMarker } from './PlanetMarker'
 
 interface StellationSceneProps {
   chart: ChartData
+  onSelectPattern: (pattern: Pattern, key: string) => void
 }
 
-export function StellationScene({ chart }: StellationSceneProps) {
+export function StellationScene({ chart, onSelectPattern }: StellationSceneProps) {
   const sphereRef = useRef<Mesh>(null!)
 
   return (
@@ -30,6 +32,7 @@ export function StellationScene({ chart }: StellationSceneProps) {
         <meshBasicMaterial color="#8cbdb9" wireframe transparent opacity={0.18} />
       </mesh>
       <AspectEdges planets={chart.planets} aspects={chart.aspects} />
+      <PatternStellation chart={chart} onSelectPattern={onSelectPattern} />
       {chart.planets.map((planet) => (
         <PlanetMarker
           key={planet.name}

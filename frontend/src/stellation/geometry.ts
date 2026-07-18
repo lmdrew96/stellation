@@ -57,3 +57,23 @@ export function positionOnSphere(longitudeDeg: number, inclinationDeg: number, r
 export function planetPosition(planet: Planet, radius = SPHERE_RADIUS): Vector3 {
   return positionOnSphere(longitudeOf(planet), BODY_BAND[planet.name] ?? 0, radius)
 }
+
+export function centroid(positions: Vector3[]): Vector3 {
+  return positions.reduce((sum, p) => sum.add(p), new Vector3()).divideScalar(positions.length)
+}
+
+// The sphere is centered at the origin, so a vertex's own position already
+// is its outward direction - no separate normal computation needed. Used
+// for stellation (phase 3): the direction a pattern's spike/bulge extrudes
+// away from the surface.
+export function outwardDirection(positions: Vector3[]): Vector3 {
+  return centroid(positions).normalize()
+}
+
+// Blends an outward direction toward a specific vertex's own direction -
+// used to give T-square/Yod spikes their asymmetric "lean" toward the
+// pattern's anchor/apex vertex (see patterns.py: planets[2] is that
+// vertex for both pattern types) rather than sitting dead-center.
+export function leanDirection(outward: Vector3, towardVertex: Vector3, leanFactor: number): Vector3 {
+  return outward.clone().lerp(towardVertex.clone().normalize(), leanFactor).normalize()
+}
