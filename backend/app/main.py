@@ -20,6 +20,7 @@ from app.routers import (
     session,
     solar_return,
     synastry,
+    today,
     transit,
 )
 
@@ -51,3 +52,4 @@ app.include_router(saturn_return.router)
 app.include_router(mixtape.router)
 app.include_router(session.router)
 app.include_router(profile.router)
+app.include_router(today.router)

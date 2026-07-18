@@ -438,3 +438,18 @@ class SessionResponse(BaseModel):
 class SessionInsightRequest(BaseModel):
     key: str
     blurb: str
+
+
+# Your Day's daily content - see app/services/daily_content.py. Generated
+# and cached together as one TodayResponse unit, keyed by calendar date, so
+# a page reload never re-fires the Claude calls inside it.
+class DailyFocus(BaseModel):
+    mantra: str
+    focus_word: str
+
+
+class TodayResponse(BaseModel):
+    natal: ChartData
+    transit: TransitData
+    transit_interpretation: TransitInterpretation
+    daily_focus: DailyFocus

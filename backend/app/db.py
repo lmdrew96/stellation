@@ -51,6 +51,17 @@ SCHEMA_STATEMENTS = [
         updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
     );
     """,
+    # Your Day's whole computed payload (natal chart + today's transits +
+    # transit interpretation + daily mantra/focus word), cached as one unit
+    # keyed by calendar date so a page reload never re-fires the billable
+    # Claude calls inside it - see app/services/daily_content.py. Lives on
+    # the same row as the birth-data columns above but is written by a
+    # disjoint UPDATE that only ever touches these two columns, and vice
+    # versa (save_profile's SET clause never touches these) - a profile
+    # edit must never clobber today's cache, and today's cache must never
+    # clobber a profile edit.
+    "ALTER TABLE profiles ADD COLUMN IF NOT EXISTS daily_content JSONB;",
+    "ALTER TABLE profiles ADD COLUMN IF NOT EXISTS daily_content_date DATE;",
 ]
 
 

@@ -370,6 +370,49 @@
   outline-offset: 2px;
 }
 
+/* ---------- daily focus card (Your Day) ---------- */
+
+.daily-focus-card {
+  position: relative;
+  z-index: 1;
+  background: var(--color-surface);
+  border: 1.5px dashed var(--color-accent-warm);
+  border-radius: 10px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+.daily-focus-card__mantra {
+  font-family: var(--font-scrawl);
+  font-size: 1.5rem;
+  line-height: 1.3;
+  color: var(--color-text);
+  margin: 0 0 0.75rem;
+}
+
+.daily-focus-card__word {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 0.5rem;
+  margin: 0;
+}
+
+.daily-focus-card__word-label {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.daily-focus-card__word-value {
+  font-family: var(--font-stamp);
+  font-size: 1.1rem;
+  color: var(--color-accent-warm);
+}
+
 /* ---------- backend status badge ---------- */
 
 .backend-status {

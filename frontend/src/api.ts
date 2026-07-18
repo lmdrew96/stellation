@@ -25,6 +25,7 @@ import type {
   SynastryData,
   SynastryInterpretation,
   SynastryRequest,
+  TodayResponse,
   TransitData,
   TransitInterpretation,
 } from './types'
@@ -587,6 +588,25 @@ export async function saveProfile(payload: ChartRequest, token: string): Promise
     const body = await res.json().catch(() => null)
     throw new ApiError(parseErrorDetail(body, 'Could not save your profile.'))
   }
+}
+
+// Your Day - see backend/app/routers/today.py. `date` must be the viewer's
+// own local calendar date (YYYY-MM-DD), not a UTC-derived one - it's the
+// cache key the backend uses to avoid re-firing its Claude calls on every
+// page load. A 404 means no profile has been saved yet, not an error.
+export async function fetchToday(date: string, token: string): Promise<TodayResponse | null> {
+  const res = await fetch(`/api/today?date=${encodeURIComponent(date)}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  })
+
+  if (res.status === 404) return null
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => null)
+    throw new ApiError(parseErrorDetail(body, 'Could not load Your Day.'))
+  }
+
+  return res.json()
 }
 
 export async function saveSynastryInsightRemote(key: string, blurb: string, token: string): Promise<void> {

@@ -549,6 +549,53 @@ SYNASTRY_ASPECT_INSIGHT_TOOL = {
 }
 
 
+# Your Day's daily mantra + focus word - deliberately short (a single line,
+# not a full reading) and grounded in today's transits specifically, not a
+# generic affirmation. Generated once per calendar date and cached alongside
+# the transit interpretation (see app/services/daily_content.py) rather than
+# on every page load.
+DAILY_FOCUS_SYSTEM_PROMPT = (
+    "You are an astrologer writing a short daily affirmation for someone based "
+    "on their natal chart and today's transits. You are given their natal "
+    "chart placements and today's transiting aspects to that chart, as JSON. "
+    "Write a short, warm, second-person mantra (1-2 sentences, under 200 "
+    "characters) grounded in today's most significant transit(s) specifically "
+    "- not a generic affirmation that could apply to any day. Also name a "
+    "single focus word (one word, or a short two-word phrase at most) that "
+    "captures the day's theme. Ground both in the specific transit data "
+    "provided - do not invent aspects not present in the data."
+)
+
+DAILY_FOCUS_TOOL = {
+    "name": "record_daily_focus",
+    "description": "Record today's mantra and focus word as structured data.",
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "mantra": {"type": "string"},
+            "focus_word": {"type": "string"},
+        },
+        "required": ["mantra", "focus_word"],
+    },
+}
+
+
+def generate_daily_focus(transit: TransitData) -> dict:
+    client = anthropic.Anthropic(api_key=settings.anthropic_api_key or None)
+
+    response = client.messages.create(
+        model=settings.anthropic_model,
+        max_tokens=256,
+        system=DAILY_FOCUS_SYSTEM_PROMPT,
+        tools=[DAILY_FOCUS_TOOL],
+        tool_choice={"type": "tool", "name": "record_daily_focus"},
+        messages=[{"role": "user", "content": transit.model_dump_json()}],
+    )
+
+    tool_use = next(b for b in response.content if b.type == "tool_use")
+    return tool_use.input
+
+
 def generate_synastry_aspect_insight(synastry: SynastryData, aspect: SynastryAspect) -> dict:
     client = anthropic.Anthropic(api_key=settings.anthropic_api_key or None)
 

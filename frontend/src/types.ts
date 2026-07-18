@@ -239,3 +239,17 @@ export interface SessionResponse {
 }
 
 export type SoloInsightScope = 'aspect' | 'pattern' | 'placement'
+
+// Your Day's daily content - generated and cached together server-side,
+// keyed by calendar date. See backend/app/services/daily_content.py.
+export interface DailyFocus {
+  mantra: string
+  focus_word: string
+}
+
+export interface TodayResponse {
+  natal: ChartData
+  transit: TransitData
+  transit_interpretation: TransitInterpretation
+  daily_focus: DailyFocus
+}
