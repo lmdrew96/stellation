@@ -205,8 +205,15 @@ export function buildAspectBulgeSpecs(chart: ChartData): BulgeSpec[] {
   return specs
 }
 
+// t² (used previously for "point") is concave: steep right at the tip but
+// flattening out almost completely near the rim, so most of a spike's
+// height happened in a short burst near its own peak while the base
+// flared into a long, gentle, gradually-mounding skirt - not "comes
+// straight out of the sphere." Linear has constant slope throughout: an
+// actual straight-sided cone, tapering uniformly from a real point at the
+// tip down to a distinct edge at the base instead of fading into it.
 function heightFalloff(t: number, profile: BulgeProfile): number {
-  return profile === 'dome' ? t * t * (3 - 2 * t) : t * t
+  return profile === 'dome' ? t * t * (3 - 2 * t) : t
 }
 
 // Deliberately NOT the same curve as height. Height needs a slow-rising

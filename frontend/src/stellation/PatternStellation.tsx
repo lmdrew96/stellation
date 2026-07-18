@@ -3,7 +3,6 @@ import { useMemo, useRef } from 'react'
 import type { RefObject } from 'react'
 import type { Mesh } from 'three'
 import type { ChartData, Pattern } from '../types'
-import { DRUZY_NORMAL_MAP } from './druzyNormalMap'
 import { buildAspectBulgeSpecs, buildBulgeSpecs, buildStellatedGeometry, findBulgeAtPoint } from './stellatedSphere'
 
 // The whole globe is a single clickable mesh now (see below), so an
@@ -73,8 +72,6 @@ export function PatternStellation({ chart, onSelectPattern, meshRef }: PatternSt
         metalness={0.1}
         clearcoat={0.6}
         clearcoatRoughness={0.2}
-        normalMap={DRUZY_NORMAL_MAP}
-        normalScale={[0.5, 0.5]}
       />
     </mesh>
   )
