@@ -1,6 +1,7 @@
 import { saveSoloChart } from '../api'
 import { ART_STYLES } from '../hooks/useChartReveal'
 import { chartCacheId } from '../insightCache'
+import { StellationView } from '../stellation/StellationView'
 import type { ChartRevealState } from '../hooks/useChartReveal'
 import type { SaturnReturnRevealState } from '../hooks/useSaturnReturnReveal'
 import type { SolarReturnRevealState } from '../hooks/useSolarReturnReveal'
@@ -124,6 +125,7 @@ export function ChartReveal({
               {reading && <ReadingDisplay reading={reading} />}
             </div>
           </div>
+          <StellationView chart={chart} />
           {reading && !viewingSaved && (
             <SaveLink save={(token) => saveSoloChart(chart, reading, token)} pathPrefix="/c/" />
           )}

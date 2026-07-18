@@ -1782,6 +1782,33 @@
   opacity: 0.6;
 }
 
+/* 3D stellated-polyhedron view (react-three-fiber) - deliberately its own
+   chrome, dark/planetarium-like, separate from the zine card's paper/tape
+   treatment (see the 3D-stellation epic's framing decision in ChaosPatch).
+   Fixed colors regardless of light/dark site theme, same convention as the
+   chart art's own untouched render.py palette. */
+.stellation-view__canvas-frame {
+  width: min(100%, 640px);
+  aspect-ratio: 4 / 3;
+  margin: 1rem auto 0;
+  border-radius: 12px;
+  overflow: hidden;
+  background: radial-gradient(circle at 50% 40%, #2a2340 0%, #14101e 100%);
+  border: 1px solid rgb(from var(--periwinkle) r g b / 0.35);
+  box-shadow: 0 12px 28px rgb(from var(--ink) r g b / 0.3);
+  animation: reveal-in 0.3s ease both;
+}
+
+.stellation-marker-glyph {
+  display: inline-block;
+  margin-top: -0.9em;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-shadow: 0 0 6px rgb(0 0 0 / 0.8);
+  white-space: nowrap;
+}
+
 .solar-return-trigger {
   max-width: 22rem;
   margin: 0.5rem auto 2rem;
