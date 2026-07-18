@@ -745,6 +745,74 @@
   border-radius: 50%;
 }
 
+/* Invisible, laid exactly over .chart-art (see ChartCarousel.tsx for why a
+   wrapping button doesn't work) - inset matches .chart-frame's own padding
+   so this aligns with the content box the in-flow, width:100% art object
+   actually occupies, not the frame's outer padding edge. */
+.chart-art-trigger {
+  position: absolute;
+  inset: 1.75rem;
+  padding: 0;
+  border: none;
+  background: none;
+  border-radius: 50%;
+  cursor: zoom-in;
+}
+
+.chart-art-trigger:focus-visible {
+  outline: 2px solid var(--color-accent-warm);
+  outline-offset: 3px;
+}
+
+/* Portaled to document.body (see ChartCarousel.tsx) so .chart-frame's
+   rotate transform can't turn this into a small rotated box instead of a
+   full-viewport overlay. */
+.chart-magnify-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem;
+  background: rgb(from var(--ink) r g b / 0.82);
+  cursor: zoom-out;
+}
+
+.chart-magnify-close {
+  position: absolute;
+  top: 1.25rem;
+  right: 1.5rem;
+  width: 2.75rem;
+  height: 2.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: 1.5px solid var(--color-ink-border);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: 1.1rem;
+  cursor: pointer;
+}
+
+.chart-magnify-close:hover {
+  background: var(--color-accent);
+  color: var(--color-bg);
+}
+
+.chart-magnify-close:focus-visible {
+  outline: 2px solid var(--color-accent-warm);
+  outline-offset: 2px;
+}
+
+.chart-art--magnified {
+  width: min(85vw, 720px);
+  max-height: 85vh;
+  cursor: default;
+  box-shadow: 0 20px 60px rgb(from var(--ink) r g b / 0.4);
+}
+
 .tape {
   position: absolute;
   width: 62px;
