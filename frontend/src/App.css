@@ -1082,8 +1082,7 @@
 /* This is a full multi-sentence AI-generated paragraph, not a caption - it
    read as an illegible wall of cursive at Caveat's scale, which is exactly
    what the patch spec warns against ("used sparingly, not for body copy").
-   Space Grotesk carries the text; the scrawl voice is limited to the
-   quote marks. */
+   Space Grotesk carries the text. */
 .reading-synthesis {
   font-family: var(--font-body);
   font-size: 1.2rem;
@@ -1092,23 +1091,6 @@
   color: var(--color-text);
   max-width: 34rem;
   margin: 0 auto 2rem;
-}
-
-.reading-synthesis::before,
-.reading-synthesis::after {
-  font-family: var(--font-scrawl);
-  font-size: 1.4em;
-  color: var(--color-accent-warm);
-}
-
-.reading-synthesis::before {
-  content: '\201C';
-  margin-right: 0.1em;
-}
-
-.reading-synthesis::after {
-  content: '\201D';
-  margin-left: 0.1em;
 }
 
 .reading-rows {
