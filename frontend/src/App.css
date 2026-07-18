@@ -317,6 +317,59 @@
   outline-offset: 2px;
 }
 
+/* ---------- site nav ---------- */
+
+/* Real routed pages now, not an ARIA tab widget swapping panels in place -
+   styled to match .mode-toggle's pill-button language (still used by
+   SynastryForm's Comparative/Composite toggle, which *is* a same-page tab
+   widget) but as anchors, with aria-current (NavLink sets this
+   automatically on the matched route) driving the active look instead of
+   data-active. */
+.site-nav {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.site-nav__link {
+  display: inline-flex;
+  align-items: center;
+  background: transparent;
+  border: 1.5px dashed var(--color-text-muted);
+  color: var(--color-text-muted);
+  border-radius: 999px;
+  min-height: 2.75rem;
+  padding: 0.45rem 1.1rem;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.site-nav__link:hover {
+  border-color: var(--color-accent-warm);
+  color: var(--color-text);
+}
+
+.site-nav__link[aria-current='page'] {
+  background: var(--color-accent);
+  border-style: solid;
+  border-color: var(--color-ink-border);
+  color: var(--color-bg);
+}
+
+.site-nav__link:focus-visible {
+  outline: 2px solid var(--color-accent-warm);
+  outline-offset: 2px;
+}
+
 /* ---------- backend status badge ---------- */
 
 .backend-status {
