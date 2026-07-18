@@ -18,7 +18,13 @@ interface CrystalClusterProps {
 // one spot; only actual separate solids can).
 export function CrystalCluster({ cluster, pointerDownAt, onSelect }: CrystalClusterProps) {
   const shards = useMemo(
-    () => buildClusterShards(cluster.center, CLUSTER_SIZES[cluster.size], cluster.moundHeight),
+    () =>
+      buildClusterShards(
+        cluster.center,
+        CLUSTER_SIZES[cluster.size],
+        cluster.moundHeight,
+        cluster.moundAngularRadius
+      ),
     [cluster]
   )
 

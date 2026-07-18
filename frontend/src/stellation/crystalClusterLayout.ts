@@ -20,11 +20,27 @@ export const CLUSTER_SIZES: Record<ClusterSizeName, ClusterSize> = {
   small: { shardCount: 4, maxLength: 0.45 },
 }
 
-const MAX_SPLAY_RAD = 0.55 // ~31 degrees - how far a shard can lean from dead-center outward
-const MIN_LENGTH_FACTOR = 0.45
 const CAP_FRACTION = 0.28
 const RADIUS_MIN_FACTOR = 0.06
 const RADIUS_MAX_FACTOR = 0.11
+
+// The main population - the tall, prominent shards, based near dead-
+// center of the mound and fanning outward.
+const MAIN_BASE_JITTER_MAX = 0.05
+const MAIN_SPLAY_MAX = 0.5 // ~29 degrees
+const MAIN_LENGTH_MIN = 0.45
+const MAIN_LENGTH_MAX = 1
+
+// A second, more numerous population of short "filler" shards scattered
+// across the rest of the mound's footprint - without these, every shard
+// shares almost the same base point and the cluster reads as one tight
+// bundle instead of something surrounded by smaller crystals growing out
+// of the same patch of rock (matching a real druse/crystal cluster).
+const FILLER_COUNT_FACTOR = 1.3
+const FILLER_BASE_JITTER_MAX = 0.24
+const FILLER_SPLAY_MAX = 0.3
+const FILLER_LENGTH_MIN = 0.12
+const FILLER_LENGTH_MAX = 0.3
 
 export interface ShardInstance {
   geometry: BufferGeometry
@@ -34,36 +50,61 @@ export interface ShardInstance {
 
 const UP = new Vector3(0, 1, 0)
 
-// A fan of shards of varying length/thickness, all based near the same
-// point (the top of the pattern's growth mound) but leaning outward at
-// random angles around `center` - a small crystal cluster growing out of
-// the matrix rock, rather than one continuous spike.
-export function buildClusterShards(center: Vector3, size: ClusterSize, moundHeight: number): ShardInstance[] {
+// A random direction within `maxAngle` of `axis`, sampled uniformly over
+// the cone (used both to scatter a shard's base point across the mound
+// and, separately, to splay its own pointing direction from that base).
+function coneSample(axis: Vector3, right: Vector3, forward: Vector3, maxAngle: number): Vector3 {
+  const azimuth = Math.random() * Math.PI * 2
+  const angle = Math.random() * maxAngle
+  return axis
+    .clone()
+    .multiplyScalar(Math.cos(angle))
+    .addScaledVector(right, Math.cos(azimuth) * Math.sin(angle))
+    .addScaledVector(forward, Math.sin(azimuth) * Math.sin(angle))
+    .normalize()
+}
+
+// A fan of shards of varying length/thickness growing out of the top of
+// the pattern's growth mound - a small crystal cluster rather than one
+// continuous spike. Two populations: a handful of tall, prominent shards
+// near dead-center, plus more numerous short ones scattered around them
+// to fill in the base (see FILLER_* above).
+export function buildClusterShards(
+  center: Vector3,
+  size: ClusterSize,
+  moundHeight: number,
+  moundAngularRadius: number
+): ShardInstance[] {
   const { right, forward } = tangentBasis(center)
-  const basePosition = center.clone().multiplyScalar(SPHERE_RADIUS + moundHeight)
   const shards: ShardInstance[] = []
 
-  for (let i = 0; i < size.shardCount; i++) {
-    const lengthFactor = MIN_LENGTH_FACTOR + Math.random() * (1 - MIN_LENGTH_FACTOR)
+  function addShard(baseJitterMax: number, splayMax: number, lengthMin: number, lengthMax: number) {
+    const localCenter = coneSample(center, right, forward, baseJitterMax)
+    const { right: localRight, forward: localForward } = tangentBasis(localCenter)
+    const direction = coneSample(localCenter, localRight, localForward, splayMax)
+
+    const lengthFactor = lengthMin + Math.random() * (lengthMax - lengthMin)
     const length = size.maxLength * lengthFactor
     const capLength = length * CAP_FRACTION
     const shaftLength = length - capLength
     const radius = length * (RADIUS_MIN_FACTOR + Math.random() * (RADIUS_MAX_FACTOR - RADIUS_MIN_FACTOR))
-
-    const azimuth = Math.random() * Math.PI * 2
-    const splay = Math.random() * MAX_SPLAY_RAD
-    const direction = center
-      .clone()
-      .multiplyScalar(Math.cos(splay))
-      .addScaledVector(right, Math.cos(azimuth) * Math.sin(splay))
-      .addScaledVector(forward, Math.sin(azimuth) * Math.sin(splay))
-      .normalize()
+    const position = localCenter.clone().multiplyScalar(SPHERE_RADIUS + moundHeight)
 
     shards.push({
       geometry: buildShardGeometry(radius, shaftLength, capLength),
-      position: basePosition,
+      position,
       quaternion: new Quaternion().setFromUnitVectors(UP, direction),
     })
+  }
+
+  for (let i = 0; i < size.shardCount; i++) {
+    addShard(MAIN_BASE_JITTER_MAX, MAIN_SPLAY_MAX, MAIN_LENGTH_MIN, MAIN_LENGTH_MAX)
+  }
+
+  const fillerCount = Math.round(size.shardCount * FILLER_COUNT_FACTOR)
+  const fillerJitterMax = Math.min(moundAngularRadius * 1.4, FILLER_BASE_JITTER_MAX)
+  for (let i = 0; i < fillerCount; i++) {
+    addShard(fillerJitterMax, FILLER_SPLAY_MAX, FILLER_LENGTH_MIN, FILLER_LENGTH_MAX)
   }
 
   return shards

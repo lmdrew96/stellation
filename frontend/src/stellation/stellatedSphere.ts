@@ -43,6 +43,7 @@ export interface ClusterSpec {
   color: string
   size: ClusterSizeName
   moundHeight: number
+  moundAngularRadius: number
 }
 
 const MOUND_HEIGHT = 0.12
@@ -190,6 +191,7 @@ export function buildClusterSpecs(chart: ChartData): ClusterSpec[] {
     center: loc.center,
     size: loc.size,
     moundHeight: loc.moundHeight,
+    moundAngularRadius: loc.moundAngularRadius,
   }))
 }
 
