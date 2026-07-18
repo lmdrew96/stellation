@@ -14,6 +14,14 @@ import {
   fetchSynastryFromSaved,
   fetchTransits,
 } from './api'
+import {
+  loadSoloSession,
+  loadStoredMode,
+  loadSynastrySession,
+  saveSoloSession,
+  saveStoredMode,
+  saveSynastrySession,
+} from './chartSession'
 import { clerkEnabled } from './clerkConfig'
 import { AccountControls } from './components/AccountControls'
 import { AstrolabeRing } from './components/AstrolabeRing'
@@ -108,13 +116,21 @@ function App() {
   const [soloViewingSaved, setSoloViewingSaved] = useState(false)
   const [synastryViewingSaved, setSynastryViewingSaved] = useState(false)
 
-  const [mode, setMode] = useState<Mode>(() => savedRoute?.kind ?? 'solo')
+  const [mode, setMode] = useState<Mode>(() => savedRoute?.kind ?? loadStoredMode() ?? 'solo')
   const [submitting, setSubmitting] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
-  const [chart, setChart] = useState<ChartData | null>(null)
+  // A saved-link visit (savedRoute) always wins - its own effect below loads
+  // the canonical chart/interpretation from the backend. Otherwise, restore
+  // whatever was last generated in this browser so a reload doesn't force a
+  // fresh (and billable) Anthropic call for a reading that already exists.
+  const [chart, setChart] = useState<ChartData | null>(() =>
+    savedRoute ? null : (loadSoloSession()?.chart ?? null)
+  )
   const [showManualCoords, setShowManualCoords] = useState(false)
-  const [presetInterpretation, setPresetInterpretation] = useState<Interpretation | undefined>(undefined)
+  const [presetInterpretation, setPresetInterpretation] = useState<Interpretation | undefined>(() =>
+    savedRoute ? undefined : loadSoloSession()?.interpretation
+  )
   const soloReveal = useChartReveal(chart, presetInterpretation)
 
   const [transit, setTransit] = useState<TransitData | null>(null)
@@ -138,12 +154,14 @@ function App() {
   const [mixtapeLoading, setMixtapeLoading] = useState(false)
   const [mixtapeError, setMixtapeError] = useState<string | null>(null)
 
-  const [synastry, setSynastry] = useState<SynastryData | null>(null)
+  const [synastry, setSynastry] = useState<SynastryData | null>(() =>
+    savedRoute ? null : (loadSynastrySession()?.synastry ?? null)
+  )
   const [showManualCoordsA, setShowManualCoordsA] = useState(false)
   const [showManualCoordsB, setShowManualCoordsB] = useState(false)
   const [presetSynastryInterpretation, setPresetSynastryInterpretation] = useState<
     SynastryInterpretation | undefined
-  >(undefined)
+  >(() => (savedRoute ? undefined : loadSynastrySession()?.interpretation))
   const synastryReveal = useSynastryReveal(synastry, presetSynastryInterpretation)
   // Which reading the synastry form last asked for - 'composite' means the
   // form skipped straight to a blended chart, so the synastry reading
@@ -176,6 +194,20 @@ function App() {
       .then((res) => (res.ok ? setHealth('ok') : setHealth('error')))
       .catch(() => setHealth('error'))
   }, [])
+
+  // Cache the reading as soon as it settles, so a reload restores it via the
+  // lazy state initializers above instead of regenerating it.
+  useEffect(() => {
+    if (chart && soloReveal.reading) {
+      saveSoloSession({ chart, interpretation: soloReveal.reading })
+    }
+  }, [chart, soloReveal.reading])
+
+  useEffect(() => {
+    if (synastry && synastryReveal.reading && synastryReadingType === 'comparative') {
+      saveSynastrySession({ synastry, interpretation: synastryReveal.reading })
+    }
+  }, [synastry, synastryReveal.reading, synastryReadingType])
 
   useEffect(() => {
     if (!savedRoute) return
@@ -443,6 +475,9 @@ function App() {
     setMode(next)
     setErrorMessage(null)
     resetUrlToHome()
+    if (next === 'solo' || next === 'synastry') {
+      saveStoredMode(next)
+    }
   }
 
   const hasResult =
