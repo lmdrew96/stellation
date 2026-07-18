@@ -81,7 +81,7 @@ export function StellationView({ chart }: StellationViewProps) {
       </button>
       {open && (
         <div className="stellation-view__canvas-frame">
-          <Canvas camera={{ position: [0, 0, 6], fov: 45 }}>
+          <Canvas camera={{ position: [0, 0, 4.2], fov: 45 }}>
             <Suspense fallback={null}>
               <StellationScene chart={chart} onSelectPattern={handleSelectPattern} />
             </Suspense>

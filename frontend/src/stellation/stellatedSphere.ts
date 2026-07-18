@@ -2,38 +2,20 @@ import { BufferGeometry, Color, Float32BufferAttribute, IcosahedronGeometry, Vec
 import { patternKey } from '../components/PatternList'
 import { PATTERN_COLOR } from '../glyphs'
 import type { ChartData, Pattern } from '../types'
-import { aspectColor, orbToBumpHeight } from './aspectStyle'
 import type { ClusterSizeName } from './crystalClusterLayout'
-import { leanDirection, outwardDirection, planetPosition, SPHERE_RADIUS, tangentBasis } from './geometry'
+import { domeFalloff, leanDirection, outwardDirection, planetPosition, SPHERE_RADIUS } from './geometry'
 
-// "dome" pushes a rounded, flat-ish mound (Stellium's cluster-of-planets
-// mound, and now every pattern's small "growth rock" a crystal cluster
-// grows out of - see buildPatternLocations/CrystalCluster); "stud" (every
-// plain aspect - see buildAspectBulgeSpecs) pinches to an actual point
-// instead, with its color reaching full saturation much faster (see
-// colorWeight) - at a stud's small size there usually isn't enough mesh
-// resolution for the height falloff alone to read as faceted, so a
-// hard-edged color patch is what actually sells "a small gem chip"
-// instead of "a soft glow." Named patterns used to deform this same mesh
-// into a full spike ("point" profile) directly; they now only leave a
-// small mound here, with the dramatic shape coming from an actual
-// crystal-cluster of separate shard meshes instead (see CrystalCluster.tsx).
-export type BulgeProfile = 'dome' | 'stud'
-
+// A rounded, flat-ish mound - Stellium's cluster-of-planets mound, and
+// every other pattern's small "growth rock" a crystal cluster grows out
+// of (see buildPatternLocations/CrystalCluster). Named patterns used to
+// deform this same mesh into a full spike directly; they now only leave a
+// small mound here, with the dramatic shape coming from actual crystal
+// solids instead (CrystalCluster.tsx, StelliumCrystal.tsx, AspectShards.tsx).
 export interface BulgeSpec {
   center: Vector3
   angularRadius: number
   height: number
   color: string
-  profile: BulgeProfile
-  // Real crystals (quartz prisms, druzy) are faceted polygons, not
-  // circular cones - set together with `right`/`forward` (see
-  // tangentBasis) to give this bulge's cross-section N straight sides
-  // instead of a smooth circle. Omit for a circular/organic bulge
-  // (Stellium's mound, every pattern's growth mound).
-  sides?: number
-  right?: Vector3
-  forward?: Vector3
 }
 
 export interface ClusterSpec {
@@ -46,24 +28,32 @@ export interface ClusterSpec {
   moundAngularRadius: number
 }
 
+export interface StelliumSpec {
+  pattern: Pattern
+  key: string
+  color: string
+  center: Vector3
+  memberCount: number
+  moundHeight: number
+  moundAngularRadius: number
+}
+
 const MOUND_HEIGHT = 0.12
 const MOUND_ANGULAR_RADIUS = 0.22
 const CROSS_MOUND_HEIGHT = 0.16
 const CROSS_MOUND_ANGULAR_RADIUS = 0.26
 const COUNTER_MOUND_HEIGHT = 0.07
 const COUNTER_MOUND_ANGULAR_RADIUS = 0.13
-const BULGE_HEIGHT_BASE = 0.26
-const BULGE_HEIGHT_PER_MEMBER = 0.05
-const BULGE_ANGULAR_RADIUS = 0.4
-const STELLIUM_MIN_MEMBERS = 3
+// Sized as a small "growth rock" like every other pattern's mound now that
+// Stellium's own dramatic shape comes from its plateau crystals
+// (StelliumCrystal.tsx) - not the big standalone dome this used to be
+// back when the bulge itself was the only visual.
+const BULGE_HEIGHT_BASE = 0.14
+const BULGE_HEIGHT_PER_MEMBER = 0.03
+const BULGE_ANGULAR_RADIUS = 0.24
+export const STELLIUM_MIN_MEMBERS = 3
 const LEAN_MILD = 0.3
 const LEAN_STRONG = 0.65
-// Bigger than an earlier pass at this - at this mesh's triangle density
-// (see buildStellatedGeometry), a smaller stud simply doesn't span enough
-// triangles to show a defined facet no matter how the falloff curve is
-// shaped; the softness was a resolution limit, not a curve-shape problem.
-const ASPECT_BUMP_ANGULAR_RADIUS = 0.17
-const CRYSTAL_SIDES = 6
 
 export const BASE_COLOR = new Color('#1b1730')
 
@@ -153,27 +143,47 @@ function buildPatternLocations(chart: ChartData): PatternLocation[] {
   return locations
 }
 
-export function buildBulgeSpecs(chart: ChartData): BulgeSpec[] {
+// Stellium's own vertex/member math, computed once and shared by
+// buildBulgeSpecs (the growth mound its plateau embeds into) and
+// StelliumCrystal (the actual Beryl-style plateau crystal - see
+// stelliumPlateauLayout.ts), mirroring buildPatternLocations above.
+export function buildStelliumSpecs(chart: ChartData): StelliumSpec[] {
   const positionByName = new Map(chart.planets.map((p) => [p.name, planetPosition(p)]))
-  const specs: BulgeSpec[] = []
+  const specs: StelliumSpec[] = []
 
-  chart.patterns.forEach((pattern) => {
+  chart.patterns.forEach((pattern, index) => {
     if (pattern.pattern_type !== 'stellium') return
     const positions = positionsFor(pattern.planets, positionByName)
     if (positions.length < STELLIUM_MIN_MEMBERS) return
     specs.push({
+      pattern,
+      key: patternKey(pattern, index),
       color: PATTERN_COLOR[pattern.pattern_type] ?? '#c9e0eb',
-      profile: 'dome',
       center: outwardDirection(positions),
-      angularRadius: BULGE_ANGULAR_RADIUS,
-      height: BULGE_HEIGHT_BASE + BULGE_HEIGHT_PER_MEMBER * (positions.length - STELLIUM_MIN_MEMBERS),
+      memberCount: positions.length,
+      moundHeight: BULGE_HEIGHT_BASE + BULGE_HEIGHT_PER_MEMBER * (positions.length - STELLIUM_MIN_MEMBERS),
+      moundAngularRadius: BULGE_ANGULAR_RADIUS,
     })
   })
+
+  return specs
+}
+
+export function buildBulgeSpecs(chart: ChartData): BulgeSpec[] {
+  const specs: BulgeSpec[] = []
+
+  for (const stellium of buildStelliumSpecs(chart)) {
+    specs.push({
+      color: stellium.color,
+      center: stellium.center,
+      angularRadius: BULGE_ANGULAR_RADIUS,
+      height: stellium.moundHeight,
+    })
+  }
 
   for (const loc of buildPatternLocations(chart)) {
     specs.push({
       color: loc.color,
-      profile: 'dome',
       center: loc.center,
       angularRadius: loc.moundAngularRadius,
       height: loc.moundHeight,
@@ -195,87 +205,23 @@ export function buildClusterSpecs(chart: ChartData): ClusterSpec[] {
   }))
 }
 
-// A small stud for every real aspect in the chart, centered on the great-
-// circle midpoint of the two involved planets (the same point the aspect's
-// arc line - see AspectEdges.tsx - passes through), sized by orb tightness
-// and colored by the same harmonious/tense language as the lines. Ensures
-// a chart with few or no named patterns still gets a surface uniquely
-// textured by its own aspect graph rather than staying mostly plain.
-export function buildAspectBulgeSpecs(chart: ChartData): BulgeSpec[] {
-  const positionByName = new Map(chart.planets.map((p) => [p.name, planetPosition(p)]))
-  const specs: BulgeSpec[] = []
-
-  for (const aspect of chart.aspects) {
-    const a = positionByName.get(aspect.planet_a)
-    const b = positionByName.get(aspect.planet_b)
-    if (!a || !b) continue
-    const center = outwardDirection([a, b])
-    specs.push({
-      center,
-      angularRadius: ASPECT_BUMP_ANGULAR_RADIUS,
-      height: orbToBumpHeight(aspect.orb),
-      color: aspectColor(aspect.aspect_type),
-      profile: 'stud',
-      sides: CRYSTAL_SIDES,
-      ...tangentBasis(center),
-    })
-  }
-
-  return specs
-}
-
-function heightFalloff(t: number, profile: BulgeProfile): number {
-  return profile === 'dome' ? t * t * (3 - 2 * t) : t
-}
-
 // Deliberately NOT the same curve as height. Height needs a slow-rising
 // curve near the rim so a mound blends seamlessly into the sphere, but
 // using that same curve for color means most of a bulge's *visible*
 // surface sits far closer to the dark base color than to its own hue -
 // which read as dim overall. This rises to strong saturation well before
-// the rim instead, independent of which height profile the bulge uses.
+// the rim instead.
 function colorWeight(t: number): number {
   return Math.pow(t, 0.35)
-}
-
-const _axial = new Vector3()
-const _tangent = new Vector3()
-
-// The bulge-local azimuthal angle of `direction` around `bulge.center` -
-// i.e. which way around the point's own axis this direction sits, used to
-// facet its cross-section instead of leaving it circular.
-function azimuthOf(bulge: BulgeSpec, direction: Vector3): number {
-  _axial.copy(bulge.center).multiplyScalar(direction.dot(bulge.center))
-  _tangent.copy(direction).sub(_axial)
-  return Math.atan2(_tangent.dot(bulge.forward!), _tangent.dot(bulge.right!))
-}
-
-// Distance from center to a regular N-gon's boundary at angle `phi`,
-// relative to its circumradius - 1 exactly at each corner, cos(π/N) at
-// the middle of each flat edge. Scaling a bulge's angularRadius by this
-// turns its circular footprint (and every concentric iso-height ring
-// inside it) into a flat-sided polygon - a hexagonal prism/pyramid for
-// sides=6, the way an actual quartz crystal point is faceted.
-function polygonRadiusFactor(phi: number, sides: number): number {
-  const sector = (2 * Math.PI) / sides
-  const half = Math.PI / sides
-  const local = ((phi % sector) + sector) % sector
-  return Math.cos(half) / Math.cos(local - half)
-}
-
-function effectiveRadius(bulge: BulgeSpec, direction: Vector3): number {
-  if (!bulge.sides || !bulge.right || !bulge.forward) return bulge.angularRadius
-  return bulge.angularRadius * polygonRadiusFactor(azimuthOf(bulge, direction), bulge.sides)
 }
 
 export function bulgeHeightAt(direction: Vector3, bulges: BulgeSpec[]): number {
   let extra = 0
   for (const bulge of bulges) {
     const angle = direction.angleTo(bulge.center)
-    const radius = effectiveRadius(bulge, direction)
-    if (angle < radius) {
-      const t = 1 - angle / radius
-      extra = Math.max(extra, bulge.height * heightFalloff(t, bulge.profile))
+    if (angle < bulge.angularRadius) {
+      const t = 1 - angle / bulge.angularRadius
+      extra = Math.max(extra, bulge.height * domeFalloff(t))
     }
   }
   return extra
@@ -286,9 +232,8 @@ function bulgeColorAt(direction: Vector3, bulges: BulgeSpec[]): Color {
   let winningColor: string | null = null
   for (const bulge of bulges) {
     const angle = direction.angleTo(bulge.center)
-    const radius = effectiveRadius(bulge, direction)
-    if (angle < radius) {
-      const weight = colorWeight(1 - angle / radius)
+    if (angle < bulge.angularRadius) {
+      const weight = colorWeight(1 - angle / bulge.angularRadius)
       if (weight > winningWeight) {
         winningWeight = weight
         winningColor = bulge.color

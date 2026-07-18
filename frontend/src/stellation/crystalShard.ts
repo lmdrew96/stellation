@@ -3,6 +3,11 @@ import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js
 
 const SHARD_SEGMENTS = 6
 
+// Shared by every pointed-shard placement (a pattern's cluster, a single
+// aspect shard) so they all taper/embed by the same proportions.
+export const SHARD_CAP_FRACTION = 0.28
+export const SHARD_EMBED_DEPTH_FACTOR = 1.4
+
 // A hexagonal-prism shaft capped with a hexagonal pyramid tip - the same
 // straight-shaft-then-taper shape already used for the deformed-mesh
 // crystal points, but here as an actual standalone solid so several can
@@ -22,4 +27,15 @@ export function buildShardGeometry(radius: number, shaftLength: number, capLengt
   shaft.dispose()
   cap.dispose()
   return merged
+}
+
+// A flat-topped hexagonal prism - Beryl's tabular habit (parallel sides,
+// no taper to a point), a deliberate contrast to buildShardGeometry's
+// pointed quartz-style shards. Grows from y=0 upward like that function,
+// so it slots into the same position/embed math (see
+// stelliumPlateauLayout.ts).
+export function buildPlateauGeometry(radius: number, height: number): BufferGeometry {
+  const geometry = new CylinderGeometry(radius, radius, height, SHARD_SEGMENTS)
+  geometry.translate(0, height / 2, 0)
+  return geometry
 }

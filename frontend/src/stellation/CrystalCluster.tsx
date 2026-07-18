@@ -2,6 +2,7 @@ import type { ThreeEvent } from '@react-three/fiber'
 import { useMemo } from 'react'
 import type { PointerDownRef } from './clickVsDrag'
 import { recordPointerDown, wasDrag } from './clickVsDrag'
+import { CrystalMaterial } from './CrystalMaterial'
 import { buildClusterShards, CLUSTER_SIZES } from './crystalClusterLayout'
 import type { ClusterSpec } from './stellatedSphere'
 
@@ -55,17 +56,7 @@ export function CrystalCluster({ cluster, pointerDownAt, onSelect }: CrystalClus
           onPointerOver={handlePointerOver}
           onPointerOut={handlePointerOut}
         >
-          <meshPhysicalMaterial
-            color={cluster.color}
-            flatShading
-            roughness={0.05}
-            metalness={0}
-            transmission={0.9}
-            thickness={0.4}
-            ior={1.5}
-            clearcoat={1}
-            clearcoatRoughness={0.05}
-          />
+          <CrystalMaterial color={cluster.color} />
         </mesh>
       ))}
     </>

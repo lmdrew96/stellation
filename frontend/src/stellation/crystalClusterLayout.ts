@@ -1,7 +1,7 @@
 import type { BufferGeometry } from 'three'
 import { Quaternion, Vector3 } from 'three'
-import { buildShardGeometry } from './crystalShard'
-import { SPHERE_RADIUS, tangentBasis } from './geometry'
+import { buildShardGeometry, SHARD_CAP_FRACTION, SHARD_EMBED_DEPTH_FACTOR } from './crystalShard'
+import { domeFalloff, SPHERE_RADIUS, tangentBasis } from './geometry'
 
 export type ClusterSizeName = 'normal' | 'large' | 'small'
 
@@ -15,14 +15,15 @@ interface ClusterSize {
 // counter-spike). Shard counts kept modest - a busy chart can have half a
 // dozen+ patterns, each spawning its own cluster.
 export const CLUSTER_SIZES: Record<ClusterSizeName, ClusterSize> = {
-  normal: { shardCount: 6, maxLength: 0.85 },
-  large: { shardCount: 8, maxLength: 1.2 },
-  small: { shardCount: 4, maxLength: 0.45 },
+  normal: { shardCount: 8, maxLength: 0.85 },
+  large: { shardCount: 11, maxLength: 1.2 },
+  small: { shardCount: 5, maxLength: 0.45 },
 }
 
-const CAP_FRACTION = 0.28
-const RADIUS_MIN_FACTOR = 0.06
-const RADIUS_MAX_FACTOR = 0.11
+// Radius as a fraction of shard length - kept high (length:width ~3.8-6.3:1)
+// so shards read as chunky crystal points rather than thin sword blades.
+const RADIUS_MIN_FACTOR = 0.16
+const RADIUS_MAX_FACTOR = 0.26
 
 // The main population - the tall, prominent shards, based near dead-
 // center of the mound and fanning outward.
@@ -36,8 +37,8 @@ const MAIN_LENGTH_MAX = 1
 // shares almost the same base point and the cluster reads as one tight
 // bundle instead of something surrounded by smaller crystals growing out
 // of the same patch of rock (matching a real druse/crystal cluster).
-const FILLER_COUNT_FACTOR = 1.3
-const FILLER_BASE_JITTER_MAX = 0.24
+const FILLER_COUNT_FACTOR = 1.6
+const FILLER_BASE_JITTER_MAX = 0.11
 const FILLER_SPLAY_MAX = 0.3
 const FILLER_LENGTH_MIN = 0.12
 const FILLER_LENGTH_MAX = 0.3
@@ -53,7 +54,9 @@ const UP = new Vector3(0, 1, 0)
 // A random direction within `maxAngle` of `axis`, sampled uniformly over
 // the cone (used both to scatter a shard's base point across the mound
 // and, separately, to splay its own pointing direction from that base).
-function coneSample(axis: Vector3, right: Vector3, forward: Vector3, maxAngle: number): Vector3 {
+// Exported for stelliumPlateauLayout.ts's own small companion-crystal
+// scatter.
+export function coneSample(axis: Vector3, right: Vector3, forward: Vector3, maxAngle: number): Vector3 {
   const azimuth = Math.random() * Math.PI * 2
   const angle = Math.random() * maxAngle
   return axis
@@ -85,10 +88,21 @@ export function buildClusterShards(
 
     const lengthFactor = lengthMin + Math.random() * (lengthMax - lengthMin)
     const length = size.maxLength * lengthFactor
-    const capLength = length * CAP_FRACTION
+    const capLength = length * SHARD_CAP_FRACTION
     const shaftLength = length - capLength
     const radius = length * (RADIUS_MIN_FACTOR + Math.random() * (RADIUS_MAX_FACTOR - RADIUS_MIN_FACTOR))
-    const position = localCenter.clone().multiplyScalar(SPHERE_RADIUS + moundHeight)
+
+    // The mesh's mound height falls off away from `center` (see
+    // buildStellatedGeometry/bulgeHeightAt) - using the mound's peak
+    // height for every jittered base would sit each shard above the
+    // actual surface at its own offset, the further out the more visible
+    // the gap. Matching the same falloff curve here keeps every base
+    // flush with the real surface it's growing out of.
+    const offAngle = center.angleTo(localCenter)
+    const t = Math.max(0, 1 - offAngle / moundAngularRadius)
+    const localMoundHeight = moundHeight * domeFalloff(t)
+    const embedDepth = radius * SHARD_EMBED_DEPTH_FACTOR
+    const position = localCenter.clone().multiplyScalar(SPHERE_RADIUS + localMoundHeight - embedDepth)
 
     shards.push({
       geometry: buildShardGeometry(radius, shaftLength, capLength),

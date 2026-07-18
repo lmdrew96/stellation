@@ -1,28 +1,13 @@
 export const MAX_ORB = 8.0
 
-// Same weight law as backend/app/services/render.py's _orb_to_alpha /
-// _orb_to_width - tighter orb (closer to exact) reads bolder and more
-// opaque, ported 1:1 so this view's edges feel like the same instrument as
-// the 2D chart even though the chrome around them differs.
-export function orbToAlpha(orb: number): number {
-  const t = 1 - Math.min(orb, MAX_ORB) / MAX_ORB
-  return 0.25 + 0.65 * t
-}
-
-export function orbToWidth(orb: number): number {
-  const t = 1 - Math.min(orb, MAX_ORB) / MAX_ORB
-  return 0.6 + 2.0 * t
-}
-
 const ASPECT_BUMP_HEIGHT_MIN = 0.1
 const ASPECT_BUMP_HEIGHT_MAX = 0.32
 
-// Same "tighter orb = more prominent" law as orbToAlpha/orbToWidth, mapped
-// to a small surface-bump height instead of a line's alpha/width - every
-// real aspect gets a subtle bump (see stellatedSphere.ts), not just the
-// ones that happen to form a named pattern. A chart with only one or two
-// named patterns still ends up with a uniquely textured surface instead
-// of a mostly-plain sphere.
+// Tighter orb (closer to exact) maps to a bigger, more prominent shard -
+// every real aspect gets its own (see AspectShards.tsx), not just the ones
+// that happen to form a named pattern. A chart with only one or two named
+// patterns still ends up with a uniquely crystalled surface instead of a
+// mostly-plain sphere.
 export function orbToBumpHeight(orb: number): number {
   const t = 1 - Math.min(orb, MAX_ORB) / MAX_ORB
   return ASPECT_BUMP_HEIGHT_MIN + (ASPECT_BUMP_HEIGHT_MAX - ASPECT_BUMP_HEIGHT_MIN) * t

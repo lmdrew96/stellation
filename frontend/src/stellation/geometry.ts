@@ -5,7 +5,7 @@ import type { Planet } from '../types'
 // this radius - shrinking the sphere alone makes every crystal read as
 // proportionally bigger/more dramatic against it, without touching a
 // single bulge constant.
-export const SPHERE_RADIUS = 1.8
+export const SPHERE_RADIUS = 0.9
 
 const SIGN_ORDER = [
   'Aries', 'Taurus', 'Gemini', 'Cancer', 'Leo', 'Virgo',
@@ -75,6 +75,16 @@ export function tangentBasis(center: Vector3): { right: Vector3; forward: Vector
   return { right, forward }
 }
 
+// Smoothstep falloff for a dome-shaped bulge (stellatedSphere.ts's mound
+// height/color curve) - also used by crystalClusterLayout.ts so a shard
+// jittered off the mound's dead-center sits at the height the deformed
+// mesh actually reaches at that offset, not the mound's peak height
+// everywhere under its footprint (which left shards floating above the
+// real surface the further they were jittered from center).
+export function domeFalloff(t: number): number {
+  return t * t * (3 - 2 * t)
+}
+
 export function centroid(positions: Vector3[]): Vector3 {
   return positions.reduce((sum, p) => sum.add(p), new Vector3()).divideScalar(positions.length)
 }
@@ -93,27 +103,4 @@ export function outwardDirection(positions: Vector3[]): Vector3 {
 // vertex for both pattern types) rather than sitting dead-center.
 export function leanDirection(outward: Vector3, towardVertex: Vector3, leanFactor: number): Vector3 {
   return outward.clone().lerp(towardVertex.clone().normalize(), leanFactor).normalize()
-}
-
-// Points tracing the shorter great-circle path between two directions,
-// scaled to `radius`. Used instead of a straight chord for aspect edges:
-// a straight line between two points on a sphere dips inside it for the
-// whole span except the endpoints, so once the globe is opaque a chord
-// renders invisible (hidden behind its own surface). An arc stays outside
-// the sphere by construction.
-export function greatCircleArc(a: Vector3, b: Vector3, radius = SPHERE_RADIUS, segments = 24): Vector3[] {
-  const start = a.clone().normalize()
-  const end = b.clone().normalize()
-  const theta = start.angleTo(end)
-  if (theta < 1e-5) {
-    return [start.clone().multiplyScalar(radius), end.clone().multiplyScalar(radius)]
-  }
-  const points: Vector3[] = []
-  for (let i = 0; i <= segments; i++) {
-    const t = i / segments
-    const s1 = Math.sin((1 - t) * theta) / Math.sin(theta)
-    const s2 = Math.sin(t * theta) / Math.sin(theta)
-    points.push(start.clone().multiplyScalar(s1).add(end.clone().multiplyScalar(s2)).multiplyScalar(radius))
-  }
-  return points
 }
