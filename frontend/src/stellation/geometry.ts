@@ -62,6 +62,19 @@ export function planetPosition(planet: Planet, radius = SPHERE_RADIUS): Vector3 
   return positionOnSphere(longitudeOf(planet), BODY_BAND[planet.name] ?? 0, radius)
 }
 
+const WORLD_UP = new Vector3(0, 1, 0)
+const WORLD_X = new Vector3(1, 0, 0)
+
+// An orthonormal (right, forward) basis in the plane perpendicular to
+// `center` - used both to facet a bulge's cross-section (stellatedSphere.ts)
+// and to splay crystal shards around a cluster's own axis (crystalCluster.ts).
+export function tangentBasis(center: Vector3): { right: Vector3; forward: Vector3 } {
+  const arbitrary = Math.abs(center.y) > 0.9 ? WORLD_X : WORLD_UP
+  const right = new Vector3().crossVectors(center, arbitrary).normalize()
+  const forward = new Vector3().crossVectors(right, center).normalize()
+  return { right, forward }
+}
+
 export function centroid(positions: Vector3[]): Vector3 {
   return positions.reduce((sum, p) => sum.add(p), new Vector3()).divideScalar(positions.length)
 }
