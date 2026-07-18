@@ -166,13 +166,15 @@ function heightFalloff(t: number, profile: BulgeProfile): number {
   return profile === 'dome' ? t * t * (3 - 2 * t) : t * t
 }
 
-// Studs reuse "point"'s pinched-tip height shape but saturate their color
-// almost immediately (t^0.3 rises to ~0.9 well before the rim) instead of
-// following the same slow curve as height - a hard-edged color patch is
-// what reads as "a small gem chip" at this size, where there's rarely
-// enough mesh resolution for the height shape alone to look faceted.
-function colorWeight(t: number, profile: BulgeProfile): number {
-  return profile === 'stud' ? Math.pow(t, 0.3) : heightFalloff(t, profile)
+// Deliberately NOT the same curve as height. Height needs a slow-rising
+// t² near the rim so a spike's base blends seamlessly into the sphere,
+// but using that same curve for color means most of a bulge's *visible*
+// surface sits far closer to the dark base color than to its own hue
+// (t²=0.25 at the halfway point) - which read as dim overall. This rises
+// to strong saturation well before the rim instead, independent of which
+// height profile the bulge uses.
+function colorWeight(t: number): number {
+  return Math.pow(t, 0.35)
 }
 
 export function bulgeHeightAt(direction: Vector3, bulges: BulgeSpec[]): number {
@@ -193,7 +195,7 @@ function bulgeColorAt(direction: Vector3, bulges: BulgeSpec[]): Color {
   for (const bulge of bulges) {
     const angle = direction.angleTo(bulge.center)
     if (angle < bulge.angularRadius) {
-      const weight = colorWeight(1 - angle / bulge.angularRadius, bulge.profile)
+      const weight = colorWeight(1 - angle / bulge.angularRadius)
       if (weight > winningWeight) {
         winningWeight = weight
         winningColor = bulge.color

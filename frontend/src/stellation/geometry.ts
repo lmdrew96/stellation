@@ -1,7 +1,11 @@
 import { Vector3 } from 'three'
 import type { Planet } from '../types'
 
-export const SPHERE_RADIUS = 2.5
+// Bulge heights (stellatedSphere.ts) are absolute units, not scaled to
+// this radius - shrinking the sphere alone makes every crystal read as
+// proportionally bigger/more dramatic against it, without touching a
+// single bulge constant.
+export const SPHERE_RADIUS = 1.8
 
 const SIGN_ORDER = [
   'Aries', 'Taurus', 'Gemini', 'Cancer', 'Leo', 'Virgo',

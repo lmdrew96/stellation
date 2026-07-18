@@ -24,8 +24,8 @@ export function StellationScene({ chart, onSelectPattern }: StellationSceneProps
   return (
     <>
       <ambientLight intensity={0.85} />
-      <pointLight position={[6, 6, 6]} intensity={55} />
-      <pointLight position={[-6, -4, -6]} intensity={40} />
+      <pointLight position={[6, 6, 6]} intensity={65} />
+      <pointLight position={[-6, -4, -6]} intensity={45} />
       <PatternStellation chart={chart} onSelectPattern={onSelectPattern} meshRef={sphereRef} />
       <AspectEdges planets={chart.planets} aspects={chart.aspects} />
       {chart.planets.map((planet) => {
@@ -33,7 +33,7 @@ export function StellationScene({ chart, onSelectPattern }: StellationSceneProps
         const raised = dir.clone().multiplyScalar(SPHERE_RADIUS + bulgeHeightAt(dir, bulges))
         return <PlanetMarker key={planet.name} name={planet.name} position={raised} occluder={sphereRef} />
       })}
-      <OrbitControls enablePan={false} minDistance={4} maxDistance={12} />
+      <OrbitControls enablePan={false} minDistance={3.5} maxDistance={9} />
     </>
   )
 }
