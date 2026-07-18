@@ -479,6 +479,124 @@
   color: var(--color-text);
 }
 
+/* ---------- landing page ---------- */
+
+.landing {
+  display: flex;
+  flex-direction: column;
+  gap: 3rem;
+}
+
+.landing-hero {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 1.25rem;
+  padding: 2rem 1rem 1rem;
+}
+
+.landing-hero__ring {
+  position: absolute;
+  top: -1rem;
+  opacity: 0.35;
+  pointer-events: none;
+}
+
+/* Wordmark is normally positioned absolute/centered for the sticky
+   masthead bar (see .wordmark) - here it sits in normal flow instead, so
+   the hero needs its own non-absolute sizing. */
+.landing-hero .wordmark {
+  position: static;
+  transform: none;
+  font-size: 3rem;
+}
+
+.landing-hero__tagline {
+  max-width: 32rem;
+  font-family: var(--font-scrawl);
+  font-size: 1.35rem;
+  line-height: 1.4;
+  color: var(--color-text);
+}
+
+.landing-hero__ctas {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.75rem;
+}
+
+/* .submit-button/.sign-in-button were both designed for <button>
+   (inline-block by default, so width:100%/auto sizing behaves as
+   expected) - reused here on <a> (react-router Link renders one), which
+   is inline by default and drops both the width rule and the browser's
+   default link underline/color. Overridden explicitly rather than
+   touching those shared classes, which real form buttons elsewhere still
+   depend on behaving exactly as they do today. */
+.landing-hero__ctas a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: auto;
+  text-decoration: none;
+}
+
+.landing-examples {
+  text-align: center;
+}
+
+.landing-examples__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+}
+
+.landing-chart-preview {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.landing-chart-preview__label {
+  font-family: var(--font-stamp);
+  font-size: 1.1rem;
+  color: var(--color-accent-warm);
+}
+
+.landing-chart-preview__frame {
+  width: 100%;
+  aspect-ratio: 1;
+  max-width: 340px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-surface);
+  border: 1.5px dashed var(--color-surface-line);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.landing-chart-preview__frame .chart-art {
+  width: 100%;
+  height: 100%;
+}
+
+.landing-mixtape {
+  text-align: center;
+}
+
+.landing-mixtape__header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
 /* ---------- backend status badge ---------- */
 
 .backend-status {

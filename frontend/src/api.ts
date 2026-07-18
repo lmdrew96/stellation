@@ -562,6 +562,18 @@ export async function saveSynastrySessionRemote(
   }
 }
 
+// Public/unauthenticated landing-page widget - no chart, no auth header.
+export async function fetchSampleMixtape(): Promise<MixtapeResponse> {
+  const res = await fetch('/api/mixtape/sample')
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => null)
+    throw new ApiError(parseErrorDetail(body, 'Could not load a sample mixtape.'))
+  }
+
+  return res.json()
+}
+
 // A signed-in user's own birth details - see app/services/profiles.py.
 // Reuses ChartRequest directly (same shape, same validation) rather than a
 // dedicated Profile type.

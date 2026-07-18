@@ -1,4 +1,5 @@
 import json
+import random
 
 import anthropic
 import httpx
@@ -250,6 +251,22 @@ def _run_backfill(
                 )
             )
     return backfilled
+
+
+SAMPLE_TRACK_COUNT = 4
+
+
+# A chart-free, Claude-free "sample" mixtape for the public landing page -
+# a random genre/decade pair, verified straight from Spotify search via the
+# same backfill path generate_mixtape falls back to when too few candidates
+# verify. No mood brief, no Anthropic call at all, so it's cheap enough to
+# be the least-gated, highest-traffic surface in the app (see
+# routers/mixtape.py's rate limit for the other half of that tradeoff).
+def generate_sample_mixtape() -> MixtapeResponse:
+    genre = random.choice(list(GENRE_SEARCH_TERMS))
+    decade = random.choice(list(DECADE_RANGES))
+    queries = _backfill_queries([genre], [decade])
+    return MixtapeResponse(tracks=_run_backfill(queries, [decade], SAMPLE_TRACK_COUNT, set()))
 
 
 def generate_mixtape(chart: ChartData, genres: list[str], decades: list[str]) -> MixtapeResponse:
