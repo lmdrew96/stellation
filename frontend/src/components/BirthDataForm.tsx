@@ -21,11 +21,32 @@ export function BirthDataForm({ onSubmit, submitting, showManualCoords }: BirthD
 
   return (
     <form className="form-card" onSubmit={handleSubmit}>
-      <PersonFields idPrefix="solo" value={person} onChange={setPerson} showManualCoords={showManualCoords} />
-      <ChartSettingsFields idPrefix="solo-settings" value={settings} onChange={setSettings} />
-      <button className="submit-button" type="submit" disabled={submitting}>
-        {submitting ? 'Calculating…' : 'Generate chart'}
-      </button>
+      <div className="form-row">
+        <PersonFields
+          idPrefix="solo"
+          value={person}
+          onChange={setPerson}
+          showManualCoords={showManualCoords}
+          hidePlace
+        />
+      </div>
+      <div className="form-row form-row--settings">
+        <div className="field-row field-row--place">
+          <div className="field">
+            <label htmlFor="solo-birth_place">Birth place</label>
+            <input
+              id="solo-birth_place"
+              placeholder="City, State/Country"
+              value={person.birthPlace}
+              onChange={(e) => setPerson({ ...person, birthPlace: e.target.value })}
+            />
+          </div>
+        </div>
+        <ChartSettingsFields idPrefix="solo-settings" value={settings} onChange={setSettings} />
+        <button className="submit-button" type="submit" disabled={submitting}>
+          {submitting ? 'Calculating…' : 'Generate chart'}
+        </button>
+      </div>
     </form>
   )
 }

@@ -50,16 +50,20 @@ interface PersonFieldsProps {
   value: PersonFieldsValue
   onChange: (value: PersonFieldsValue) => void
   showManualCoords: boolean
+  // BirthDataForm renders birth place itself, on the settings row next to
+  // the zodiac/houses pickers, instead of here - SynastryForm still wants
+  // it bundled with the rest of a person's fields, so this defaults to shown.
+  hidePlace?: boolean
 }
 
-export function PersonFields({ idPrefix, value, onChange, showManualCoords }: PersonFieldsProps) {
+export function PersonFields({ idPrefix, value, onChange, showManualCoords, hidePlace }: PersonFieldsProps) {
   function set<K extends keyof PersonFieldsValue>(key: K, next: PersonFieldsValue[K]) {
     onChange({ ...value, [key]: next })
   }
 
   return (
     <>
-      <div className="field-row">
+      <div className="field-row field-row--narrow">
         <div className="field">
           <label htmlFor={`${idPrefix}-name`}>Name</label>
           <input
@@ -94,19 +98,21 @@ export function PersonFields({ idPrefix, value, onChange, showManualCoords }: Pe
         </div>
       </div>
 
-      <div className="field-row">
-        <div className="field">
-          <label htmlFor={`${idPrefix}-birth_place`}>Birth place</label>
-          <input
-            id={`${idPrefix}-birth_place`}
-            placeholder="City, State/Country"
-            value={value.birthPlace}
-            onChange={(e) => set('birthPlace', e.target.value)}
-          />
+      {!hidePlace && (
+        <div className="field-row">
+          <div className="field">
+            <label htmlFor={`${idPrefix}-birth_place`}>Birth place</label>
+            <input
+              id={`${idPrefix}-birth_place`}
+              placeholder="City, State/Country"
+              value={value.birthPlace}
+              onChange={(e) => set('birthPlace', e.target.value)}
+            />
+          </div>
         </div>
-      </div>
+      )}
 
-      <div className="field-row">
+      <div className="field-row field-row--pronouns">
         <div className="field">
           <label htmlFor={`${idPrefix}-pronouns`}>Pronouns</label>
           <input

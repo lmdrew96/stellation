@@ -6,7 +6,7 @@
 
 .app {
   position: relative;
-  max-width: 640px;
+  max-width: 1200px;
   margin: 0 auto;
   padding: 4rem 1.5rem 6rem;
 }
@@ -372,7 +372,7 @@
   background: var(--color-surface);
   border: 1px solid var(--color-surface-line);
   border-radius: 10px;
-  padding: 2rem;
+  padding: 1rem;
   @media (max-width: 640px) {
     padding: 1.5rem 1.25rem;
   }
@@ -390,6 +390,17 @@
   @media (max-width: 560px) {
     grid-template-columns: 1fr;
   }
+}
+
+/* Grid items don't shrink below their content's intrinsic width by
+   default - a bare <input> with no size attribute has a native min width
+   of ~250px, so without this any .field-row narrower than that (the form
+   row's narrow/split modifiers) just overflows its own track (visibly,
+   since grid doesn't clip) instead of shrinking to fit. This is what let
+   Name/Pronouns spill into their neighbors, and separately let the
+   settings row's zodiac/houses pair spill into the submit button. */
+.field-row > .field {
+  min-width: 0;
 }
 
 .field {
@@ -490,6 +501,89 @@
   cursor: default;
 }
 
+/* ---------- birth data form: two-row layout (desktop) ---------- */
+
+/* Solo form only (BirthDataForm) - one .form-row per component (birth
+   fields, then settings+submit), each turning its field-row/field-row--split
+   children into an inline flex row. Native date/time inputs and <select>s
+   have a hard minimum content width CSS can't shrink past, so this wraps
+   rather than forcing a single nowrap row - two natural rows is what
+   actually fits without fields overlapping. SynastryForm keeps its
+   stacked two-person layout, unaffected by these rules. */
+.form-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 1rem;
+}
+
+.form-row + .form-row {
+  margin-top: 1.1rem;
+}
+
+.form-row .field-row {
+  flex: 1 1 160px;
+  min-width: 0;
+  margin-bottom: 0;
+}
+
+.form-row .field-row--split {
+  flex: 2 1 280px;
+  /* Only two items are left to grow in this row (date/time + pronouns
+     already/still narrow) once birth place moved to the settings row -
+     without a cap, date/time alone soaks up all the leftover width on
+     wide screens and the native inputs end up absurdly wide. */
+  max-width: 380px;
+}
+
+/* Name is free-text and doesn't need to compete for space with birth
+   date/time/place - keeping it fixed-narrow leaves more room for the
+   fields that actually need it. */
+.form-row .field-row--narrow {
+  flex: 0 1 140px;
+}
+
+/* Wide enough to show the full "she/her, he/him, they/them…" placeholder
+   (measured ~280px) instead of truncating it. */
+.form-row .field-row--pronouns {
+  flex: 0 1 290px;
+}
+
+/* Birth place narrowed down from the general field-row basis so the
+   zodiac/houses pickers next to it have room to be legible instead of
+   cramped down to their content's bare minimum. */
+.form-row--settings .field-row--place {
+  flex: 1 1 200px;
+  max-width: 260px;
+}
+
+.form-row--settings .field-row--split {
+  flex: 0 1 280px;
+}
+
+.form-row--settings .submit-button {
+  width: auto;
+  margin-top: 0;
+  white-space: nowrap;
+  flex: 0 0 auto;
+}
+
+@media (max-width: 640px) {
+  .form-row {
+    display: block;
+  }
+
+  .form-row .field-row {
+    margin-bottom: 1.1rem;
+  }
+
+  .form-row--settings .submit-button {
+    width: 100%;
+    margin-top: 0.5rem;
+  }
+}
+
 /* ---------- notices ---------- */
 
 .notice {
@@ -565,6 +659,76 @@
   z-index: 1;
   width: min(100%, 420px);
   margin: 0 auto 2.5rem;
+}
+
+/* ---------- chart + reading split (desktop) ---------- */
+
+/* True editorial wrap, not a two-column grid: the chart art floats so the
+   reading text runs down its right side while there's art to run past,
+   then reclaims the full width once it clears the art's bottom edge. A
+   flex/grid split can't do the "fills full width underneath" part - a
+   flex column stays column-width for its entire height regardless of the
+   sibling's height. */
+.chart-reading-split {
+  margin-bottom: 2.5rem;
+}
+
+.chart-reading-split::after {
+  content: '';
+  display: table;
+  clear: both;
+}
+
+.chart-reading-split .chart-carousel {
+  float: left;
+  width: 300px;
+  margin: 0 2rem 1.5rem 0;
+}
+
+.chart-reading-split__reading .reading {
+  margin-bottom: 0;
+}
+
+/* Centered text wrapping around a float reads as ragged (each line centers
+   in whatever width the float leaves that line) - left-align and drop the
+   34rem cap so the synthesis actually fills the full width once it clears
+   the art, as requested. Desktop-only: mobile drops the float entirely and
+   keeps the original centered treatment. */
+@media (min-width: 641px) {
+  .chart-reading-split__reading .reading h2 {
+    text-align: left;
+  }
+
+  .chart-reading-split__reading .reading-synthesis {
+    max-width: none;
+    text-align: left;
+    margin: 0 0 1.5rem;
+  }
+}
+
+/* The carousel's default arrow offsets (-3.25rem) assume the old
+   full-width centered carousel with plenty of side whitespace - at
+   thumbnail size the reading text sits right where that whitespace used
+   to be, so the arrows need to sit closer in (same tighter offset the
+   mobile breakpoint already uses for the same reason). */
+.chart-reading-split .carousel-arrow--prev {
+  left: -0.75rem;
+}
+
+.chart-reading-split .carousel-arrow--next {
+  right: -0.75rem;
+}
+
+@media (max-width: 640px) {
+  .chart-reading-split .chart-carousel {
+    float: none;
+    width: min(100%, 420px);
+    margin: 0 auto 2.5rem;
+  }
+
+  .chart-reading-split__reading .reading {
+    margin-bottom: 2.5rem;
+  }
 }
 
 /* The signature element: the generated chart art (render.py, untouched)
@@ -1072,19 +1236,21 @@
   animation: reveal-in 0.3s ease both;
 }
 
-.synastry-placements {
+/* Shared by SynastryReveal's two-person placements grid and the solo
+   ChartReveal's Placements/Aspects split. */
+.data-columns {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 1.5rem 2rem;
   margin-bottom: 2rem;
 }
 
-.synastry-placements .data-section {
+.data-columns .data-section {
   margin-bottom: 0;
 }
 
 @media (max-width: 640px) {
-  .synastry-placements {
+  .data-columns {
     grid-template-columns: 1fr;
     gap: 2rem;
   }
@@ -1146,6 +1312,19 @@
    linestyle so the two still read as distinct at a glance. */
 .data-table__glyph--dashed {
   border-style: dashed;
+}
+
+/* PlacementList's angle rows (ASC/MC): ANGLE_GLYPH is 2-3 letters, not a
+   single symbol like the planet glyphs - the circular badge becomes a
+   pill instead of forcing that text into a fixed 2rem circle. */
+.data-table__glyph--text {
+  width: auto;
+  min-width: 2rem;
+  padding: 0 0.4rem;
+  border-radius: 999px;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.02em;
 }
 
 .data-table > .data-table__row:nth-child(even) .data-table__glyph,
@@ -1420,35 +1599,16 @@
   opacity: 0.45;
 }
 
-/* Breaks out of .app's 640px column so cards actually stretch across the
-   page instead of squeezing into 2 cramped columns - .page's
-   overflow-x: clip (see .carousel-arrow's comment above) safely absorbs
-   the 100vw-wide intermediate state this creates. Capped at 1100px and
-   re-centered with translateX(-50%) rather than the usual -50vw margin
-   trick, since that trick doesn't combine with max-width - translateX
-   centers correctly whether the grid ends up 100vw or capped at 1100px. */
 .mixtape-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
   gap: 1.75rem 1.25rem;
   margin-top: 1rem;
-  position: relative;
-  left: 50%;
-  width: 100vw;
-  max-width: 1100px;
-  transform: translateX(-50%);
-  padding: 0 1.5rem;
-  box-sizing: border-box;
 }
 
 @media (max-width: 640px) {
   .mixtape-grid {
     grid-template-columns: 1fr;
-    position: static;
-    width: auto;
-    max-width: none;
-    transform: none;
-    padding: 0;
   }
 }
 

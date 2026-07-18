@@ -88,7 +88,7 @@ export function SynastryReveal({
               relationshipType={synastry.relationship_type}
             />
           )}
-          <div className="synastry-placements">
+          <div className="data-columns">
             <div>
               <ChartAngles angles={synastry.person_a.angles} />
               <PlanetList planets={synastry.person_a.planets} heading={`${nameA}'s Placements`} />

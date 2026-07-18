@@ -15,7 +15,6 @@ import type {
   TransitData,
 } from '../types'
 import { AspectList } from './AspectList'
-import { ChartAngles } from './ChartAngles'
 import { ChartCarousel } from './ChartCarousel'
 import { CompareForm } from './CompareForm'
 import { GeneratingScreen } from './GeneratingScreen'
@@ -112,12 +111,18 @@ export function ChartReveal({
       {!isGenerating && (
         <>
           {artError && <p className="notice notice-error">{artError}</p>}
-          {ART_STYLES.every(({ style }) => artUrls[style]) && (
-            <ChartCarousel
-              name={chart.name}
-              slides={ART_STYLES.map(({ style, label }) => ({ label, url: artUrls[style]! }))}
-            />
-          )}
+          <div className="chart-reading-split">
+            {ART_STYLES.every(({ style }) => artUrls[style]) && (
+              <ChartCarousel
+                name={chart.name}
+                slides={ART_STYLES.map(({ style, label }) => ({ label, url: artUrls[style]! }))}
+              />
+            )}
+            <div className="chart-reading-split__reading">
+              {readingStatus === 'error' && <p className="notice notice-error">{readingError}</p>}
+              {reading && <ReadingDisplay reading={reading} />}
+            </div>
+          </div>
           {reading && !viewingSaved && (
             <SaveLink save={(token) => saveSoloChart(chart, reading, token)} pathPrefix="/c/" />
           )}
@@ -190,12 +195,11 @@ export function ChartReveal({
             />
           )}
           {mixtape && <MixtapeReveal mixtape={mixtape} onClose={onCloseMixtape} />}
-          {readingStatus === 'error' && <p className="notice notice-error">{readingError}</p>}
-          {reading && <ReadingDisplay reading={reading} />}
-          <ChartAngles angles={chart.angles} chart={chart} />
-          <PlacementList chart={chart} />
+          <div className="data-columns">
+            <PlacementList chart={chart} />
+            <AspectList chart={chart} />
+          </div>
           <PatternList chart={chart} />
-          <AspectList chart={chart} />
           {reading && viewingSaved && !isComposite && (
             <CompareForm
               ownerName={chart.name}
