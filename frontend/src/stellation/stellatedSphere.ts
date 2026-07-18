@@ -32,6 +32,14 @@ export interface BulgeSpec {
   height: number
   color: string
   profile: BulgeProfile
+  // Real crystals (quartz prisms, druzy points) are faceted polygons, not
+  // circular cones - set together with `right`/`forward` (see
+  // tangentBasis) to give this bulge's cross-section N straight sides
+  // instead of a smooth circle. Omit for a circular/organic bulge
+  // (Stellium's mound).
+  sides?: number
+  right?: Vector3
+  forward?: Vector3
 }
 
 const SPIKE_HEIGHT = 0.8
@@ -51,8 +59,24 @@ const LEAN_STRONG = 0.65
 // triangles to show a defined facet no matter how the falloff curve is
 // shaped; the softness was a resolution limit, not a curve-shape problem.
 const ASPECT_BUMP_ANGULAR_RADIUS = 0.17
+// Quartz-style hexagonal prism/pyramid points, for both the dramatic
+// pattern spikes and the small aspect studs.
+const CRYSTAL_SIDES = 6
 
 export const BASE_COLOR = new Color('#1b1730')
+
+const WORLD_UP = new Vector3(0, 1, 0)
+const WORLD_X = new Vector3(1, 0, 0)
+
+// An orthonormal (right, forward) basis in the plane perpendicular to
+// `center`, used to measure a bulge-local azimuthal angle so its
+// cross-section can be faceted (see hexRadiusFactor) instead of circular.
+function tangentBasis(center: Vector3): { right: Vector3; forward: Vector3 } {
+  const arbitrary = Math.abs(center.y) > 0.9 ? WORLD_X : WORLD_UP
+  const right = new Vector3().crossVectors(center, arbitrary).normalize()
+  const forward = new Vector3().crossVectors(right, center).normalize()
+  return { right, forward }
+}
 
 function positionsFor(names: string[], positionByName: Map<string, Vector3>): Vector3[] {
   const found: Vector3[] = []
@@ -89,25 +113,31 @@ export function buildBulgeSpecs(chart: ChartData): BulgeSpec[] {
     if (pattern.pattern_type === 'kite') {
       const trio = positionsFor(pattern.planets.slice(0, 3), positionByName)
       if (trio.length < 3) return
+      const trioCenter = outwardDirection(trio)
       specs.push({
         pattern,
         key,
         color,
         profile: 'point',
-        center: outwardDirection(trio),
+        center: trioCenter,
         angularRadius: SPIKE_ANGULAR_RADIUS,
         height: SPIKE_HEIGHT,
+        sides: CRYSTAL_SIDES,
+        ...tangentBasis(trioCenter),
       })
       const opposed = positionByName.get(pattern.planets[3])
       if (opposed) {
+        const opposedCenter = opposed.clone().normalize()
         specs.push({
           pattern,
           key,
           color,
           profile: 'point',
-          center: opposed.clone().normalize(),
+          center: opposedCenter,
           angularRadius: COUNTER_ANGULAR_RADIUS,
           height: COUNTER_HEIGHT,
+          sides: CRYSTAL_SIDES,
+          ...tangentBasis(opposedCenter),
         })
       }
       return
@@ -130,13 +160,23 @@ export function buildBulgeSpecs(chart: ChartData): BulgeSpec[] {
       angularRadius = CROSS_ANGULAR_RADIUS
     }
 
-    specs.push({ pattern, key, color, profile: 'point', center, angularRadius, height })
+    specs.push({
+      pattern,
+      key,
+      color,
+      profile: 'point',
+      center,
+      angularRadius,
+      height,
+      sides: CRYSTAL_SIDES,
+      ...tangentBasis(center),
+    })
   })
 
   return specs
 }
 
-// A small dome for every real aspect in the chart, centered on the great-
+// A small stud for every real aspect in the chart, centered on the great-
 // circle midpoint of the two involved planets (the same point the aspect's
 // arc line - see AspectEdges.tsx - passes through), sized by orb tightness
 // and colored by the same harmonious/tense language as the lines. Ensures
@@ -150,12 +190,15 @@ export function buildAspectBulgeSpecs(chart: ChartData): BulgeSpec[] {
     const a = positionByName.get(aspect.planet_a)
     const b = positionByName.get(aspect.planet_b)
     if (!a || !b) continue
+    const center = outwardDirection([a, b])
     specs.push({
-      center: outwardDirection([a, b]),
+      center,
       angularRadius: ASPECT_BUMP_ANGULAR_RADIUS,
       height: orbToBumpHeight(aspect.orb),
       color: aspectColor(aspect.aspect_type),
       profile: 'stud',
+      sides: CRYSTAL_SIDES,
+      ...tangentBasis(center),
     })
   }
 
@@ -177,12 +220,43 @@ function colorWeight(t: number): number {
   return Math.pow(t, 0.35)
 }
 
+const _axial = new Vector3()
+const _tangent = new Vector3()
+
+// The bulge-local azimuthal angle of `direction` around `bulge.center` -
+// i.e. which way around the point's own axis this direction sits, used to
+// facet its cross-section instead of leaving it circular.
+function azimuthOf(bulge: BulgeSpec, direction: Vector3): number {
+  _axial.copy(bulge.center).multiplyScalar(direction.dot(bulge.center))
+  _tangent.copy(direction).sub(_axial)
+  return Math.atan2(_tangent.dot(bulge.forward!), _tangent.dot(bulge.right!))
+}
+
+// Distance from center to a regular N-gon's boundary at angle `phi`,
+// relative to its circumradius - 1 exactly at each corner, cos(π/N) at
+// the middle of each flat edge. Scaling a bulge's angularRadius by this
+// turns its circular footprint (and every concentric iso-height ring
+// inside it) into a flat-sided polygon - a hexagonal prism/pyramid for
+// sides=6, the way an actual quartz crystal point is faceted.
+function polygonRadiusFactor(phi: number, sides: number): number {
+  const sector = (2 * Math.PI) / sides
+  const half = Math.PI / sides
+  const local = ((phi % sector) + sector) % sector
+  return Math.cos(half) / Math.cos(local - half)
+}
+
+function effectiveRadius(bulge: BulgeSpec, direction: Vector3): number {
+  if (!bulge.sides || !bulge.right || !bulge.forward) return bulge.angularRadius
+  return bulge.angularRadius * polygonRadiusFactor(azimuthOf(bulge, direction), bulge.sides)
+}
+
 export function bulgeHeightAt(direction: Vector3, bulges: BulgeSpec[]): number {
   let extra = 0
   for (const bulge of bulges) {
     const angle = direction.angleTo(bulge.center)
-    if (angle < bulge.angularRadius) {
-      const t = 1 - angle / bulge.angularRadius
+    const radius = effectiveRadius(bulge, direction)
+    if (angle < radius) {
+      const t = 1 - angle / radius
       extra = Math.max(extra, bulge.height * heightFalloff(t, bulge.profile))
     }
   }
@@ -194,8 +268,9 @@ function bulgeColorAt(direction: Vector3, bulges: BulgeSpec[]): Color {
   let winningColor: string | null = null
   for (const bulge of bulges) {
     const angle = direction.angleTo(bulge.center)
-    if (angle < bulge.angularRadius) {
-      const weight = colorWeight(1 - angle / bulge.angularRadius)
+    const radius = effectiveRadius(bulge, direction)
+    if (angle < radius) {
+      const weight = colorWeight(1 - angle / radius)
       if (weight > winningWeight) {
         winningWeight = weight
         winningColor = bulge.color
@@ -248,7 +323,7 @@ export function findBulgeAtPoint(point: Vector3, bulges: BulgeSpec[]): BulgeSpec
   for (const bulge of bulges) {
     if (!bulge.pattern || !bulge.key) continue
     const angle = dir.angleTo(bulge.center)
-    if (angle < bulge.angularRadius && angle < closestAngle) {
+    if (angle < effectiveRadius(bulge, dir) && angle < closestAngle) {
       closest = bulge
       closestAngle = angle
     }
