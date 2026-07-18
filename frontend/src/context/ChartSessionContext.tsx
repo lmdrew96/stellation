@@ -144,7 +144,7 @@ interface ChartSessionProviderProps {
 }
 
 // Holds essentially everything that used to be App.tsx's ~30 useState calls
-// (minus theme/health, which live in Layout, and mode/saved-route state,
+// (minus theme, which lives in Layout, and mode/saved-route state,
 // which is now page-local). Deliberately one flat provider rather than
 // split per-domain contexts - see the plan doc for why: it reproduces
 // today's behavior exactly, and splitting buys nothing since only one page

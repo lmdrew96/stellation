@@ -3,10 +3,10 @@ import { useEffect, useState } from 'react'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { clerkEnabled } from '../clerkConfig'
 import { AccountControls } from './AccountControls'
+import { InstallPrompt } from './InstallPrompt'
 import { ThemeToggle } from './ThemeToggle'
 import { Wordmark } from './Wordmark'
 
-type HealthStatus = 'checking' | 'ok' | 'error'
 type Theme = 'light' | 'dark'
 
 const THEME_STORAGE_KEY = 'stellation-theme'
@@ -21,10 +21,10 @@ function initialTheme(): Theme {
 }
 
 // Persistent chrome across every route: masthead (theme/wordmark/account),
-// primary nav, and the backend-status footer. Theme and the health check
-// live here rather than in ChartSessionContext - if that context's value
-// were ever read from here, this always-mounted wrapper would re-render on
-// every keystroke/fetch across both the Solo and Synastry flows.
+// primary nav, and the install prompt. Theme lives here rather than in
+// ChartSessionContext - if that context's value were ever read from here,
+// this always-mounted wrapper would re-render on every keystroke/fetch
+// across both the Solo and Synastry flows.
 function MastheadAndNav({ theme, onThemeChange }: { theme: Theme; onThemeChange: (t: Theme) => void }) {
   return (
     <>
@@ -60,7 +60,6 @@ function MastheadAndNav({ theme, onThemeChange }: { theme: Theme; onThemeChange:
 
 export function Layout() {
   const [theme, setTheme] = useState<Theme>(initialTheme)
-  const [health, setHealth] = useState<HealthStatus>('checking')
   const location = useLocation()
   const isHome = location.pathname === '/'
 
@@ -72,12 +71,6 @@ export function Layout() {
       // Private browsing / storage disabled - theme just won't persist.
     }
   }, [theme])
-
-  useEffect(() => {
-    fetch('/api/health')
-      .then((res) => (res.ok ? setHealth('ok') : setHealth('error')))
-      .catch(() => setHealth('error'))
-  }, [])
 
   return (
     <div className="page">
@@ -100,10 +93,7 @@ export function Layout() {
       <main className="app">
         <Outlet />
       </main>
-      <div className="backend-status" data-state={health}>
-        <span className="backend-status__dot" />
-        Backend {health}
-      </div>
+      <InstallPrompt />
     </div>
   )
 }
