@@ -5,6 +5,7 @@ import {
   ApiError,
   fetchChart,
   fetchComposite,
+  fetchMixtape,
   fetchSavedSolo,
   fetchSavedSynastry,
   fetchSaturnReturn,
@@ -37,6 +38,9 @@ import type {
   ChartData,
   ChartRequest,
   Interpretation,
+  MixtapeDecade,
+  MixtapeGenre,
+  MixtapeResponse,
   RelationshipType,
   SaturnReturnCycle,
   SynastryData,
@@ -127,6 +131,10 @@ function App() {
   const [saturnReturnLoading, setSaturnReturnLoading] = useState(false)
   const [saturnReturnError, setSaturnReturnError] = useState<string | null>(null)
   const saturnReturnReveal = useSaturnReturnReveal(saturnReturn)
+
+  const [mixtape, setMixtape] = useState<MixtapeResponse | null>(null)
+  const [mixtapeLoading, setMixtapeLoading] = useState(false)
+  const [mixtapeError, setMixtapeError] = useState<string | null>(null)
 
   const [synastry, setSynastry] = useState<SynastryData | null>(null)
   const [showManualCoordsA, setShowManualCoordsA] = useState(false)
@@ -220,6 +228,8 @@ function App() {
       setSolarReturnError(null)
       setSaturnReturn(null)
       setSaturnReturnError(null)
+      setMixtape(null)
+      setMixtapeError(null)
       resetUrlToHome()
     } catch (err) {
       if (err instanceof ApiError) {
@@ -297,6 +307,25 @@ function App() {
   function closeSaturnReturn() {
     setSaturnReturn(null)
     setSaturnReturnError(null)
+  }
+
+  async function handleViewMixtape(genres: MixtapeGenre[], decades: MixtapeDecade[]) {
+    if (!chart) return
+    setMixtapeLoading(true)
+    setMixtapeError(null)
+    try {
+      const result = await fetchMixtape(chart, genres, decades)
+      setMixtape(result)
+    } catch (err) {
+      setMixtapeError(err instanceof ApiError ? err.detail.message : 'Could not build a mixtape.')
+    } finally {
+      setMixtapeLoading(false)
+    }
+  }
+
+  function closeMixtape() {
+    setMixtape(null)
+    setMixtapeError(null)
   }
 
   async function generateComposite(synastryData: SynastryData) {
@@ -518,6 +547,11 @@ function App() {
             saturnReturnError={saturnReturnError}
             onViewSaturnReturn={handleViewSaturnReturn}
             onCloseSaturnReturn={closeSaturnReturn}
+            mixtape={mixtape}
+            mixtapeLoading={mixtapeLoading}
+            mixtapeError={mixtapeError}
+            onViewMixtape={handleViewMixtape}
+            onCloseMixtape={closeMixtape}
             compareLoading={compareLoading}
             compareError={compareError}
             showManualCoordsCompare={showManualCoordsCompare}

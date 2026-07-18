@@ -12,6 +12,7 @@ from app.routers import (
     composite,
     health,
     interpret,
+    mixtape,
     render,
     save,
     saturn_return,
@@ -45,3 +46,4 @@ app.include_router(transit.router)
 app.include_router(composite.router)
 app.include_router(solar_return.router)
 app.include_router(saturn_return.router)
+app.include_router(mixtape.router)

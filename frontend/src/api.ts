@@ -6,6 +6,9 @@ import type {
   ChartData,
   ChartRequest,
   Interpretation,
+  MixtapeDecade,
+  MixtapeGenre,
+  MixtapeResponse,
   MyChartsResponse,
   Pattern,
   PatternInsight,
@@ -442,6 +445,25 @@ export async function fetchTransitInterpretation(transit: TransitData): Promise<
   if (!res.ok) {
     const body = await res.json().catch(() => null)
     throw new ApiError(parseErrorDetail(body, 'Something went wrong generating the transit reading.'))
+  }
+
+  return res.json()
+}
+
+export async function fetchMixtape(
+  chart: ChartData,
+  genres: MixtapeGenre[],
+  decades: MixtapeDecade[],
+): Promise<MixtapeResponse> {
+  const res = await fetch('/api/mixtape', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ chart, genres, decades }),
+  })
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => null)
+    throw new ApiError(parseErrorDetail(body, 'Something went wrong building the mixtape.'))
   }
 
   return res.json()

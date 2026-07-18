@@ -4,12 +4,23 @@ import type { ChartRevealState } from '../hooks/useChartReveal'
 import type { SaturnReturnRevealState } from '../hooks/useSaturnReturnReveal'
 import type { SolarReturnRevealState } from '../hooks/useSolarReturnReveal'
 import type { TransitRevealState } from '../hooks/useTransitReveal'
-import type { ChartData, ChartRequest, RelationshipType, SaturnReturnCycle, TransitData } from '../types'
+import type {
+  ChartData,
+  ChartRequest,
+  MixtapeDecade,
+  MixtapeGenre,
+  MixtapeResponse,
+  RelationshipType,
+  SaturnReturnCycle,
+  TransitData,
+} from '../types'
 import { AspectList } from './AspectList'
 import { ChartAngles } from './ChartAngles'
 import { ChartCarousel } from './ChartCarousel'
 import { CompareForm } from './CompareForm'
 import { GeneratingScreen } from './GeneratingScreen'
+import { MixtapeReveal } from './MixtapeReveal'
+import { MixtapeTrigger } from './MixtapeTrigger'
 import { PatternList } from './PatternList'
 import { PlacementList } from './PlacementList'
 import { ReadingDisplay } from './ReadingDisplay'
@@ -41,6 +52,11 @@ interface ChartRevealProps extends ChartRevealState {
   saturnReturnError: string | null
   onViewSaturnReturn: (cycle?: SaturnReturnCycle) => void
   onCloseSaturnReturn: () => void
+  mixtape: MixtapeResponse | null
+  mixtapeLoading: boolean
+  mixtapeError: string | null
+  onViewMixtape: (genres: MixtapeGenre[], decades: MixtapeDecade[]) => void
+  onCloseMixtape: () => void
   compareLoading: boolean
   compareError: string | null
   showManualCoordsCompare: boolean
@@ -75,6 +91,11 @@ export function ChartReveal({
   saturnReturnError,
   onViewSaturnReturn,
   onCloseSaturnReturn,
+  mixtape,
+  mixtapeLoading,
+  mixtapeError,
+  onViewMixtape,
+  onCloseMixtape,
   compareLoading,
   compareError,
   showManualCoordsCompare,
@@ -100,10 +121,17 @@ export function ChartReveal({
           {reading && !viewingSaved && (
             <SaveLink save={(token) => saveSoloChart(chart, reading, token)} pathPrefix="/c/" />
           )}
-          {reading && !isComposite && (!transit || !solarReturn || !saturnReturn) && (
+          {reading && !isComposite && (!transit || !solarReturn || !saturnReturn || !mixtape) && (
             <div className="chart-actions">
               <p className="chart-actions__label">More views of this chart</p>
               <div className="chart-actions__row">
+                {!mixtape && (
+                  <MixtapeTrigger
+                    loading={mixtapeLoading}
+                    error={mixtapeError}
+                    onSubmit={onViewMixtape}
+                  />
+                )}
                 {!transit && (
                   <div className="reveal-trigger">
                     <button
@@ -161,6 +189,7 @@ export function ChartReveal({
               {...saturnReturnReveal}
             />
           )}
+          {mixtape && <MixtapeReveal mixtape={mixtape} onClose={onCloseMixtape} />}
           {readingStatus === 'error' && <p className="notice notice-error">{readingError}</p>}
           {reading && <ReadingDisplay reading={reading} />}
           <ChartAngles angles={chart.angles} chart={chart} />

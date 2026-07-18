@@ -9,6 +9,8 @@ class Settings(BaseSettings):
     cors_origins: list[str] = ["http://localhost:5173"]
     database_url: str = ""
     clerk_secret_key: str = ""
+    spotify_client_id: str = ""
+    spotify_client_secret: str = ""
 
 
 settings = Settings()

@@ -189,3 +189,32 @@ export interface TransitInterpretation {
   aspect_interpretations: TransitAspectInterpretation[]
   synthesis: string
 }
+
+export type MixtapeGenre =
+  | 'Rock'
+  | 'Pop'
+  | 'Hip Hop'
+  | 'R&B'
+  | 'Alternative'
+  | 'Indie'
+  | 'Electronic'
+  | 'Jazz'
+  | 'Funk/Disco'
+  | 'Folk'
+  | 'Punk'
+  | 'Metal'
+  | 'Country'
+
+export type MixtapeDecade = '60s' | '70s' | '80s' | '90s' | '00s' | '10s' | '20s'
+
+export interface MixtapeTrack {
+  spotify_id: string
+  title: string
+  artist: string
+  release_year: number
+  source: 'claude' | 'backfill'
+}
+
+export interface MixtapeResponse {
+  tracks: MixtapeTrack[]
+}

@@ -340,3 +340,71 @@ class CompositeInterpretRequest(BaseModel):
     # math regardless), but the reading isn't - a friendship's composite
     # shouldn't read as romantic any more than its synastry would.
     relationship_type: RelationshipType
+
+
+# The 13-genre list is locked (see the mixtape ChaosPatch spec) - Hip Hop/Rap
+# merged (near-duplicate search results), Funk/Disco combined (70s decade
+# picks need both), Country kept despite personal feelings. A fixed Literal
+# rather than a free string so a bad genre name 422s instead of silently
+# producing an empty Spotify search.
+MixtapeGenre = Literal[
+    "Rock",
+    "Pop",
+    "Hip Hop",
+    "R&B",
+    "Alternative",
+    "Indie",
+    "Electronic",
+    "Jazz",
+    "Funk/Disco",
+    "Folk",
+    "Punk",
+    "Metal",
+    "Country",
+]
+
+MixtapeDecade = Literal["60s", "70s", "80s", "90s", "00s", "10s", "20s"]
+
+
+class MixtapeRequest(BaseModel):
+    chart: ChartData
+    # Both optional, each capped at 3 - see playlist_mood.py for how an
+    # empty selection is handled (broadens rather than blocks generation).
+    genres: list[MixtapeGenre] = []
+    decades: list[MixtapeDecade] = []
+
+    @field_validator("genres")
+    @classmethod
+    def _validate_genres(cls, v: list[str]) -> list[str]:
+        if len(v) > 3:
+            raise ValueError("up to 3 genres")
+        return v
+
+    @field_validator("decades")
+    @classmethod
+    def _validate_decades(cls, v: list[str]) -> list[str]:
+        if len(v) > 3:
+            raise ValueError("up to 3 decades")
+        return v
+
+
+# "claude" = a Claude-proposed candidate that passed Spotify verification;
+# "backfill" = a plain genre/year Spotify search result with no Claude
+# involvement at all, used to top up when too few candidates verify. The
+# frontend doesn't currently render this differently, but it's worth keeping
+# on the wire for debugging a mixtape that looks off-mood.
+MixtapeTrackSource = Literal["claude", "backfill"]
+
+
+class MixtapeTrack(BaseModel):
+    spotify_id: str
+    title: str
+    artist: str
+    # Real release year from Spotify's album.release_date, never Claude's
+    # claim - see playlist_mood.py's decade cross-check.
+    release_year: int
+    source: MixtapeTrackSource
+
+
+class MixtapeResponse(BaseModel):
+    tracks: list[MixtapeTrack]
