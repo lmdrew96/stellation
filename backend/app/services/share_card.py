@@ -66,7 +66,7 @@ _WORDMARK_FONTSIZE = 15
 # each glyph's true width so the cut-out letters crowd together like the
 # in-app ransom-note mark instead of reading as evenly-kerned text.
 _WORDMARK_ADVANCE = [0.019, 0.013, 0.014, 0.02, 0.014, 0.013, 0.009, 0.015, 0.017]
-_LOGO_WIDTH_IN = 0.3
+_LOGO_WIDTH_IN = 0.1
 
 
 def _first_sentence(text: str) -> str:
@@ -105,11 +105,13 @@ def _title_fontsize_and_wrap(title: str) -> tuple[int, int]:
     # The right column is ~5.5in wide - long solo names are fine at full
     # size, but "A & B" synastry titles routinely run past it, so longer
     # titles shrink and wrap instead of clipping off the card's edge.
+    # Permanent Marker runs wider per character than a plain bold sans, so
+    # these are tighter than a generic-font title would need.
     if len(title) <= 18:
-        return 32, 20
+        return 28, 16
     if len(title) <= 30:
-        return 24, 27
-    return 20, 32
+        return 20, 22
+    return 17, 26
 
 
 def _add_card_text(fig, title: str, tagline: str, hook: str) -> None:
@@ -117,7 +119,7 @@ def _add_card_text(fig, title: str, tagline: str, hook: str) -> None:
     wrapped_title = "\n".join(textwrap.wrap(title, wrap_width))
     fig.text(
         0.51, 0.78, wrapped_title, fontsize=fontsize,
-        fontweight="bold", color=LABEL_COLOR, va="top",
+        fontproperties=_FONT_STAMP, color=LABEL_COLOR, va="top",
     )
     fig.text(0.51, 0.66, tagline, fontsize=14, color=STRUCTURE_COLOR, va="top")
     wrapped = textwrap.fill(hook, _HOOK_WRAP_WIDTH)
