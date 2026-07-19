@@ -1,10 +1,15 @@
-import { OrbitControls } from '@react-three/drei'
+import { OrbitControls, Stars } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
+import { Bloom, EffectComposer } from '@react-three/postprocessing'
 import { useMemo, useRef } from 'react'
 import type { Mesh, PointLight } from 'three'
 import type { ChartData } from '../types'
 import { PlanetMarker } from '../stellation/PlanetMarker'
 import { paleMarkerColor, scaledRadius, solarSystemPosition } from './geometry'
+
+// The Sun burns brighter than every other body so Bloom picks it out as
+// the scene's one dramatic glow, not just another dot.
+const SUN_EMISSIVE_INTENSITY = 2.5
 
 interface SolarSystemSceneProps {
   chart: ChartData
@@ -50,6 +55,7 @@ export function SolarSystemScene({ chart, reducedMotion }: SolarSystemSceneProps
 
   return (
     <>
+      <Stars radius={70} depth={50} count={4000} factor={3} saturation={0} fade speed={reducedMotion ? 0 : 1} />
       <ambientLight intensity={0.85} />
       <pointLight position={[6, 6, 6]} intensity={65} />
       <pointLight position={[-6, -4, -6]} intensity={45} />
@@ -68,6 +74,7 @@ export function SolarSystemScene({ chart, reducedMotion }: SolarSystemSceneProps
           position={position}
           occluder={earthRef}
           markerColor={paleMarkerColor(planet.name)}
+          emissiveIntensity={planet.name === 'Sun' ? SUN_EMISSIVE_INTENSITY : undefined}
         />
       ))}
       <OrbitControls
@@ -77,6 +84,9 @@ export function SolarSystemScene({ chart, reducedMotion }: SolarSystemSceneProps
         autoRotate={!reducedMotion}
         autoRotateSpeed={0.4}
       />
+      <EffectComposer>
+        <Bloom luminanceThreshold={0.25} luminanceSmoothing={0.9} intensity={0.7} mipmapBlur />
+      </EffectComposer>
     </>
   )
 }

@@ -14,16 +14,20 @@ interface PlanetMarkerProps {
   // solarsystem/geometry.ts's paleMarkerColor) makes the glyph stand out
   // against its own marker instead of blending into it.
   markerColor?: string
+  // Lets the solar system view's Sun burn brighter than every other body
+  // (for the Bloom postprocessing pass to catch) without changing the
+  // crystal view's markers, which never pass this.
+  emissiveIntensity?: number
 }
 
-export function PlanetMarker({ name, position, occluder, markerColor }: PlanetMarkerProps) {
+export function PlanetMarker({ name, position, occluder, markerColor, emissiveIntensity = 0.6 }: PlanetMarkerProps) {
   const glyphColor = PLANET_COLOR[name] ?? '#c9e0eb'
   const sphereColor = markerColor ?? glyphColor
   return (
     <group position={position}>
       <mesh>
         <sphereGeometry args={[MARKER_RADIUS, 16, 16]} />
-        <meshStandardMaterial color={sphereColor} emissive={sphereColor} emissiveIntensity={0.6} />
+        <meshStandardMaterial color={sphereColor} emissive={sphereColor} emissiveIntensity={emissiveIntensity} />
       </mesh>
       <Html center occlude={[occluder]} distanceFactor={8} style={{ pointerEvents: 'none' }}>
         <span className="stellation-marker-glyph" style={{ color: glyphColor }}>
