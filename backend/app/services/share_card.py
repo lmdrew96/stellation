@@ -2,13 +2,17 @@ import io
 import os
 import re
 import textwrap
+from pathlib import Path
 
 os.environ.setdefault("MPLCONFIGDIR", "/tmp/matplotlib")
 
 import matplotlib
 
 matplotlib.use("Agg")
+import matplotlib.image as mpimg
 import matplotlib.pyplot as plt
+from matplotlib.font_manager import FontProperties
+from matplotlib.offsetbox import AnnotationBbox, OffsetImage
 
 from app.models.schemas import ChartData, Interpretation, SynastryData, SynastryInterpretation
 from app.services.render import (
@@ -19,9 +23,11 @@ from app.services.render import (
     _draw_synastry_chart,
 )
 
-# Standard OG/Twitter card ratio (1200x630) at 100 dpi.
+# Standard OG/Twitter card ratio (1200x630), at 2x for crisp downloads/retina
+# unfurls - the figure stays 12x6.3in so every figure-fraction coordinate
+# below is dpi-independent, only pixel density changes.
 _CARD_FIGSIZE = (12.0, 6.3)
-_CARD_DPI = 100
+_CARD_DPI = 200
 
 # A square inset, hand-fit to _CARD_FIGSIZE so the chart art reads as a
 # circle rather than an ellipse (add_axes takes figure-fraction coords,
@@ -31,6 +37,37 @@ _CHART_AXES = (0.033, 0.09, 0.433, 0.82)
 _HOOK_WRAP_WIDTH = 42
 _HOOK_MAX_CHARS = 220
 
+# Bundled locally (not read from frontend/public/) - Vercel deploys the
+# backend service from just backend/, so anything the card needs at runtime
+# has to live inside it, same as the ephemeris kernels in app/data/.
+_DATA_DIR = Path(__file__).resolve().parent.parent / "data"
+_FONT_STAMP = FontProperties(fname=str(_DATA_DIR / "fonts" / "PermanentMarker-Regular.ttf"))
+_FONT_SCRAWL = FontProperties(fname=str(_DATA_DIR / "fonts" / "Caveat-Bold.ttf"))
+_FONT_BODY = FontProperties(fname=str(_DATA_DIR / "fonts" / "SpaceGrotesk-Bold.ttf"))
+_LOGO_IMAGE = mpimg.imread(str(_DATA_DIR / "logo.png"))
+
+# Mirrors Wordmark.tsx's ransom-note letter list (mixed fonts + rotation per
+# letter) and App.css's dark-theme :nth-child(3n) color cycle - same look as
+# the in-app wordmark, just sized down for the card's corner.
+_SKY, _BLUSH, _PERIWINKLE = "#A2D2DD", "#D8CAD5", "#878BBF"
+_WORDMARK_LETTERS = [
+    ("S", _FONT_STAMP, -6, _SKY),
+    ("t", _FONT_BODY, 0, _BLUSH),
+    ("e", _FONT_SCRAWL, 4, _PERIWINKLE),
+    ("ll", _FONT_STAMP, 3, _SKY),
+    ("a", _FONT_BODY, 0, _BLUSH),
+    ("t", _FONT_SCRAWL, -4, _PERIWINKLE),
+    ("i", _FONT_STAMP, -3, _SKY),
+    ("o", _FONT_BODY, 0, _BLUSH),
+    ("n", _FONT_STAMP, 5, _PERIWINKLE),
+]
+_WORDMARK_FONTSIZE = 15
+# Hand-tuned per-letter x-advance (figure-fraction) - a little tighter than
+# each glyph's true width so the cut-out letters crowd together like the
+# in-app ransom-note mark instead of reading as evenly-kerned text.
+_WORDMARK_ADVANCE = [0.019, 0.013, 0.014, 0.02, 0.014, 0.013, 0.009, 0.015, 0.017]
+_LOGO_WIDTH_IN = 0.3
+
 
 def _first_sentence(text: str) -> str:
     match = re.search(r"[.!?](?:\s|$)", text)
@@ -38,6 +75,30 @@ def _first_sentence(text: str) -> str:
     if len(sentence) > _HOOK_MAX_CHARS:
         sentence = sentence[:_HOOK_MAX_CHARS].rsplit(" ", 1)[0] + "…"
     return sentence
+
+
+def _draw_wordmark(fig) -> None:
+    y = 0.055
+    text_width = sum(_WORDMARK_ADVANCE)
+    text_start_x = 0.965 - text_width
+
+    x = text_start_x
+    for (ch, font, rotate, color), advance in zip(
+        _WORDMARK_LETTERS, _WORDMARK_ADVANCE, strict=True
+    ):
+        fig.text(
+            x, y, ch, fontproperties=font, fontsize=_WORDMARK_FONTSIZE,
+            color=color, rotation=rotate, va="center", ha="left",
+        )
+        x += advance
+
+    logo_width_frac = _LOGO_WIDTH_IN / _CARD_FIGSIZE[0]
+    logo_zoom = _LOGO_WIDTH_IN * _CARD_DPI / _LOGO_IMAGE.shape[1]
+    logo_x = text_start_x - 0.008 - logo_width_frac / 2
+    logo_box = OffsetImage(_LOGO_IMAGE, zoom=logo_zoom)
+    fig.add_artist(
+        AnnotationBbox(logo_box, (logo_x, y), xycoords="figure fraction", frameon=False)
+    )
 
 
 def _title_fontsize_and_wrap(title: str) -> tuple[int, int]:
@@ -64,10 +125,7 @@ def _add_card_text(fig, title: str, tagline: str, hook: str) -> None:
         0.51, 0.56, wrapped, fontsize=15, color=LABEL_COLOR,
         va="top", linespacing=1.6, alpha=0.92,
     )
-    fig.text(
-        0.965, 0.05, "STELLATION", fontsize=12, color=STRUCTURE_COLOR,
-        ha="right", fontweight="bold",
-    )
+    _draw_wordmark(fig)
 
 
 def _new_card_figure() -> tuple:
