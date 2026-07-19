@@ -291,7 +291,10 @@ def _draw_orbit_rings(
         )
 
 
-def render_chart_svg(chart: ChartData, style: ChartStyle = "generative") -> str:
+def _draw_solo_chart(ax, chart: ChartData, style: ChartStyle = "generative") -> dict[str, str]:
+    """Draws a solo chart onto an existing axes - shared by render_chart_svg
+    (a standalone 6x6 figure) and share_card.py's social-card composite
+    (the same chart art inset into a wider canvas alongside text)."""
     positions = {}
     for planet in chart.planets:
         lon = _absolute_longitude(planet.sign, planet.degree_in_sign)
@@ -300,8 +303,6 @@ def render_chart_svg(chart: ChartData, style: ChartStyle = "generative") -> str:
 
     label_offsets = _label_offsets(chart.planets)
 
-    fig, ax = plt.subplots(figsize=(6, 6))
-    fig.patch.set_facecolor(BG_COLOR)
     ax.set_facecolor(BG_COLOR)
     ax.set_aspect("equal")
     ax.axis("off")
@@ -341,6 +342,13 @@ def render_chart_svg(chart: ChartData, style: ChartStyle = "generative") -> str:
 
     ax.set_xlim(-1.35, 1.35)
     ax.set_ylim(-1.35, 1.35)
+    return gid_titles
+
+
+def render_chart_svg(chart: ChartData, style: ChartStyle = "generative") -> str:
+    fig, ax = plt.subplots(figsize=(6, 6))
+    fig.patch.set_facecolor(BG_COLOR)
+    gid_titles = _draw_solo_chart(ax, chart, style)
 
     buf = io.StringIO()
     fig.savefig(buf, format="svg", bbox_inches="tight", facecolor=BG_COLOR)
@@ -429,12 +437,13 @@ def _draw_synastry_generative(ax, synastry: SynastryData) -> None:
     )
 
 
-def render_synastry_svg(synastry: SynastryData, style: ChartStyle = "generative") -> str:
+def _draw_synastry_chart(ax, synastry: SynastryData, style: ChartStyle = "generative") -> None:
+    """Draws a synastry chart onto an existing axes - shared by
+    render_synastry_svg (a standalone 6x6 figure) and share_card.py's
+    social-card composite."""
     positions_a = _ring_positions(synastry.person_a.planets, RADIUS)
     positions_b = _ring_positions(synastry.person_b.planets, SYNASTRY_INNER_RADIUS)
 
-    fig, ax = plt.subplots(figsize=(6, 6))
-    fig.patch.set_facecolor(BG_COLOR)
     ax.set_facecolor(BG_COLOR)
     ax.set_aspect("equal")
     ax.axis("off")
@@ -462,6 +471,12 @@ def render_synastry_svg(synastry: SynastryData, style: ChartStyle = "generative"
 
     ax.set_xlim(-1.35, 1.35)
     ax.set_ylim(-1.35, 1.35)
+
+
+def render_synastry_svg(synastry: SynastryData, style: ChartStyle = "generative") -> str:
+    fig, ax = plt.subplots(figsize=(6, 6))
+    fig.patch.set_facecolor(BG_COLOR)
+    _draw_synastry_chart(ax, synastry, style)
 
     buf = io.StringIO()
     fig.savefig(buf, format="svg", bbox_inches="tight", facecolor=BG_COLOR)

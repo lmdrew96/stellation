@@ -5,6 +5,17 @@ import { AuthTokenContext } from '../authTokenContext'
 export type SaveStatus = 'idle' | 'saving' | 'saved' | 'error'
 export type SavedLinkPrefix = '/c/' | '/s/'
 
+// The app route (pushed to the address bar, for the owner's own bookmarking)
+// vs. the share route (what gets copied to share with others). They differ
+// because the frontend is a pure SPA - a social crawler unfurling the app
+// route only ever sees index.html's generic static preview, never this
+// specific chart. /api/share/... is a backend-rendered shell with real
+// per-chart OG tags that redirects real humans straight into the app route.
+const SHARE_PREFIX: Record<SavedLinkPrefix, string> = {
+  '/c/': '/api/share/c/',
+  '/s/': '/api/share/s/',
+}
+
 export interface SaveLinkState {
   status: SaveStatus
   slug: string | null
@@ -12,6 +23,7 @@ export interface SaveLinkState {
   copied: boolean
   handleSave: () => void
   handleCopy: () => void
+  cardImageUrl: string | null
 }
 
 // Shared by the solo and synastry reveal screens - only the save call and
@@ -45,12 +57,14 @@ export function useSaveLink(
 
   const handleCopy = useCallback(() => {
     if (!slug) return
-    const url = `${window.location.origin}${pathPrefix}${slug}`
+    const url = `${window.location.origin}${SHARE_PREFIX[pathPrefix]}${slug}`
     navigator.clipboard.writeText(url).then(() => {
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
     })
   }, [slug, pathPrefix])
 
-  return { status, slug, errorMessage, copied, handleSave, handleCopy }
+  const cardImageUrl = slug ? `${SHARE_PREFIX[pathPrefix]}${slug}/card.png` : null
+
+  return { status, slug, errorMessage, copied, handleSave, handleCopy, cardImageUrl }
 }

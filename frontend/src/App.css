@@ -1272,11 +1272,16 @@
   cursor: pointer;
   border: 1.5px dashed var(--color-surface-line);
   border-radius: 999px;
+  text-decoration: none;
   transition: color 0.15s ease, border-color 0.15s ease;
 }
 
 .save-link-button::before {
   content: '⤴';
+}
+
+.save-link-button--secondary::before {
+  content: '⇩';
 }
 
 .save-link-button:hover {

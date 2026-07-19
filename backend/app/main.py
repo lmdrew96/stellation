@@ -19,6 +19,7 @@ from app.routers import (
     saturn_return,
     save,
     session,
+    share,
     solar_return,
     synastry,
     today,
@@ -55,3 +56,4 @@ app.include_router(session.router)
 app.include_router(profile.router)
 app.include_router(today.router)
 app.include_router(people.router)
+app.include_router(share.router)
