@@ -35,7 +35,43 @@ _CARD_DPI = 200
 _CHART_AXES = (0.033, 0.09, 0.433, 0.82)
 
 _HOOK_WRAP_WIDTH = 34
-_HOOK_MAX_CHARS = 220
+_HOOK_MAX_WORDS = 15
+_KEYWORD_COUNT = 3
+_KEYWORD_MIN_LEN = 6
+
+# General-purpose English stopwords plus a handful of the verbs/connectors
+# that show up constantly in Claude's reading prose ("carries", "suggests",
+# "grounds"...) - filtering both out biases _extract_keywords toward the
+# distinctive nouns/adjectives that actually read as "keywords" instead of
+# sentence scaffolding.
+_STOPWORDS = frozenset(
+    """
+    about above after again against all am an and any are aren't as at be
+    because been before being below between both but by can't cannot could
+    couldn't did didn't do does doesn't doing don't down during each few for
+    from further had hadn't has hasn't have haven't having here here's hers
+    herself him himself his how how's if in into is isn't it it's its itself
+    let's more most mustn't myself nor not of off on once only other ought
+    our ours ourselves out over own same shan't should shouldn't some such
+    than that that's the their theirs them themselves then there there's
+    these they they'd they'll they're they've this those through to too
+    under until very was wasn't we we'd we'll we're we've were weren't what
+    what's when when's where where's which while who who's whom why why's
+    with won't would wouldn't you you'd you'll you're you've your yours
+    yourself yourselves also within without carries carrying suggests
+    suggesting indicates indicating introduces introducing reflects
+    reflecting shows showing grounds grounding channels channeling tempers
+    tempering softens softening speaks speaking provides providing balances
+    balancing designed eventually ultimately meanwhile despite beneath
+    behind toward across genuine deep together
+    """.split()
+)
+# Terms that would always be redundant with the tagline directly above the
+# keyword line (the person's/pair's own name, the signs already spelled
+# out there, and the generic chart-kind/relationship-type words).
+_GENERIC_KEYWORD_EXCLUDE = frozenset(
+    {"sun", "moon", "ascendant", "natal", "chart", "composite", "synastry"}
+)
 
 # Standard Unicode zodiac glyphs - the frontend has no equivalent table
 # (glyphs.ts's PLANET_GLYPH only covers bodies, not signs).
@@ -80,9 +116,43 @@ _LOGO_WIDTH_IN = 0.1
 def _first_sentence(text: str) -> str:
     match = re.search(r"[.!?](?:\s|$)", text)
     sentence = text[: match.end()].strip() if match else text.strip()
-    if len(sentence) > _HOOK_MAX_CHARS:
-        sentence = sentence[:_HOOK_MAX_CHARS].rsplit(" ", 1)[0] + "…"
+    # Capping by word count (rather than the old character-count cutoff)
+    # means a long sentence always ends cleanly after a whole word instead
+    # of occasionally getting chopped mid-word before the "…".
+    words = sentence.split()
+    if len(words) > _HOOK_MAX_WORDS:
+        sentence = " ".join(words[:_HOOK_MAX_WORDS]) + "…"
     return sentence
+
+
+def _extract_keywords(text: str, exclude: set[str]) -> list[str]:
+    """Picks up to _KEYWORD_COUNT distinctive words from the full reading
+    text (not just the truncated hook, for a better sample) - a plain
+    frequency count with stopwords/short words/already-shown terms
+    (name, signs, "Sun" etc.) filtered out, no separate AI call needed
+    since this is just a decorative accent under the hook."""
+    counts: dict[str, int] = {}
+    display: dict[str, str] = {}
+    for raw in re.findall(r"[A-Za-z][A-Za-z'-]*", text):
+        word = raw.strip("'-")
+        lower = word.lower()
+        # "Person's" needs to match an exclude/stopword entry of "person" -
+        # strip the possessive before checking, but keep the original word
+        # (with its own casing) for display/counting.
+        base = lower[:-2] if lower.endswith("'s") else lower
+        if len(word) < _KEYWORD_MIN_LEN or base in _STOPWORDS or base in exclude:
+            continue
+        counts[lower] = counts.get(lower, 0) + 1
+        display.setdefault(lower, word.capitalize())
+    ranked = sorted(counts, key=lambda w: (-counts[w], text.lower().index(w)))
+    return [display[w] for w in ranked[:_KEYWORD_COUNT]]
+
+
+def _name_words(*names: str) -> set[str]:
+    words: set[str] = set()
+    for name in names:
+        words.update(re.findall(r"[A-Za-z']+", name.lower()))
+    return words
 
 
 def _draw_wordmark(fig) -> None:
@@ -136,7 +206,7 @@ def _stacked_text(fig, top_y: float, text: str, **kwargs) -> float:
     return top_y - bbox.height / fig.bbox.height
 
 
-def _add_card_text(fig, title: str, tagline: str, hook: str) -> None:
+def _add_card_text(fig, title: str, tagline: str, hook: str, keywords: list[str]) -> None:
     fontsize, wrap_width = _title_fontsize_and_wrap(title)
     wrapped_title = "\n".join(textwrap.wrap(title, wrap_width))
     y = _stacked_text(
@@ -147,10 +217,15 @@ def _add_card_text(fig, title: str, tagline: str, hook: str) -> None:
         fig, y - 0.03, textwrap.fill(tagline, 38), fontsize=18,
         color=STRUCTURE_COLOR, linespacing=1.4,
     )
-    _stacked_text(
+    y = _stacked_text(
         fig, y - 0.05, textwrap.fill(hook, _HOOK_WRAP_WIDTH), fontsize=19,
         color=LABEL_COLOR, linespacing=1.55, alpha=0.92,
     )
+    if keywords:
+        _stacked_text(
+            fig, y - 0.045, "  ·  ".join(w.upper() for w in keywords),
+            fontsize=13, color=STRUCTURE_COLOR, alpha=0.85,
+        )
     _draw_wordmark(fig)
 
 
@@ -201,8 +276,14 @@ def render_solo_card_png(chart: ChartData, interpretation: Interpretation) -> by
     fig, ax = _new_card_figure()
     _draw_solo_chart(ax, chart, style="generative")
 
+    exclude = _name_words(chart.name) | _GENERIC_KEYWORD_EXCLUDE
+    exclude |= {p.sign.lower() for p in chart.planets if p.name in ("Sun", "Moon")}
+    exclude |= {a.sign.lower() for a in chart.angles if a.name == "Ascendant"}
+    keywords = _extract_keywords(interpretation.synthesis, exclude)
+
     _add_card_text(
-        fig, chart.name, _big_three_tagline(chart), _first_sentence(interpretation.synthesis)
+        fig, chart.name, _big_three_tagline(chart),
+        _first_sentence(interpretation.synthesis), keywords,
     )
     return _save_card(fig)
 
@@ -215,6 +296,9 @@ def render_synastry_card_png(
 
     title = f"{synastry.person_a.name} & {synastry.person_b.name}"
     tagline = f"{synastry.relationship_type} synastry"
+    exclude = _name_words(synastry.person_a.name, synastry.person_b.name)
+    exclude |= _GENERIC_KEYWORD_EXCLUDE | {synastry.relationship_type.lower()}
+    keywords = _extract_keywords(interpretation.synthesis, exclude)
 
-    _add_card_text(fig, title, tagline, _first_sentence(interpretation.synthesis))
+    _add_card_text(fig, title, tagline, _first_sentence(interpretation.synthesis), keywords)
     return _save_card(fig)
