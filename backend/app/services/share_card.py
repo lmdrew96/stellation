@@ -35,6 +35,8 @@ _CARD_DPI = 200
 _CHART_AXES = (0.033, 0.09, 0.433, 0.82)
 
 _HOOK_WRAP_WIDTH = 34
+_HOOK_MAX_WORDS = 15
+_HOOK_MIN_WORDS = 6
 _KEYWORD_COUNT = 3
 _KEYWORD_MIN_LEN = 6
 
@@ -45,9 +47,10 @@ _KEYWORD_MIN_LEN = 6
 _ASTRO_JARGON = frozenset(
     """
     sun moon mercury venus mars jupiter saturn uranus neptune pluto chiron
-    lilith ascendant midheaven node nodes conjunction opposition trine
-    square sextile quincunx sesquiquadrate semisextile stellium cross yod
-    kite grand aries taurus gemini cancer leo virgo libra scorpio
+    lilith ascendant midheaven node nodes conjunction conjunct conjuncts
+    opposition opposes opposite trine trines square squares sextile
+    sextiles quincunx quincunxes sesquiquadrate semisextile stellium cross
+    yod kite grand aries taurus gemini cancer leo virgo libra scorpio
     sagittarius capricorn aquarius pisces chart charts house houses sign
     signs natal synastry composite aspect aspects degree degrees retrograde
     angle angles placement placements transit transits return returns
@@ -123,28 +126,100 @@ _WORDMARK_ADVANCE = [0.019, 0.013, 0.014, 0.02, 0.014, 0.013, 0.009, 0.015, 0.01
 _LOGO_WIDTH_IN = 0.1
 
 
+# Hard clause boundaries - semicolons/colons and comma+"but"/"yet"/"so".
+# Deliberately excludes:
+# - relative/subordinate clause markers (which/who/that/while/because...) -
+#   those introduce a DEPENDENT clause that can't stand alone ("Channels
+#   their intensity..." read as an orphaned fragment missing its subject
+#   when split out of "...which channels their intensity...").
+# - em-dashes - this reading style uses them mid-clause for a "subject—
+#   apposition list—verb" aside ("The Stellium in Taurus—Sun, Venus,
+#   Jupiter—grounds their identity..."), not to join independent clauses,
+#   so splitting there severs the subject from its own verb.
+_HARD_CLAUSE_SPLIT_RE = re.compile(r"\s*[;:]\s*|,\s+(?:but|yet|so)\s+")
+# ", and"/", or" get their own pass in _split_and_or below (not folded into
+# the regex above) - unlike "but"/"yet"/"so", this reading style leans
+# heavily on Oxford-comma lists ("Sun, Mercury, Mars, and Saturn all
+# converging..."), where splitting at the final ", and" severs a list item
+# from the verb the whole list shares. Distinguishing "list and" from
+# "clause and" needs to count commas since the last boundary, which a
+# static regex can't do.
+_AND_OR_RE = re.compile(r",\s+(?:and|or)\s+")
+
+
+def _split_and_or(text: str) -> list[str]:
+    """Splits on ", and"/", or" only when no other comma precedes it since
+    the last split point - a lone ", and" is far more likely to join two
+    independent clauses ("X happened, and Y followed") than a list item
+    is, since list items are almost always introduced alongside at least
+    one sibling comma ("Sun, Mercury, and Mars")."""
+    parts = []
+    piece_start = 0
+    window_start = 0
+    for m in _AND_OR_RE.finditer(text):
+        if "," not in text[window_start : m.start()]:
+            parts.append(text[piece_start : m.start()])
+            piece_start = m.end()
+        window_start = m.end()
+    parts.append(text[piece_start:])
+    return parts
+
+
+def _split_clauses(sentence: str) -> list[str]:
+    pieces = _HARD_CLAUSE_SPLIT_RE.split(sentence)
+    return [p for piece in pieces for p in _split_and_or(piece)]
+
+
+def _clean_clause(clause: str) -> str:
+    clause = clause.strip(" ,;:—-")
+    if not clause:
+        return clause
+    clause = clause[0].upper() + clause[1:]
+    if clause[-1] not in ".!?":
+        clause += "."
+    return clause
+
+
 def _select_hook_sentence(text: str) -> str:
-    """Picks a complete sentence describing the person's character rather
-    than chart mechanics (placements, aspects, houses) - and never
-    truncates it, so the hook always reads as a finished thought instead of
-    getting cut off with "…" mid-list. Readings routinely open with a
-    mechanics sentence ("X's chart is anchored by a Grand Cross...") before
-    pivoting to the person a sentence or two later, so this scores every
-    sentence by how much astrological jargon it contains and keeps the
-    cleanest one (ties broken by shorter, then earlier)."""
+    """Picks a complete thought, at most _HOOK_MAX_WORDS words, describing
+    the person's character rather than chart mechanics (placements,
+    aspects, houses) - a hard cap: candidates over the limit are dropped
+    entirely rather than chopped with an ellipsis, so a clause pulled from
+    the middle of a long sentence is preferred over truncating it. Scores
+    every candidate by astrological-jargon density and keeps the cleanest
+    one that fits (ties broken toward using more of the word budget, then
+    earlier position)."""
     sentences = [s.strip() for s in re.split(r"(?<=[.!?])\s+", text.strip()) if s.strip()]
     if not sentences:
-        return text.strip()
+        return _clean_clause(text.strip())
 
-    def jargon_count(sentence: str) -> int:
-        words = re.findall(r"[A-Za-z]+", sentence.lower())
+    def jargon_count(s: str) -> int:
+        words = re.findall(r"[A-Za-z]+", s.lower())
         return sum(1 for w in words if w in _ASTRO_JARGON)
 
-    best = min(
-        range(len(sentences)),
-        key=lambda i: (jargon_count(sentences[i]), len(sentences[i].split()), i),
-    )
-    return sentences[best]
+    candidates: list[str] = []
+    for sentence in sentences:
+        candidates.append(sentence)
+        candidates.extend(_split_clauses(sentence))
+
+    fits = [c.strip(" ,;:—-") for c in candidates]
+    fits = [c for c in fits if c and len(c.split()) <= _HOOK_MAX_WORDS]
+
+    if not fits:
+        # Every whole sentence AND every sub-clause ran long - vanishingly
+        # unlikely given clause-level splitting, but the cap is hard, so
+        # this still can't exceed it even as a last resort.
+        best_sentence = min(sentences, key=lambda s: (jargon_count(s), len(s.split())))
+        return _clean_clause(" ".join(best_sentence.split()[:_HOOK_MAX_WORDS]))
+
+    # A short, zero-jargon fragment ("Karmic resolution.") can otherwise
+    # beat a more substantive one that only has a single incidental jargon
+    # word - preferring _HOOK_MIN_WORDS+ candidates first (falling back to
+    # whatever's available under the cap if nothing clears that floor)
+    # keeps the pick from being *too* terse to actually read as a blurb.
+    sized = [c for c in fits if len(c.split()) >= _HOOK_MIN_WORDS] or fits
+    best = min(sized, key=lambda c: (jargon_count(c), -len(c.split())))
+    return _clean_clause(best)
 
 
 def _extract_keywords(text: str, exclude: set[str]) -> list[str]:
