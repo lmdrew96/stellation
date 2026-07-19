@@ -60,6 +60,13 @@ export default defineConfig({
       '/api': {
         target: 'http://localhost:8420',
         changeOrigin: true,
+        // Without this, share.py's og:url/redirect (built from the Host
+        // header the backend itself sees) bakes in localhost:8420 - the
+        // backend's own port, not the frontend's - since changeOrigin
+        // rewrites Host to the proxy target. xfwd adds X-Forwarded-Host/
+        // -Proto carrying the original :5173 origin, matching what a real
+        // reverse proxy (and Vercel in prod) already sends.
+        xfwd: true,
       },
     },
   },

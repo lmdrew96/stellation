@@ -37,6 +37,23 @@ _STALE_PAYLOAD_DETAIL = {
 }
 
 
+def _external_base_url(request: Request) -> str:
+    """request.base_url reflects whatever Host header the backend process
+    itself saw - fine when hit directly, wrong behind any proxy that
+    rewrites Host to its own upstream target instead of forwarding the
+    original. Vite's dev proxy does exactly that (changeOrigin: true),
+    which without this would bake the backend's own port into the
+    redirect/og:url below - a browser following it would 404 on the
+    backend instead of landing on the actual reading page. X-Forwarded-
+    Host/-Proto carry the original client-facing host (set by xfwd: true
+    in vite.config.ts locally, and natively by Vercel in prod)."""
+    forwarded_host = request.headers.get("x-forwarded-host")
+    if forwarded_host:
+        proto = request.headers.get("x-forwarded-proto", "https")
+        return f"{proto}://{forwarded_host}"
+    return str(request.base_url).rstrip("/")
+
+
 # The frontend is a pure SPA (one index.html, everything client-rendered),
 # so a social crawler hitting /c/{slug} directly only ever sees index.html's
 # generic static og:image - never this specific chart. This shell is a
@@ -46,7 +63,7 @@ _STALE_PAYLOAD_DETAIL = {
 def _shell_html(
     request: Request, *, title: str, description: str, image_path: str, redirect_path: str
 ) -> str:
-    base = str(request.base_url).rstrip("/")
+    base = _external_base_url(request)
     image_url = f"{base}{image_path}"
     redirect_url = f"{base}{redirect_path}"
     title = html_escape.escape(title)
