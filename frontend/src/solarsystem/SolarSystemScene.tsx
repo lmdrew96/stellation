@@ -4,7 +4,7 @@ import { useMemo, useRef } from 'react'
 import type { Mesh, PointLight } from 'three'
 import type { ChartData } from '../types'
 import { PlanetMarker } from '../stellation/PlanetMarker'
-import { scaledRadius, solarSystemPosition } from './geometry'
+import { paleMarkerColor, scaledRadius, solarSystemPosition } from './geometry'
 
 interface SolarSystemSceneProps {
   chart: ChartData
@@ -62,7 +62,13 @@ export function SolarSystemScene({ chart, reducedMotion }: SolarSystemSceneProps
         <OrbitRing key={`ring-${planet.name}`} radius={scaledRadius(planet.distance_au!)} />
       ))}
       {placed.map(({ planet, position }) => (
-        <PlanetMarker key={planet.name} name={planet.name} position={position} occluder={earthRef} />
+        <PlanetMarker
+          key={planet.name}
+          name={planet.name}
+          position={position}
+          occluder={earthRef}
+          markerColor={paleMarkerColor(planet.name)}
+        />
       ))}
       <OrbitControls
         enablePan={false}

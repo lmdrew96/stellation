@@ -1,4 +1,5 @@
 import type { Vector3 } from 'three'
+import { PLANET_COLOR } from '../glyphs'
 import type { Planet } from '../types'
 import { longitudeOf, positionOnSphere } from '../stellation/geometry'
 
@@ -28,4 +29,19 @@ export function scaledRadius(distanceAu: number): number {
 export function solarSystemPosition(planet: Planet): Vector3 | null {
   if (planet.ecliptic_latitude == null || planet.distance_au == null) return null
   return positionOnSphere(longitudeOf(planet), planet.ecliptic_latitude, scaledRadius(planet.distance_au))
+}
+
+const PALE_MIX = 0.6
+
+// Lightens a body's PLANET_COLOR toward white for the marker sphere itself,
+// so the glyph (rendered at full PLANET_COLOR saturation, see PlanetMarker)
+// reads clearly against its own marker instead of nearly matching it.
+export function paleMarkerColor(name: string): string {
+  const hex = PLANET_COLOR[name] ?? '#c9e0eb'
+  const n = parseInt(hex.slice(1), 16)
+  const mix = (c: number) => Math.round(c + (255 - c) * PALE_MIX)
+  const r = mix((n >> 16) & 255)
+  const g = mix((n >> 8) & 255)
+  const b = mix(n & 255)
+  return `#${[r, g, b].map((c) => c.toString(16).padStart(2, '0')).join('')}`
 }
