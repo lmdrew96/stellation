@@ -1929,6 +1929,54 @@
   white-space: nowrap;
 }
 
+/* 3D solar system view (react-three-fiber) - same planetarium-dark chrome
+   as the stellation crystal view above, for visual consistency between
+   Stellation's two 3D scenes. See .stellation-view__canvas-frame for the
+   full rationale (fixed colors regardless of site theme, etc). */
+.chart-actions__row .solarsystem-view:has(.solarsystem-view__canvas-frame) {
+  flex-basis: 100%;
+}
+
+.solarsystem-view__canvas-frame {
+  position: relative;
+  width: min(100%, 640px);
+  aspect-ratio: 4 / 3;
+  margin: 1rem auto 0;
+  border-radius: 12px;
+  overflow: hidden;
+  background: radial-gradient(circle at 50% 40%, #2a2340 0%, #14101e 100%);
+  border: 1px solid rgb(from var(--periwinkle) r g b / 0.35);
+  box-shadow: 0 12px 28px rgb(from var(--ink) r g b / 0.3);
+  animation: reveal-in 0.3s ease both;
+}
+
+.solarsystem-view__framing {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  margin: 0;
+  padding: 0.6rem 1rem;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.02em;
+  color: var(--sky);
+  background: linear-gradient(to top, rgb(20 16 30 / 0.85), transparent);
+  pointer-events: none;
+}
+
+.solarsystem-view__fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  margin: 0;
+  padding: 1.5rem;
+  text-align: center;
+  color: var(--blush);
+  font-size: 0.9rem;
+}
+
 .solar-return-trigger {
   max-width: 22rem;
   margin: 0.5rem auto 2rem;

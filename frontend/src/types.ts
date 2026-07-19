@@ -31,6 +31,11 @@ export interface Planet {
   degree_in_sign: number
   house: number
   retrograde: boolean
+  // Real ecliptic latitude (deg) + geocentric distance (AU) - only present
+  // for charts computed from a real birth moment (absent/null on composite
+  // charts and pre-existing saved charts). Powers solarsystem/geometry.ts.
+  ecliptic_latitude?: number | null
+  distance_au?: number | null
 }
 
 export interface Aspect {

@@ -1,7 +1,7 @@
 import { saveSoloChart } from '../api'
 import { ART_STYLES } from '../hooks/useChartReveal'
 import { chartCacheId } from '../insightCache'
-import { StellationView } from '../stellation/StellationView'
+import { SolarSystemView } from '../solarsystem/SolarSystemView'
 import type { ChartRevealState } from '../hooks/useChartReveal'
 import type { SaturnReturnRevealState } from '../hooks/useSaturnReturnReveal'
 import type { SolarReturnRevealState } from '../hooks/useSolarReturnReveal'
@@ -140,7 +140,10 @@ export function ChartReveal({
                   onSubmit={onViewMixtape}
                 />
               )}
-              <StellationView chart={chart} />
+              {/* Stellation crystal (stellation/) is temporarily swapped out for
+                  the solar system view while its own visual direction gets
+                  nailed down - both will live side by side once it does. */}
+              {!isComposite && <SolarSystemView chart={chart} />}
             </div>
           </div>
           {mixtape && <MixtapeReveal mixtape={mixtape} onClose={onCloseMixtape} />}

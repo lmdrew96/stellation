@@ -157,6 +157,16 @@ def _kernel_body_longitude(t, target) -> float:
     return lon.degrees % 360.0
 
 
+def _kernel_body_lat_lon_dist(t, target) -> tuple[float, float, float]:
+    """Same apparent-position call as _kernel_body_longitude, but keeping
+    the latitude/distance that call discards - used for the 3D solar
+    system view, which needs real ecliptic latitude and geocentric
+    distance in addition to the longitude the 2D wheel already uses."""
+    apparent = EARTH.at(t).observe(target).apparent()
+    lat, lon, dist = apparent.ecliptic_latlon(epoch=t)
+    return lat.degrees, lon.degrees % 360.0, dist.au
+
+
 def _lilith_longitude(jd_ut: float) -> float:
     a, b, c = _LILITH_COEFFS
     big_t = _centuries_since_j2000(jd_ut)
@@ -176,8 +186,8 @@ def _ayanamsa(jd_ut: float) -> float:
     return a * big_t * big_t + b * big_t + c
 
 
-def _chiron_longitude(jd_ut: float) -> float:
-    """Geocentric apparent ecliptic longitude of date for Chiron.
+def _chiron_lat_lon_dist(jd_ut: float) -> tuple[float, float, float]:
+    """Geocentric apparent ecliptic lat/lon/distance of date for Chiron.
     Skips iterative light-time/aberration correction (unlike the kernel
     bodies above) - deliberately: at Chiron's ~13 AU average distance those
     corrections are on the order of a few arcseconds, ~100-1000x below this
@@ -192,7 +202,14 @@ def _chiron_longitude(jd_ut: float) -> float:
         state, _lt = spice.spkezr(_CHIRON_NAIF_ID, et, "J2000", "NONE", "399")
     xyz_au = np.array(state[:3]) / _AU_KM
     x, y, z = mxv(framelib.ecliptic_frame.rotation_at(t), xyz_au)
-    return np.degrees(np.arctan2(y, x)) % 360.0
+    dist_au = float(np.linalg.norm([x, y, z]))
+    lat_deg = float(np.degrees(np.arcsin(z / dist_au)))
+    lon_deg = float(np.degrees(np.arctan2(y, x)) % 360.0)
+    return lat_deg, lon_deg, dist_au
+
+
+def _chiron_longitude(jd_ut: float) -> float:
+    return _chiron_lat_lon_dist(jd_ut)[1]
 
 
 def _angular_speed(lon_before: float, lon_after: float, dt_days: float) -> float:
@@ -231,24 +248,56 @@ def saturn_longitude(jd_ut: float, zodiac: ZodiacMode = "tropical") -> float:
 
 
 def compute_raw_positions(jd_ut: float, zodiac: ZodiacMode = "tropical") -> list[dict]:
-    """Longitude + speed per placement. Internal use only (aspect math needs
-    speed, which isn't part of the public Planet shape)."""
+    """Longitude + speed + latitude/distance per placement. Internal use
+    only (aspect math needs speed, which isn't part of the public Planet
+    shape; latitude/distance flow out through compute_planets instead)."""
     t = TS.ut1_jd(jd_ut)
     positions = []
 
+    moon_distance_au = 0.0
     for name, key in PLANET_KEYS:
         target = _EPH[key]
         lon, speed = _body_longitude_and_speed(
             jd_ut, lambda j, target=target: _kernel_body_longitude(TS.ut1_jd(j), target)
         )
-        positions.append({"name": name, "longitude": lon, "speed": speed})
+        lat_deg, _lon_check, dist_au = _kernel_body_lat_lon_dist(t, target)
+        if name == "Moon":
+            moon_distance_au = dist_au
+        positions.append(
+            {
+                "name": name,
+                "longitude": lon,
+                "speed": speed,
+                "latitude": lat_deg,
+                "distance_au": dist_au,
+            }
+        )
 
+    # Lilith is the mean lunar apogee, not an independently observed body -
+    # it has no real distance/latitude of its own, so it borrows the Moon's
+    # real geocentric distance at this moment (same orbital neighborhood)
+    # and sits on the ecliptic (mean orbital elements carry no latitude).
     positions.append(
-        {"name": "Lilith", "longitude": _lilith_longitude(jd_ut), "speed": _lilith_speed(jd_ut)}
+        {
+            "name": "Lilith",
+            "longitude": _lilith_longitude(jd_ut),
+            "speed": _lilith_speed(jd_ut),
+            "latitude": 0.0,
+            "distance_au": moon_distance_au,
+        }
     )
 
     chiron_lon, chiron_speed = _body_longitude_and_speed(jd_ut, _chiron_longitude)
-    positions.append({"name": "Chiron", "longitude": chiron_lon, "speed": chiron_speed})
+    chiron_lat, _chiron_lon_check, chiron_dist = _chiron_lat_lon_dist(jd_ut)
+    positions.append(
+        {
+            "name": "Chiron",
+            "longitude": chiron_lon,
+            "speed": chiron_speed,
+            "latitude": chiron_lat,
+            "distance_au": chiron_dist,
+        }
+    )
 
     if zodiac == "sidereal":
         ayan = _ayanamsa(jd_ut)
@@ -300,6 +349,8 @@ def compute_planets(
                 "degree_in_sign": round(degree_in_sign, 4),
                 "house": _house_of(p["longitude"], cusps),
                 "retrograde": p["speed"] < 0,
+                "ecliptic_latitude": p.get("latitude"),
+                "distance_au": p.get("distance_au"),
             }
         )
     return planets

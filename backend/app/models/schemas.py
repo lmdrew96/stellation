@@ -57,6 +57,14 @@ class Planet(BaseModel):
     degree_in_sign: float
     house: int
     retrograde: bool
+    # Real ecliptic latitude (deg) + geocentric distance (AU) - additive,
+    # only consumed by the 3D solar system view (frontend/src/solarsystem/).
+    # Optional/defaulted so charts saved before this field existed (and
+    # composite charts, whose planets are midpoint-synthesized rather than
+    # computed from a real jd_ut) still deserialize cleanly - same pattern
+    # as ChartData.angles below.
+    ecliptic_latitude: float | None = None
+    distance_au: float | None = None
 
 
 class Aspect(BaseModel):
