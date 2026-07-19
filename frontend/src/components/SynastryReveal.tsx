@@ -17,6 +17,7 @@ import { SynastryReadingDisplay } from './SynastryReadingDisplay'
 interface SynastryRevealProps extends SynastryRevealState {
   synastry: SynastryData
   viewingSaved?: boolean
+  slug?: string
   composite: ChartData | null
   compositeReveal: CompositeRevealState
   compositeLoading: boolean
@@ -34,6 +35,7 @@ export function SynastryReveal({
   readingError,
   artSettled,
   viewingSaved,
+  slug,
   composite,
   compositeReveal,
   compositeLoading,
@@ -70,8 +72,12 @@ export function SynastryReveal({
               )}
             </div>
           </div>
-          {reading && !viewingSaved && (
-            <SaveLink save={(token) => saveSynastryChart(synastry, reading, token)} pathPrefix="/s/" />
+          {reading && (
+            <SaveLink
+              save={(token) => saveSynastryChart(synastry, reading, token)}
+              pathPrefix="/s/"
+              initialSlug={viewingSaved ? slug : undefined}
+            />
           )}
           <div className="data-columns">
             <div>

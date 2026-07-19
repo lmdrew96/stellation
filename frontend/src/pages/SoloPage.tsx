@@ -96,6 +96,7 @@ export function SoloPage() {
         <ChartReveal
           chart={session.chart}
           viewingSaved={session.soloViewingSaved}
+          slug={slug}
           {...session.soloReveal}
           transit={session.transit}
           transitReveal={session.transitReveal}

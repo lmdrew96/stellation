@@ -4,12 +4,14 @@ import { useSaveLink } from '../hooks/useSaveLink'
 interface SaveLinkProps {
   save: (token: string | undefined) => Promise<string>
   pathPrefix: SavedLinkPrefix
+  initialSlug?: string
 }
 
-export function SaveLink({ save, pathPrefix }: SaveLinkProps) {
+export function SaveLink({ save, pathPrefix, initialSlug }: SaveLinkProps) {
   const { status, errorMessage, copied, handleSave, handleCopy, cardImageUrl } = useSaveLink(
     save,
     pathPrefix,
+    initialSlug,
   )
 
   if (status === 'saved') {

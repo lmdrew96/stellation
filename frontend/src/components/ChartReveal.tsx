@@ -35,6 +35,7 @@ import { TransitReveal } from './TransitReveal'
 interface ChartRevealProps extends ChartRevealState {
   chart: ChartData
   viewingSaved?: boolean
+  slug?: string
   transit: TransitData | null
   transitReveal: TransitRevealState
   transitLoading: boolean
@@ -74,6 +75,7 @@ export function ChartReveal({
   readingError,
   artSettled,
   viewingSaved,
+  slug,
   transit,
   transitReveal,
   transitLoading,
@@ -127,8 +129,12 @@ export function ChartReveal({
               {reading && <ReadingDisplay reading={reading} />}
             </div>
           </div>
-          {reading && !viewingSaved && (
-            <SaveLink save={(token) => saveSoloChart(chart, reading, token)} pathPrefix="/c/" />
+          {reading && (
+            <SaveLink
+              save={(token) => saveSoloChart(chart, reading, token)}
+              pathPrefix="/c/"
+              initialSlug={viewingSaved ? slug : undefined}
+            />
           )}
           <div className="chart-actions">
             <p className="chart-actions__label">Cool Tricks</p>

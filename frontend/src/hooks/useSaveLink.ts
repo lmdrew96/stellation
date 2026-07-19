@@ -27,13 +27,18 @@ export interface SaveLinkState {
 }
 
 // Shared by the solo and synastry reveal screens - only the save call and
-// the URL prefix ('/c/' vs '/s/') differ between them.
+// the URL prefix ('/c/' vs '/s/') differ between them. initialSlug is set
+// when the page was opened via its own /c|s/:slug permalink - the chart is
+// already saved, so this starts straight in the 'saved' state (Copy
+// link/Download card) instead of showing "Save & get link" again, which
+// would just insert a duplicate row for a chart that's already there.
 export function useSaveLink(
   save: (token: string | undefined) => Promise<string>,
   pathPrefix: SavedLinkPrefix,
+  initialSlug?: string,
 ): SaveLinkState {
-  const [status, setStatus] = useState<SaveStatus>('idle')
-  const [slug, setSlug] = useState<string | null>(null)
+  const [status, setStatus] = useState<SaveStatus>(initialSlug ? 'saved' : 'idle')
+  const [slug, setSlug] = useState<string | null>(initialSlug ?? null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
   const getToken = useContext(AuthTokenContext)

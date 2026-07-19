@@ -77,6 +77,7 @@ export function SynastryPage() {
         <SynastryReveal
           synastry={session.synastry}
           viewingSaved={session.synastryViewingSaved}
+          slug={slug}
           {...session.synastryReveal}
           composite={session.composite?.chart ?? null}
           compositeReveal={session.compositeReveal}
