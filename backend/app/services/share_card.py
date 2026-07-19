@@ -34,8 +34,18 @@ _CARD_DPI = 200
 # which aren't 1:1 with inches once width != height).
 _CHART_AXES = (0.033, 0.09, 0.433, 0.82)
 
-_HOOK_WRAP_WIDTH = 42
+_HOOK_WRAP_WIDTH = 34
 _HOOK_MAX_CHARS = 220
+
+# Mirrors frontend/src/glyphs.ts's PLANET_GLYPH (Sun/Moon only - the other
+# bodies don't appear in the big-three tagline) plus the standard Unicode
+# zodiac glyphs, which the frontend has no equivalent table for yet.
+_BODY_GLYPH = {"Sun": "☉", "Moon": "☽"}
+_SIGN_GLYPH = {
+    "Aries": "♈", "Taurus": "♉", "Gemini": "♊", "Cancer": "♋",
+    "Leo": "♌", "Virgo": "♍", "Libra": "♎", "Scorpio": "♏",
+    "Sagittarius": "♐", "Capricorn": "♑", "Aquarius": "♒", "Pisces": "♓",
+}
 
 # Bundled locally (not read from frontend/public/) - Vercel deploys the
 # backend service from just backend/, so anything the card needs at runtime
@@ -108,24 +118,24 @@ def _title_fontsize_and_wrap(title: str) -> tuple[int, int]:
     # Permanent Marker runs wider per character than a plain bold sans, so
     # these are tighter than a generic-font title would need.
     if len(title) <= 18:
-        return 28, 16
+        return 34, 13
     if len(title) <= 30:
-        return 20, 22
-    return 17, 26
+        return 25, 18
+    return 21, 21
 
 
 def _add_card_text(fig, title: str, tagline: str, hook: str) -> None:
     fontsize, wrap_width = _title_fontsize_and_wrap(title)
     wrapped_title = "\n".join(textwrap.wrap(title, wrap_width))
     fig.text(
-        0.51, 0.78, wrapped_title, fontsize=fontsize,
+        0.51, 0.82, wrapped_title, fontsize=fontsize,
         fontproperties=_FONT_STAMP, color=LABEL_COLOR, va="top",
     )
-    fig.text(0.51, 0.66, tagline, fontsize=14, color=STRUCTURE_COLOR, va="top")
+    fig.text(0.51, 0.62, tagline, fontsize=18, color=STRUCTURE_COLOR, va="top")
     wrapped = textwrap.fill(hook, _HOOK_WRAP_WIDTH)
     fig.text(
-        0.51, 0.56, wrapped, fontsize=15, color=LABEL_COLOR,
-        va="top", linespacing=1.6, alpha=0.92,
+        0.51, 0.52, wrapped, fontsize=19, color=LABEL_COLOR,
+        va="top", linespacing=1.55, alpha=0.92,
     )
     _draw_wordmark(fig)
 
@@ -144,15 +154,39 @@ def _save_card(fig) -> bytes:
     return buf.getvalue()
 
 
+def _big_three_tagline(chart: ChartData) -> str:
+    kind_label = "composite chart" if chart.chart_kind == "composite" else "natal chart"
+    sun_sign = next((p.sign for p in chart.planets if p.name == "Sun"), None)
+    moon_sign = next((p.sign for p in chart.planets if p.name == "Moon"), None)
+    # Composite/solar-return/Saturn-return charts and pre-angles saved
+    # charts all deserialize with an empty angles list (see ChartData.angles)
+    # - no real Ascendant to show, so the big three degrades to a big two.
+    asc_sign = next((a.sign for a in chart.angles if a.name == "Ascendant"), None)
+
+    if not sun_sign or not moon_sign:
+        return kind_label.capitalize()
+
+    parts = [
+        f"{_BODY_GLYPH['Sun']}{_SIGN_GLYPH[sun_sign]} Sun",
+        f"{_BODY_GLYPH['Moon']}{_SIGN_GLYPH[moon_sign]} Moon",
+    ]
+    if asc_sign:
+        # "ASC" + Gemini's glyph with no gap reads as "ASCII" - unlike the
+        # Sun/Moon pairs above, a text abbreviation butted against a glyph
+        # needs the space to stay legible.
+        parts.append(f"ASC {_SIGN_GLYPH[asc_sign]} Ascendant")
+    else:
+        parts.append(kind_label)
+    return "  ·  ".join(parts)
+
+
 def render_solo_card_png(chart: ChartData, interpretation: Interpretation) -> bytes:
     fig, ax = _new_card_figure()
     _draw_solo_chart(ax, chart, style="generative")
 
-    sun_sign = next((p.sign for p in chart.planets if p.name == "Sun"), None)
-    kind_label = "composite chart" if chart.chart_kind == "composite" else "natal chart"
-    tagline = f"☉ Sun in {sun_sign} · {kind_label}" if sun_sign else kind_label.capitalize()
-
-    _add_card_text(fig, chart.name, tagline, _first_sentence(interpretation.synthesis))
+    _add_card_text(
+        fig, chart.name, _big_three_tagline(chart), _first_sentence(interpretation.synthesis)
+    )
     return _save_card(fig)
 
 
