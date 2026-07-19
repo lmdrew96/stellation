@@ -35,9 +35,25 @@ _CARD_DPI = 200
 _CHART_AXES = (0.033, 0.09, 0.433, 0.82)
 
 _HOOK_WRAP_WIDTH = 34
-_HOOK_MAX_WORDS = 15
 _KEYWORD_COUNT = 3
 _KEYWORD_MIN_LEN = 6
+
+# Astrology mechanics words (planets/points, signs, aspect types, pattern
+# names, chart-structure terms) - excluded from both the hook sentence
+# selection and the keyword line so both describe the person's character
+# rather than restating placements the chart art/tagline already show.
+_ASTRO_JARGON = frozenset(
+    """
+    sun moon mercury venus mars jupiter saturn uranus neptune pluto chiron
+    lilith ascendant midheaven node nodes conjunction opposition trine
+    square sextile quincunx sesquiquadrate semisextile stellium cross yod
+    kite grand aries taurus gemini cancer leo virgo libra scorpio
+    sagittarius capricorn aquarius pisces chart charts house houses sign
+    signs natal synastry composite aspect aspects degree degrees retrograde
+    angle angles placement placements transit transits return returns
+    cycle
+    """.split()
+)
 
 # General-purpose English stopwords plus a handful of the verbs/connectors
 # that show up constantly in Claude's reading prose ("carries", "suggests",
@@ -65,12 +81,6 @@ _STOPWORDS = frozenset(
     balancing designed eventually ultimately meanwhile despite beneath
     behind toward across genuine deep together
     """.split()
-)
-# Terms that would always be redundant with the tagline directly above the
-# keyword line (the person's/pair's own name, the signs already spelled
-# out there, and the generic chart-kind/relationship-type words).
-_GENERIC_KEYWORD_EXCLUDE = frozenset(
-    {"sun", "moon", "ascendant", "natal", "chart", "composite", "synastry"}
 )
 
 # Standard Unicode zodiac glyphs - the frontend has no equivalent table
@@ -113,24 +123,37 @@ _WORDMARK_ADVANCE = [0.019, 0.013, 0.014, 0.02, 0.014, 0.013, 0.009, 0.015, 0.01
 _LOGO_WIDTH_IN = 0.1
 
 
-def _first_sentence(text: str) -> str:
-    match = re.search(r"[.!?](?:\s|$)", text)
-    sentence = text[: match.end()].strip() if match else text.strip()
-    # Capping by word count (rather than the old character-count cutoff)
-    # means a long sentence always ends cleanly after a whole word instead
-    # of occasionally getting chopped mid-word before the "…".
-    words = sentence.split()
-    if len(words) > _HOOK_MAX_WORDS:
-        sentence = " ".join(words[:_HOOK_MAX_WORDS]) + "…"
-    return sentence
+def _select_hook_sentence(text: str) -> str:
+    """Picks a complete sentence describing the person's character rather
+    than chart mechanics (placements, aspects, houses) - and never
+    truncates it, so the hook always reads as a finished thought instead of
+    getting cut off with "…" mid-list. Readings routinely open with a
+    mechanics sentence ("X's chart is anchored by a Grand Cross...") before
+    pivoting to the person a sentence or two later, so this scores every
+    sentence by how much astrological jargon it contains and keeps the
+    cleanest one (ties broken by shorter, then earlier)."""
+    sentences = [s.strip() for s in re.split(r"(?<=[.!?])\s+", text.strip()) if s.strip()]
+    if not sentences:
+        return text.strip()
+
+    def jargon_count(sentence: str) -> int:
+        words = re.findall(r"[A-Za-z]+", sentence.lower())
+        return sum(1 for w in words if w in _ASTRO_JARGON)
+
+    best = min(
+        range(len(sentences)),
+        key=lambda i: (jargon_count(sentences[i]), len(sentences[i].split()), i),
+    )
+    return sentences[best]
 
 
 def _extract_keywords(text: str, exclude: set[str]) -> list[str]:
     """Picks up to _KEYWORD_COUNT distinctive words from the full reading
-    text (not just the truncated hook, for a better sample) - a plain
-    frequency count with stopwords/short words/already-shown terms
-    (name, signs, "Sun" etc.) filtered out, no separate AI call needed
-    since this is just a decorative accent under the hook."""
+    text (not just the hook, for a better sample) describing the person
+    rather than the chart - a plain frequency count with stopwords, astro
+    jargon (planets, signs, aspects, chart-structure terms), and already-
+    shown terms (name, relationship type) filtered out. No separate AI
+    call needed since this is just a decorative accent under the hook."""
     counts: dict[str, int] = {}
     display: dict[str, str] = {}
     for raw in re.findall(r"[A-Za-z][A-Za-z'-]*", text):
@@ -140,7 +163,12 @@ def _extract_keywords(text: str, exclude: set[str]) -> list[str]:
         # strip the possessive before checking, but keep the original word
         # (with its own casing) for display/counting.
         base = lower[:-2] if lower.endswith("'s") else lower
-        if len(word) < _KEYWORD_MIN_LEN or base in _STOPWORDS or base in exclude:
+        if (
+            len(word) < _KEYWORD_MIN_LEN
+            or base in _STOPWORDS
+            or base in _ASTRO_JARGON
+            or base in exclude
+        ):
             continue
         counts[lower] = counts.get(lower, 0) + 1
         display.setdefault(lower, word.capitalize())
@@ -276,14 +304,11 @@ def render_solo_card_png(chart: ChartData, interpretation: Interpretation) -> by
     fig, ax = _new_card_figure()
     _draw_solo_chart(ax, chart, style="generative")
 
-    exclude = _name_words(chart.name) | _GENERIC_KEYWORD_EXCLUDE
-    exclude |= {p.sign.lower() for p in chart.planets if p.name in ("Sun", "Moon")}
-    exclude |= {a.sign.lower() for a in chart.angles if a.name == "Ascendant"}
-    keywords = _extract_keywords(interpretation.synthesis, exclude)
+    keywords = _extract_keywords(interpretation.synthesis, _name_words(chart.name))
 
     _add_card_text(
         fig, chart.name, _big_three_tagline(chart),
-        _first_sentence(interpretation.synthesis), keywords,
+        _select_hook_sentence(interpretation.synthesis), keywords,
     )
     return _save_card(fig)
 
@@ -297,8 +322,10 @@ def render_synastry_card_png(
     title = f"{synastry.person_a.name} & {synastry.person_b.name}"
     tagline = f"{synastry.relationship_type} synastry"
     exclude = _name_words(synastry.person_a.name, synastry.person_b.name)
-    exclude |= _GENERIC_KEYWORD_EXCLUDE | {synastry.relationship_type.lower()}
+    exclude |= {synastry.relationship_type.lower()}
     keywords = _extract_keywords(interpretation.synthesis, exclude)
 
-    _add_card_text(fig, title, tagline, _first_sentence(interpretation.synthesis), keywords)
+    _add_card_text(
+        fig, title, tagline, _select_hook_sentence(interpretation.synthesis), keywords
+    )
     return _save_card(fig)
