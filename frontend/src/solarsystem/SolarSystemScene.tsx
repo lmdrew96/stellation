@@ -2,6 +2,7 @@ import { OrbitControls, Stars } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
 import { Bloom, EffectComposer } from '@react-three/postprocessing'
 import { useMemo, useRef } from 'react'
+import { CanvasTexture, SRGBColorSpace } from 'three'
 import type { Mesh, PointLight } from 'three'
 import type { ChartData } from '../types'
 import { PlanetMarker } from '../stellation/PlanetMarker'
@@ -17,6 +18,45 @@ interface SolarSystemSceneProps {
 }
 
 const EARTH_RADIUS = 0.18
+const EARTH_OCEAN_COLOR = '#244952'
+const EARTH_LAND_COLOR = '#849440'
+const EARTH_ICE_COLOR = '#dbd5e2'
+
+// Procedural continent splotches on a plain canvas, painted once and reused
+// for the session (no image asset/new dependency needed) - low-poly Earth
+// otherwise reads as an unlabeled teal ball, not recognizably "Earth."
+// Land ellipses avoid the poles so the ice-cap bands stay unbroken.
+function useEarthTexture(): CanvasTexture {
+  return useMemo(() => {
+    const size = 128
+    const canvas = document.createElement('canvas')
+    canvas.width = size
+    canvas.height = size
+    const ctx = canvas.getContext('2d')!
+
+    ctx.fillStyle = EARTH_OCEAN_COLOR
+    ctx.fillRect(0, 0, size, size)
+
+    ctx.fillStyle = EARTH_LAND_COLOR
+    for (let i = 0; i < 16; i++) {
+      const x = Math.random() * size
+      const y = size * 0.15 + Math.random() * size * 0.7
+      const rx = 6 + Math.random() * 16
+      const ry = rx * (0.5 + Math.random() * 0.5)
+      ctx.beginPath()
+      ctx.ellipse(x, y, rx, ry, Math.random() * Math.PI, 0, Math.PI * 2)
+      ctx.fill()
+    }
+
+    ctx.fillStyle = EARTH_ICE_COLOR
+    ctx.fillRect(0, 0, size, size * 0.06)
+    ctx.fillRect(0, size * 0.94, size, size * 0.06)
+
+    const texture = new CanvasTexture(canvas)
+    texture.colorSpace = SRGBColorSpace
+    return texture
+  }, [])
+}
 
 // Mirrors the crystal scene's CameraLight (StellationScene.tsx) - keeps
 // whatever's currently facing the viewer lit regardless of where the two
@@ -38,6 +78,11 @@ function OrbitRing({ radius }: { radius: number }) {
 
 export function SolarSystemScene({ chart, reducedMotion }: SolarSystemSceneProps) {
   const earthRef = useRef<Mesh>(null!)
+  const earthTexture = useEarthTexture()
+
+  useFrame((_state, delta) => {
+    if (!reducedMotion) earthRef.current.rotation.y += delta * 0.15
+  })
 
   // Only bodies with a real birth-moment position render here - composite
   // charts and pre-existing saved charts have no ecliptic_latitude/
@@ -62,7 +107,7 @@ export function SolarSystemScene({ chart, reducedMotion }: SolarSystemSceneProps
       <CameraLight />
       <mesh ref={earthRef}>
         <sphereGeometry args={[EARTH_RADIUS, 24, 24]} />
-        <meshStandardMaterial color="#244952" emissive="#244952" emissiveIntensity={0.4} />
+        <meshStandardMaterial map={earthTexture} emissive={EARTH_OCEAN_COLOR} emissiveIntensity={0.25} />
       </mesh>
       {placed.map(({ planet }) => (
         <OrbitRing key={`ring-${planet.name}`} radius={scaledRadius(planet.distance_au!)} />
