@@ -180,11 +180,20 @@ def _big_three_tagline(chart: ChartData) -> str:
     if not sun_sign or not moon_sign:
         return kind_label.capitalize()
 
+    # Non-breaking spaces (NBSP) glue each glyph/sign/placement triplet into
+    # one unit - textwrap.fill (called on this in _add_card_text) only knows
+    # to break on whitespace, so a plain space here risked wrapping mid-
+    # triplet (e.g. "Gemini" landing on one line, "Ascendant" on the next).
+    # The "  ·  " joins below stay plain spaces so a wrap CAN land there.
+    nbsp = " "
     parts = [
-        f"{_SIGN_GLYPH[sun_sign]} {sun_sign} Sun",
-        f"{_SIGN_GLYPH[moon_sign]} {moon_sign} Moon",
+        f"{_SIGN_GLYPH[sun_sign]}{nbsp}{sun_sign}{nbsp}Sun",
+        f"{_SIGN_GLYPH[moon_sign]}{nbsp}{moon_sign}{nbsp}Moon",
     ]
-    parts.append(f"{_SIGN_GLYPH[asc_sign]} {asc_sign} Ascendant" if asc_sign else kind_label)
+    if asc_sign:
+        parts.append(f"{_SIGN_GLYPH[asc_sign]}{nbsp}{asc_sign}{nbsp}Ascendant")
+    else:
+        parts.append(kind_label.replace(" ", nbsp))
     return "  ·  ".join(parts)
 
 
