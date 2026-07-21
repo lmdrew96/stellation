@@ -1569,6 +1569,7 @@
 
 .data-section {
   margin-bottom: 2rem;
+  min-width: 0;
 }
 
 .chart-angles {
@@ -1643,6 +1644,16 @@
   margin-bottom: 0;
 }
 
+/* A grid item's automatic minimum width defaults to its content's min-content
+   size, not 0 - so a wide .data-table nested inside (via .data-section) can
+   blow out this column's 1fr track instead of being clipped to it, no matter
+   what overflow rule .data-table itself has. min-width: 0 here is what makes
+   the 1fr track (and .data-table's own overflow-x: auto, below) authoritative
+   over the grid item's content width. */
+.data-columns__stack {
+  min-width: 0;
+}
+
 @media (max-width: 640px) {
   .data-columns {
     grid-template-columns: 1fr;
@@ -1660,6 +1671,7 @@
 .data-table {
   display: flex;
   flex-direction: column;
+  min-width: 0;
 }
 
 .data-table__row {
