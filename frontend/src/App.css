@@ -1378,7 +1378,10 @@
 .my-charts-list__name {
   font-family: var(--font-body);
   font-weight: 600;
-  overflow-wrap: anywhere;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .my-charts-list__kind {
