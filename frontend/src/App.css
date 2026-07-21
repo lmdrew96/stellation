@@ -1788,6 +1788,35 @@
   font-style: italic;
 }
 
+/* Below medium width, a long label (e.g. "Transiting Mercury square natal
+   Venus") plus its meta column no longer both fit - rather than letting the
+   grid's 1fr column squeeze the label down toward its per-character minimum
+   (the same collapse-to-vertical-stack bug .my-charts-list__name had), each
+   row keeps its natural single-line width and the table scrolls horizontally
+   instead. This covers every .data-table consumer (PlanetList, AspectList,
+   SynastryAspectList, TransitAspectList, PatternList, PlacementList) from
+   one shared rule, at any row-content length or screen size. */
+@media (max-width: 768px) {
+  .data-table {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .data-table > .data-table__row,
+  .data-table > .data-table__item {
+    width: max-content;
+    min-width: 100%;
+  }
+
+  .data-table__row {
+    grid-template-columns: 2rem max-content max-content;
+  }
+
+  .data-table__label {
+    white-space: nowrap;
+  }
+}
+
 /* ---------- secondary chart views (transits, composite, solar return) ---------- */
 
 /* A single discoverable row for the "more views" actions (transits, solar
