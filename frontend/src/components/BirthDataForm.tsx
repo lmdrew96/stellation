@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
-import type { ChartRequest } from '../types'
+import type { ChartRequest, SavedPerson } from '../types'
 import { ChartSettingsFields, defaultChartSettings } from './ChartSettingsFields'
 import type { ChartSettingsValue } from './ChartSettingsFields'
-import { PersonFields, emptyPersonFields, personFieldsToRequest } from './PersonFields'
+import { PersonFields, emptyPersonFields, personFieldsFromSavedPerson, personFieldsToRequest } from './PersonFields'
 import type { PersonFieldsValue } from './PersonFields'
 
 interface BirthDataFormProps {
@@ -17,6 +17,7 @@ interface BirthDataFormProps {
   // different button copy for the same submit/submitting states.
   submitLabel?: string
   submittingLabel?: string
+  savedPeople?: SavedPerson[]
 }
 
 export function BirthDataForm({
@@ -27,6 +28,7 @@ export function BirthDataForm({
   initialSettings,
   submitLabel = 'Generate chart',
   submittingLabel = 'Calculating…',
+  savedPeople,
 }: BirthDataFormProps) {
   const [person, setPerson] = useState(initialPerson ?? emptyPersonFields())
   const [settings, setSettings] = useState(initialSettings ?? defaultChartSettings())
@@ -45,6 +47,8 @@ export function BirthDataForm({
           onChange={setPerson}
           showManualCoords={showManualCoords}
           hidePlace
+          savedPeople={savedPeople}
+          onSelectSaved={(saved) => setPerson(personFieldsFromSavedPerson(saved))}
         />
       </div>
       <div className="form-row form-row--settings">

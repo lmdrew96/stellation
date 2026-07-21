@@ -708,6 +708,43 @@
   margin: -0.3rem 0 0.2rem;
 }
 
+.person-fields__name-field {
+  position: relative;
+}
+
+.person-fields__suggestions {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 5;
+  margin: 0.3rem 0 0;
+  padding: 0.3rem;
+  list-style: none;
+  background: var(--color-surface);
+  border: 1px solid var(--color-surface-line);
+  border-radius: 5px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+}
+
+.person-fields__suggestion {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  border-radius: 4px;
+  padding: 0.5rem 0.6rem;
+  font: 400 0.95rem var(--font-body);
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+.person-fields__suggestion:hover,
+.person-fields__suggestion:focus-visible {
+  background: var(--color-bg);
+}
+
 .synastry-person-heading {
   font-family: var(--font-mono);
   font-size: 0.8rem;

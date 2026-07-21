@@ -1,4 +1,6 @@
-import type { ChartData, ChartRequest } from '../types'
+import { useState } from 'react'
+import { PROFILE_SAVED_PERSON_ID } from '../hooks/useSavedPeopleList'
+import type { ChartData, ChartRequest, SavedPerson } from '../types'
 
 export interface PersonFieldsValue {
   name: string
@@ -40,6 +42,18 @@ export function personFieldsFromChart(chart: ChartData): PersonFieldsValue {
   }
 }
 
+export function personFieldsFromSavedPerson(person: SavedPerson): PersonFieldsValue {
+  return {
+    name: person.name,
+    birthDate: person.birth_date,
+    birthTime: person.birth_time,
+    birthPlace: person.birth_place ?? '',
+    pronouns: person.pronouns ?? '',
+    manualLat: person.manual_lat !== undefined ? String(person.manual_lat) : '',
+    manualLng: person.manual_lng !== undefined ? String(person.manual_lng) : '',
+  }
+}
+
 type PersonRequestFields = Pick<
   ChartRequest,
   'name' | 'birth_date' | 'birth_time' | 'birth_place' | 'pronouns' | 'manual_lat' | 'manual_lng'
@@ -72,24 +86,76 @@ interface PersonFieldsProps {
   // the zodiac/houses pickers, instead of here - SynastryForm still wants
   // it bundled with the rest of a person's fields, so this defaults to shown.
   hidePlace?: boolean
+  // When provided, typing a name shows matching saved people below the
+  // input; picking one overwrites the whole form via onSelectSaved instead
+  // of just the name field, so birth date/time/place/pronouns come along
+  // with it. Omitted entirely on forms with no saved-people context (e.g.
+  // the Friend Diary's own "Add a person" form).
+  savedPeople?: SavedPerson[]
+  onSelectSaved?: (person: SavedPerson) => void
 }
 
-export function PersonFields({ idPrefix, value, onChange, showManualCoords, hidePlace }: PersonFieldsProps) {
+export function PersonFields({
+  idPrefix,
+  value,
+  onChange,
+  showManualCoords,
+  hidePlace,
+  savedPeople,
+  onSelectSaved,
+}: PersonFieldsProps) {
+  const [nameFocused, setNameFocused] = useState(false)
+
   function set<K extends keyof PersonFieldsValue>(key: K, next: PersonFieldsValue[K]) {
     onChange({ ...value, [key]: next })
+  }
+
+  const query = value.name.trim().toLowerCase()
+  const suggestions =
+    savedPeople && query
+      ? savedPeople.filter((person) => person.name.toLowerCase().includes(query)).slice(0, 6)
+      : []
+
+  function selectSuggestion(person: SavedPerson) {
+    onSelectSaved?.(person)
+    setNameFocused(false)
   }
 
   return (
     <>
       <div className="field-row field-row--narrow">
-        <div className="field">
+        <div className="field person-fields__name-field">
           <label htmlFor={`${idPrefix}-name`}>Name</label>
           <input
             id={`${idPrefix}-name`}
             value={value.name}
             onChange={(e) => set('name', e.target.value)}
+            onFocus={() => setNameFocused(true)}
+            onBlur={() => setNameFocused(false)}
+            autoComplete="off"
             required
           />
+          {nameFocused && suggestions.length > 0 && (
+            <ul className="person-fields__suggestions" role="listbox">
+              {suggestions.map((person) => (
+                <li key={person.id}>
+                  <button
+                    type="button"
+                    className="person-fields__suggestion"
+                    role="option"
+                    aria-selected={false}
+                    onMouseDown={(e) => {
+                      e.preventDefault()
+                      selectSuggestion(person)
+                    }}
+                  >
+                    {person.name}
+                    {person.id === PROFILE_SAVED_PERSON_ID && ' (You)'}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       </div>
 

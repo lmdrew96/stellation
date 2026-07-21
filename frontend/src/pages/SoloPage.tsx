@@ -9,6 +9,7 @@ import { GeneratingScreen } from '../components/GeneratingScreen'
 import { personFieldsFromChart } from '../components/PersonFields'
 import { useChartSession } from '../context/ChartSessionContext'
 import { useBouncingRing } from '../hooks/useBouncingRing'
+import { useSavedPeopleList } from '../hooks/useSavedPeopleList'
 
 type SoloSection = 'transits' | 'solar-return' | 'saturn-return' | null
 
@@ -24,6 +25,7 @@ export function SoloPage() {
   const { slug } = useParams()
   const section = sectionFromPath(location.pathname)
   const session = useChartSession()
+  const savedPeople = useSavedPeopleList()
 
   const [loadingSaved, setLoadingSaved] = useState(Boolean(slug))
   const [savedLoadError, setSavedLoadError] = useState<string | null>(null)
@@ -86,6 +88,7 @@ export function SoloPage() {
           showManualCoords={session.showManualCoords}
           initialPerson={slug && session.chart ? personFieldsFromChart(session.chart) : undefined}
           initialSettings={slug && session.chart ? chartSettingsFromChart(session.chart) : undefined}
+          savedPeople={savedPeople}
         />
       )}
 

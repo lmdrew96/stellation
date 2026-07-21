@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
-import type { RelationshipType, SynastryReadingType, SynastryRequest } from '../types'
+import type { RelationshipType, SavedPerson, SynastryReadingType, SynastryRequest } from '../types'
 import { ChartSettingsFields, defaultChartSettings } from './ChartSettingsFields'
 import type { ChartSettingsValue } from './ChartSettingsFields'
-import { PersonFields, emptyPersonFields, personFieldsToRequest } from './PersonFields'
+import { PersonFields, emptyPersonFields, personFieldsFromSavedPerson, personFieldsToRequest } from './PersonFields'
 import type { PersonFieldsValue } from './PersonFields'
 
 interface SynastryFormProps {
@@ -15,6 +15,7 @@ interface SynastryFormProps {
   initialPersonB?: PersonFieldsValue
   initialSettings?: ChartSettingsValue
   initialRelationshipType?: RelationshipType
+  savedPeople?: SavedPerson[]
 }
 
 export function SynastryForm({
@@ -26,6 +27,7 @@ export function SynastryForm({
   initialPersonB,
   initialSettings,
   initialRelationshipType,
+  savedPeople,
 }: SynastryFormProps) {
   const [personA, setPersonA] = useState(initialPersonA ?? emptyPersonFields())
   const [personB, setPersonB] = useState(initialPersonB ?? emptyPersonFields())
@@ -76,10 +78,24 @@ export function SynastryForm({
       </p>
 
       <h2 className="synastry-person-heading">Person A</h2>
-      <PersonFields idPrefix="a" value={personA} onChange={setPersonA} showManualCoords={showManualCoordsA} />
+      <PersonFields
+        idPrefix="a"
+        value={personA}
+        onChange={setPersonA}
+        showManualCoords={showManualCoordsA}
+        savedPeople={savedPeople}
+        onSelectSaved={(saved) => setPersonA(personFieldsFromSavedPerson(saved))}
+      />
 
       <h2 className="synastry-person-heading">Person B</h2>
-      <PersonFields idPrefix="b" value={personB} onChange={setPersonB} showManualCoords={showManualCoordsB} />
+      <PersonFields
+        idPrefix="b"
+        value={personB}
+        onChange={setPersonB}
+        showManualCoords={showManualCoordsB}
+        savedPeople={savedPeople}
+        onSelectSaved={(saved) => setPersonB(personFieldsFromSavedPerson(saved))}
+      />
 
       <ChartSettingsFields idPrefix="synastry-settings" value={settings} onChange={setSettings} />
 

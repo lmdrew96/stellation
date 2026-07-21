@@ -10,10 +10,12 @@ import { SynastryForm } from '../components/SynastryForm'
 import { SynastryReveal } from '../components/SynastryReveal'
 import { useChartSession } from '../context/ChartSessionContext'
 import { useBouncingRing } from '../hooks/useBouncingRing'
+import { useSavedPeopleList } from '../hooks/useSavedPeopleList'
 
 export function SynastryPage() {
   const { slug } = useParams()
   const session = useChartSession()
+  const savedPeople = useSavedPeopleList()
 
   const [loadingSaved, setLoadingSaved] = useState(Boolean(slug))
   const [savedLoadError, setSavedLoadError] = useState<string | null>(null)
@@ -67,6 +69,7 @@ export function SynastryPage() {
             slug && session.synastry ? chartSettingsFromChart(session.synastry.person_a) : undefined
           }
           initialRelationshipType={slug && session.synastry ? session.synastry.relationship_type : undefined}
+          savedPeople={savedPeople}
         />
       )}
 
