@@ -23,6 +23,7 @@ export interface SaveLinkState {
   copied: boolean
   handleSave: () => void
   handleCopy: () => void
+  handleDownloadCard: () => void
   cardImageUrl: string | null
 }
 
@@ -71,5 +72,34 @@ export function useSaveLink(
 
   const cardImageUrl = slug ? `${SHARE_PREFIX[pathPrefix]}${slug}/card.png` : null
 
-  return { status, slug, errorMessage, copied, handleSave, handleCopy, cardImageUrl }
+  // A bare `download` attribute on an <a href="/api/..."> is not honored
+  // consistently across mobile browsers for a plain network URL (iOS
+  // Safari/in-app webviews in particular) - the click can fall through to a
+  // page navigation instead, and since this SPA rewrites every route to
+  // index.html (see vercel.json), the "save" that lands is the HTML shell,
+  // not the card. Fetching the image into a blob first and downloading that
+  // object URL - the same approach ChartCarousel uses for chart art - forces
+  // a real file save with an explicit filename on every platform.
+  const handleDownloadCard = useCallback(() => {
+    if (!cardImageUrl || !slug) return
+    fetch(cardImageUrl)
+      .then((res) => res.blob())
+      .then((blob) => {
+        const blobUrl = URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = blobUrl
+        link.download = `stellation-card-${slug}.png`
+        document.body.appendChild(link)
+        link.click()
+        link.remove()
+        URL.revokeObjectURL(blobUrl)
+      })
+      .catch(() => {
+        // Fall back to a plain navigation - a working image tab beats no
+        // response at all if the fetch itself fails (e.g. offline).
+        window.open(cardImageUrl, '_blank')
+      })
+  }, [cardImageUrl, slug])
+
+  return { status, slug, errorMessage, copied, handleSave, handleCopy, handleDownloadCard, cardImageUrl }
 }

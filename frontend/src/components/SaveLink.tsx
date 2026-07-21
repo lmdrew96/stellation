@@ -8,11 +8,8 @@ interface SaveLinkProps {
 }
 
 export function SaveLink({ save, pathPrefix, initialSlug }: SaveLinkProps) {
-  const { status, errorMessage, copied, handleSave, handleCopy, cardImageUrl } = useSaveLink(
-    save,
-    pathPrefix,
-    initialSlug,
-  )
+  const { status, errorMessage, copied, handleSave, handleCopy, handleDownloadCard, cardImageUrl } =
+    useSaveLink(save, pathPrefix, initialSlug)
 
   if (status === 'saved') {
     return (
@@ -21,13 +18,13 @@ export function SaveLink({ save, pathPrefix, initialSlug }: SaveLinkProps) {
           Copy link
         </button>
         {cardImageUrl && (
-          <a
+          <button
+            type="button"
             className="save-link-button save-link-button--secondary"
-            href={cardImageUrl}
-            download
+            onClick={handleDownloadCard}
           >
             Download card
-          </a>
+          </button>
         )}
         <span className="save-link__status" role="status" aria-live="polite">
           {copied ? 'Link copied!' : ''}
